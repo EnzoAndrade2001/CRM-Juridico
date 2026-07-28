@@ -338,9 +338,17 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
   if (remoteJid === 'status@broadcast') return;
 
   const isGroup = evolutionService.isGroupJid(remoteJid);
+  const remoteJidAlt = msg.key?.remoteJidAlt || '';
+  const directJids = [remoteJid, remoteJidAlt]
+    .filter((jid) => typeof jid === 'string')
+    .map((jid) => jid.trim().toLowerCase());
+  const phoneJid = directJids.find((jid) => jid.endsWith('@s.whatsapp.net')) || remoteJid;
+  const whatsappJid = directJids.find((jid) => jid.endsWith('@lid'))
+    || directJids.find((jid) => jid.endsWith('@s.whatsapp.net'))
+    || null;
   const phone = isGroup
     ? evolutionService.normalizePhoneNumber(remoteJid)
-    : evolutionService.normalizePhoneNumber(remoteJid.replace('@s.whatsapp.net', ''));
+    : evolutionService.normalizePhoneNumber(phoneJid.replace('@s.whatsapp.net', ''));
 
   const media = extractMedia(msg);
   const mContent = getMessageContent(msg.message);
@@ -426,6 +434,7 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
     const nextContactData = {
       ...(matchedContact.phone !== phone ? { phone } : {}),
       ...(matchedContact.instanceId !== waInstance.id ? { instanceId: waInstance.id } : {}),
+      ...(whatsappJid && matchedContact.whatsappJid !== whatsappJid ? { whatsappJid } : {}),
       ...(shouldUpdateName ? { name: msg.pushName } : {}),
     };
 
@@ -441,6 +450,7 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
         tenantId: tenant.id,
         instanceId: waInstance.id,
         phone,
+        whatsappJid,
         name: isGroup ? `Grupo ${phone.split('@')[0]}` : (fromMe ? null : (msg.pushName || null)),
       },
     });

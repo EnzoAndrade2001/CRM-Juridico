@@ -8,115 +8,115 @@ datasource db {
 }
 
 model Tenant {
-  id             String          @id @default(cuid())
-  name           String
-  slug           String          @unique
-  plan           String          @default("trial") // trial, starter, pro, enterprise
-  active         Boolean         @default(true)
-  maxConnections Int             @default(1)
-  maxUsers       Int             @default(5)
-  primaryColor   String?         @default("#D4AF37")
-  logoUrl        String?
-  createdAt      DateTime        @default(now())
-  contacts       Contact[]
-  quickResponses QuickResponse[]
+  id                String               @id @default(cuid())
+  name              String
+  slug              String               @unique
+  plan              String               @default("trial") // trial, starter, pro, enterprise
+  active            Boolean              @default(true)
+  maxConnections    Int                  @default(1)
+  maxUsers          Int                  @default(5)
+  primaryColor      String?              @default("#D4AF37")
+  logoUrl           String?
+  createdAt         DateTime             @default(now())
+  contacts          Contact[]
+  quickResponses    QuickResponse[]
   scheduledMessages ScheduledMessage[]
-  internalMessages InternalMessage[]
-  teams          Team[]
-  settings       TenantSettings?
-  tickets        Ticket[]
-  users          User[]
-  instances      WaInstance[]
-  metaInstances  MetaInstance[]
-  knowledges     Knowledge[]
-  businessHours  BusinessHour[]
-  knowledgeLogs  KnowledgeLog[]
-  tags           Tag[]
-  equipments     Equipment[]
-  serviceOrders  ServiceOrder[]
-  leads          Lead[]
-  syncRecords    ExternalSyncRecord[]
-  crmCustomers   CrmCustomer[]
-  crmEquipments  CrmEquipment[]
-  crmOsTypes     CrmOsType[]
-  crmTechnicians CrmTechnician[]
-  billingLogs    BillingLog[]
+  internalMessages  InternalMessage[]
+  teams             Team[]
+  settings          TenantSettings?
+  tickets           Ticket[]
+  users             User[]
+  instances         WaInstance[]
+  metaInstances     MetaInstance[]
+  knowledges        Knowledge[]
+  businessHours     BusinessHour[]
+  knowledgeLogs     KnowledgeLog[]
+  tags              Tag[]
+  equipments        Equipment[]
+  serviceOrders     ServiceOrder[]
+  leads             Lead[]
+  syncRecords       ExternalSyncRecord[]
+  crmCustomers      CrmCustomer[]
+  crmEquipments     CrmEquipment[]
+  crmOsTypes        CrmOsType[]
+  crmTechnicians    CrmTechnician[]
+  billingLogs       BillingLog[]
 }
 
 model TenantSettings {
-  id                String   @id @default(cuid())
-  tenantId          String   @unique
-  tenant            Tenant   @relation(fields: [tenantId], references: [id])
-  evolutionUrl      String?
-  evolutionKey      String?
-  geminiKey         String?
-  botEnabled        Boolean  @default(false)
-  botName           String?  @default("LCD Bot")
-  botSystemPrompt   String?  @db.Text
-  botTransferWord   String?  @default("atendente")
-  webhookUrl        String?
-  outOfOfficeMessage String?  @db.Text
+  id                 String  @id @default(cuid())
+  tenantId           String  @unique
+  tenant             Tenant  @relation(fields: [tenantId], references: [id])
+  evolutionUrl       String?
+  evolutionKey       String?
+  geminiKey          String?
+  botEnabled         Boolean @default(false)
+  botName            String? @default("LCD Bot")
+  botSystemPrompt    String? @db.Text
+  botTransferWord    String? @default("atendente")
+  webhookUrl         String?
+  outOfOfficeMessage String? @db.Text
   notificationPhone  String?
-  ratingEnabled      Boolean  @default(false)
-  ratingMessage      String?  @default("Como você avalia nosso atendimento de 1 a 5?") @db.Text
-  
+  ratingEnabled      Boolean @default(false)
+  ratingMessage      String? @default("Como você avalia nosso atendimento de 1 a 5?") @db.Text
+
   // Dados da Empresa para PDF/OS
-  companyName       String?
-  companyCnpj       String?
-  companyIE         String?
-  companyAddress    String?
-  companyBairro     String?
-  companyCep        String?
-  companyPhone      String?
-  companyCity       String?
-  companyState      String?
+  companyName    String?
+  companyCnpj    String?
+  companyIE      String?
+  companyAddress String?
+  companyBairro  String?
+  companyCep     String?
+  companyPhone   String?
+  companyCity    String?
+  companyState   String?
 
   // SerpAPI para Prospecção de Leads
-  serpApiKey         String?
+  serpApiKey String?
 
   // IntegraÃ§Ã£o com API client da empresa / Firebird
-  firebirdApiUrl     String?
-  firebirdApiKey     String?
-  firebirdClientToken String?
-  firebirdAuthMode   String?  @default("bearer")
-  firebirdHealthPath String?  @default("/health")
-  firebirdContactsPath String? @default("/contacts")
-  firebirdSyncEnabled Boolean  @default(false)
-  firebirdLastSyncAt  DateTime?
-  firebirdLastSyncStatus String? @default("idle")
-  firebirdLastSyncError String? @db.Text
-  billingMessageTemplate String? @db.Text
-  firebirdQueueBillingProcess Boolean @default(false)
+  firebirdApiUrl              String?
+  firebirdApiKey              String?
+  firebirdClientToken         String?
+  firebirdAuthMode            String?   @default("bearer")
+  firebirdHealthPath          String?   @default("/health")
+  firebirdContactsPath        String?   @default("/contacts")
+  firebirdSyncEnabled         Boolean   @default(false)
+  firebirdLastSyncAt          DateTime?
+  firebirdLastSyncStatus      String?   @default("idle")
+  firebirdLastSyncError       String?   @db.Text
+  billingMessageTemplate      String?   @db.Text
+  firebirdQueueBillingProcess Boolean   @default(false)
 
   // Configurações de KPI do RevGuard AI
-  kpiContractValue   Float?   @default(1200.0)
-  kpiServiceValue    Float?   @default(350.0)
-  kpiSlaLimitHours   Int?     @default(24)
+  kpiContractValue Float? @default(1200.0)
+  kpiServiceValue  Float? @default(350.0)
+  kpiSlaLimitHours Int?   @default(24)
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now()) @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model User {
-  id          String       @id @default(cuid())
-  tenantId    String
-  name        String
-  email       String
-  password    String
-  role        String       @default("agent")
-  phone       String?
-  firebirdSupportName String?
-  active      Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  messages    Message[]
-  sentInternalMessages InternalMessage[] @relation("InternalSender")
+  id                       String            @id @default(cuid())
+  tenantId                 String
+  name                     String
+  email                    String
+  password                 String
+  role                     String            @default("agent")
+  phone                    String?
+  firebirdSupportName      String?
+  active                   Boolean           @default(true)
+  createdAt                DateTime          @default(now())
+  messages                 Message[]
+  sentInternalMessages     InternalMessage[] @relation("InternalSender")
   receivedInternalMessages InternalMessage[] @relation("InternalReceiver")
-  teamMembers TeamMember[]
-  tickets     Ticket[]
-  ticketEvents TicketEvent[]
-  tenant      Tenant       @relation(fields: [tenantId], references: [id])
-  serviceOrders ServiceOrder[]
-  closedOrders  ServiceOrder[] @relation("ClosedBy")
+  teamMembers              TeamMember[]
+  tickets                  Ticket[]
+  ticketEvents             TicketEvent[]
+  tenant                   Tenant            @relation(fields: [tenantId], references: [id])
+  serviceOrders            ServiceOrder[]
+  closedOrders             ServiceOrder[]    @relation("ClosedBy")
 
   @@unique([tenantId, email])
 }
@@ -153,56 +153,57 @@ model WaInstance {
 }
 
 model MetaInstance {
-  id           String    @id @default(cuid())
-  tenantId     String
-  name         String    // Nome amigável (ex: "Facebook Loja X")
-  type         String    // "facebook" ou "instagram"
-  externalId   String?   // ID da Página ou do Instagram Account
-  accessToken  String?   // Token da Página (se disponível)
-  
+  id          String  @id @default(cuid())
+  tenantId    String
+  name        String // Nome amigável (ex: "Facebook Loja X")
+  type        String // "facebook" ou "instagram"
+  externalId  String? // ID da Página ou do Instagram Account
+  accessToken String? // Token da Página (se disponível)
+
   metaBrowserSession Json? // Cookies/LocalStorage para automação fallback
 
-  active       Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  tenant       Tenant    @relation(fields: [tenantId], references: [id])
-  tickets      Ticket[]
+  tenant  Tenant   @relation(fields: [tenantId], references: [id])
+  tickets Ticket[]
 }
 
 model Contact {
-  id         String     @id @default(cuid())
-  tenantId   String
-  instanceId String
-  crmCustomerId String?
-  externalSource String? @default("manual")
-  externalId  String?
+  id                String    @id @default(cuid())
+  tenantId          String
+  instanceId        String
+  crmCustomerId     String?
+  externalSource    String?   @default("manual")
+  externalId        String?
   externalUpdatedAt DateTime?
-  phone      String
-  name       String?
-  fantasyName String?
-  avatarUrl  String?
-  createdAt  DateTime   @default(now())
-  notes      String?
-  tags       String     @default("[]")
-  whatsapp   String?
-  
+  phone             String
+  name              String?
+  fantasyName       String?
+  avatarUrl         String?
+  createdAt         DateTime  @default(now())
+  notes             String?
+  tags              String    @default("[]")
+  whatsapp          String?
+  whatsappJid       String?
+
   // Dados extras para CRM
-  cpfCnpj    String?
-  email      String?
-  address    String?
-  city       String?
-  state      String?
-  zipCode    String?
+  cpfCnpj               String?
+  email                 String?
+  address               String?
+  city                  String?
+  state                 String?
+  zipCode               String?
   enableWhatsAppBilling Boolean @default(false)
 
-  instance   WaInstance @relation(fields: [instanceId], references: [id])
-  tenant     Tenant     @relation(fields: [tenantId], references: [id])
-  crmCustomer CrmCustomer? @relation(fields: [crmCustomerId], references: [id], onDelete: SetNull)
-  tickets    Ticket[]
+  instance          WaInstance         @relation(fields: [instanceId], references: [id])
+  tenant            Tenant             @relation(fields: [tenantId], references: [id])
+  crmCustomer       CrmCustomer?       @relation(fields: [crmCustomerId], references: [id], onDelete: SetNull)
+  tickets           Ticket[]
   scheduledMessages ScheduledMessage[]
-  equipments Equipment[]
-  serviceOrders ServiceOrder[]
+  equipments        Equipment[]
+  serviceOrders     ServiceOrder[]
 
   @@unique([tenantId, instanceId, phone])
   @@unique([tenantId, externalSource, externalId])
@@ -211,45 +212,45 @@ model Contact {
 }
 
 model Ticket {
-  id         String     @id @default(cuid())
-  tenantId   String
-  instanceId String?
+  id             String    @id @default(cuid())
+  tenantId       String
+  instanceId     String?
   metaInstanceId String?
-  contactId  String
-  teamId     String?
-  agentId    String?
-  status     String     @default("pending")
-  priority   String     @default("medium") // low, medium, high, urgent
-  subject    String?
-  unreadCount Int       @default(0)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  resolvedAt DateTime?
-  
+  contactId      String
+  teamId         String?
+  agentId        String?
+  status         String    @default("pending")
+  priority       String    @default("medium") // low, medium, high, urgent
+  subject        String?
+  unreadCount    Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  resolvedAt     DateTime?
+
   // SLA Fields
-  slaDueAt             DateTime?
-  firstResponseAt      DateTime?
+  slaDueAt              DateTime?
+  firstResponseAt       DateTime?
   lastCustomerMessageAt DateTime?
-  lastMessageAt          DateTime?  @default(now()) // Para ordenação estável da lista
+  lastMessageAt         DateTime? @default(now()) // Para ordenação estável da lista
 
   // Avaliação do Atendimento (CSAT)
-  rating               Int?
-  ratingAt             DateTime?
-  ratingFeedback       String?
+  rating         Int?
+  ratingAt       DateTime?
+  ratingFeedback String?
 
   // Auditoria por IA
-  auditScore           Int?
-  auditResult          String?    @db.Text
-  auditedAt            DateTime?
+  auditScore  Int?
+  auditResult String?   @db.Text
+  auditedAt   DateTime?
 
-  messages   Message[]
-  events     TicketEvent[]
-  agent      User?      @relation(fields: [agentId], references: [id])
-  contact    Contact    @relation(fields: [contactId], references: [id])
-  instance   WaInstance? @relation(fields: [instanceId], references: [id])
-  metaInstance MetaInstance? @relation(fields: [metaInstanceId], references: [id])
-  team       Team?      @relation(fields: [teamId], references: [id])
-  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  messages      Message[]
+  events        TicketEvent[]
+  agent         User?          @relation(fields: [agentId], references: [id])
+  contact       Contact        @relation(fields: [contactId], references: [id])
+  instance      WaInstance?    @relation(fields: [instanceId], references: [id])
+  metaInstance  MetaInstance?  @relation(fields: [metaInstanceId], references: [id])
+  team          Team?          @relation(fields: [teamId], references: [id])
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
   serviceOrders ServiceOrder[]
 
   @@index([tenantId])
@@ -267,7 +268,7 @@ model TicketEvent {
   ticketId  String
   tenantId  String
   userId    String?
-  type      String   // assigned, transferred, resolved, reopened, note, etc.
+  type      String // assigned, transferred, resolved, reopened, note, etc.
   payload   String?  @db.Text // JSON string with extra details (ex: "from team X to team Y")
   createdAt DateTime @default(now())
   ticket    Ticket   @relation(fields: [ticketId], references: [id])
@@ -282,7 +283,7 @@ model Knowledge {
   question  String   @db.Text
   answer    String   @db.Text
   tags      String?
-  embedding Json?    // Array de números para busca semântica
+  embedding Json? // Array de números para busca semântica
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
@@ -291,13 +292,13 @@ model Knowledge {
 }
 
 model BusinessHour {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   tenantId  String
   dayOfWeek Int
-  start     String   @default("08:00")
-  end       String   @default("18:00")
-  active    Boolean  @default(true)
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  start     String  @default("08:00")
+  end       String  @default("18:00")
+  active    Boolean @default(true)
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
 
   @@unique([tenantId, dayOfWeek])
 }
@@ -311,24 +312,24 @@ model Tag {
 }
 
 model Message {
-  id         String   @id @default(cuid())
-  ticketId   String
-  agentId    String?
-  fromBot    Boolean  @default(false)
-  fromMe     Boolean  @default(false)
+  id            String   @id @default(cuid())
+  ticketId      String
+  agentId       String?
+  fromBot       Boolean  @default(false)
+  fromMe        Boolean  @default(false)
   body          String
   transcription String?
   mediaUrl      String?
-  mediaType  String?
-  mediaStatus String?  @default("pending") // pending, ok, failed
-  externalId String?
+  mediaType     String?
+  mediaStatus   String?  @default("pending") // pending, ok, failed
+  externalId    String?
   quotedMsgId   String?
   quotedMsgBody String?
   fileName      String?
-  isDeleted  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  agent      User?    @relation(fields: [agentId], references: [id])
-  ticket     Ticket   @relation(fields: [ticketId], references: [id])
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  agent         User?    @relation(fields: [agentId], references: [id])
+  ticket        Ticket   @relation(fields: [ticketId], references: [id])
 
   @@index([ticketId])
   @@index([ticketId, createdAt])
@@ -347,15 +348,15 @@ model QuickResponse {
 }
 
 model ScheduledMessage {
-  id         String   @id @default(cuid())
-  tenantId   String
-  contactId  String
-  body       String
-  sendAt     DateTime
-  processed  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  contact    Contact  @relation(fields: [contactId], references: [id])
-  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  id        String   @id @default(cuid())
+  tenantId  String
+  contactId String
+  body      String
+  sendAt    DateTime
+  processed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  contact   Contact  @relation(fields: [contactId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
 }
 
 model InternalMessage {
@@ -382,82 +383,82 @@ model KnowledgeLog {
 }
 
 model Equipment {
-  id           String     @id @default(cuid())
-  tenantId     String
-  contactId    String
-  externalSource String? @default("manual")
-  externalId   String?
+  id                String    @id @default(cuid())
+  tenantId          String
+  contactId         String
+  externalSource    String?   @default("manual")
+  externalId        String?
   externalUpdatedAt DateTime?
-  model        String
-  manufacturer String?
-  type         String?
-  serialNumber String?
-  sector       String?
-  address      String?
-  isActive     Boolean    @default(true)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  model             String
+  manufacturer      String?
+  type              String?
+  serialNumber      String?
+  sector            String?
+  address           String?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  contact      Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact       Contact        @relation(fields: [contactId], references: [id], onDelete: Cascade)
   serviceOrders ServiceOrder[]
 
   @@unique([tenantId, externalSource, externalId])
 }
 
 model ServiceOrder {
-  id             String     @id @default(cuid())
-  tenantId       String
-  contactId      String
-  equipmentId    String
-  externalSource String? @default("manual")
-  externalId     String?
+  id                String    @id @default(cuid())
+  tenantId          String
+  contactId         String
+  equipmentId       String
+  externalSource    String?   @default("manual")
+  externalId        String?
   externalUpdatedAt DateTime?
-  ticketId       String?
-  cdOstp         String?
-  nmsuportet     String?
-  defect         String?    // Descrição do defeito relatado
-  status         String     @default("PENDENTE") // PENDENTE, EM_ATENDIMENTO, AGUARDANDO_RETORNO, FINALIZADA
-  technicalNotes String?    // Notas do técnico (peças trocadas, pendências)
-  meters         String?    // Medidores em JSON (ex: {"mono": 1000, "cor": 500})
-  userId         String?    // Atendente que criou a O.S.
+  ticketId          String?
+  cdOstp            String?
+  nmsuportet        String?
+  defect            String? // Descrição do defeito relatado
+  status            String    @default("PENDENTE") // PENDENTE, EM_ATENDIMENTO, AGUARDANDO_RETORNO, FINALIZADA
+  technicalNotes    String? // Notas do técnico (peças trocadas, pendências)
+  meters            String? // Medidores em JSON (ex: {"mono": 1000, "cor": 500})
+  userId            String? // Atendente que criou a O.S.
 
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  resolvedAt     DateTime?
-  
-  closedAt       DateTime?
-  closedById     String?
-  closedBy       User?      @relation("ClosedBy", fields: [closedById], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  resolvedAt DateTime?
 
-  user           User?      @relation(fields: [userId], references: [id])
-  tenant         Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  contact        Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  equipment      Equipment  @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
-  ticket         Ticket?    @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  closedAt   DateTime?
+  closedById String?
+  closedBy   User?     @relation("ClosedBy", fields: [closedById], references: [id])
+
+  user      User?     @relation(fields: [userId], references: [id])
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact   Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  ticket    Ticket?   @relation(fields: [ticketId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, externalSource, externalId])
 }
 
 model ExternalSyncRecord {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   tenantId   String
   source     String
   entity     String
   externalId String?
   payload    Json
-  receivedAt DateTime @default(now())
+  receivedAt DateTime  @default(now())
   syncedAt   DateTime?
-  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, source, entity, externalId])
   @@index([tenantId, source, entity])
 }
 
 model CrmCustomer {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   tenantId          String
-  externalSource    String   @default("firebird")
+  externalSource    String    @default("firebird")
   externalId        String
   externalUpdatedAt DateTime?
   name              String
@@ -471,14 +472,14 @@ model CrmCustomer {
   state             String?
   zipCode           String?
   contactName       String?
-  notes             String?  @db.Text
+  notes             String?   @db.Text
   raw               Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  equipments        CrmEquipment[]
-  whatsappContacts  Contact[]
+  tenant           Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  equipments       CrmEquipment[]
+  whatsappContacts Contact[]
 
   @@unique([tenantId, externalSource, externalId])
   @@index([tenantId, name])
@@ -487,31 +488,31 @@ model CrmCustomer {
 }
 
 model CrmEquipment {
-  id                String       @id @default(cuid())
-  tenantId          String
-  customerId        String?
-  externalSource    String       @default("firebird")
-  externalId        String
-  externalUpdatedAt DateTime?
-  model             String
-  manufacturer      String?
-  type              String?
-  serialNumber      String?
-  assetTag          String?
-  sector            String?
-  installLocation   String?
-  address           String?
-  city              String?
-  state             String?
-  phone             String?
+  id                 String    @id @default(cuid())
+  tenantId           String
+  customerId         String?
+  externalSource     String    @default("firebird")
+  externalId         String
+  externalUpdatedAt  DateTime?
+  model              String
+  manufacturer       String?
+  type               String?
+  serialNumber       String?
+  assetTag           String?
+  sector             String?
+  installLocation    String?
+  address            String?
+  city               String?
+  state              String?
+  phone              String?
   contractExternalId String?
-  isActive          Boolean      @default(true)
-  raw               Json?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  isActive           Boolean   @default(true)
+  raw                Json?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  tenant            Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer          CrmCustomer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer CrmCustomer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, externalSource, externalId])
   @@index([tenantId, model])
@@ -520,24 +521,24 @@ model CrmEquipment {
 }
 
 model Lead {
-  id          String   @id @default(cuid())
-  tenantId    String
-  placeId     String?  // Google Place ID (para evitar duplicatas)
-  name        String
-  phone       String?
-  address     String?
-  city        String?
-  state       String?
-  website     String?
-  rating      Float?
-  category    String?  // Ex: "Escritório de Advocacia"
-  query       String?  // Busca que originou o lead
-  imported    Boolean  @default(false)
-  contactId   String?  // Se foi importado para Contact
-  sentAt      DateTime? // Data do último envio WhatsApp
-  sentCount   Int      @default(0) // Quantas vezes foi enviado
-  createdAt   DateTime @default(now())
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
+  tenantId  String
+  placeId   String? // Google Place ID (para evitar duplicatas)
+  name      String
+  phone     String?
+  address   String?
+  city      String?
+  state     String?
+  website   String?
+  rating    Float?
+  category  String? // Ex: "Escritório de Advocacia"
+  query     String? // Busca que originou o lead
+  imported  Boolean   @default(false)
+  contactId String? // Se foi importado para Contact
+  sentAt    DateTime? // Data do último envio WhatsApp
+  sentCount Int       @default(0) // Quantas vezes foi enviado
+  createdAt DateTime  @default(now())
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, placeId])
   @@index([tenantId, imported])
@@ -548,11 +549,11 @@ model Lead {
 model CrmOsType {
   id        String   @id @default(cuid())
   tenantId  String
-  code      String   // CDOSTP
-  name      String   // NMOSTP
+  code      String // CDOSTP
+  name      String // NMOSTP
   createdAt DateTime @default(now())
-  
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, code])
 }
@@ -560,12 +561,12 @@ model CrmOsType {
 model CrmTechnician {
   id        String   @id @default(cuid())
   tenantId  String
-  name      String   // NMSUPORTE
+  name      String // NMSUPORTE
   email     String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
-  
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, name])
 }
@@ -576,11 +577,11 @@ model BillingLog {
   cpfCnpj      String?
   clientName   String?
   fileName     String
-  status       String   // "SUCCESS" ou "FAILED"
+  status       String // "SUCCESS" ou "FAILED"
   errorMessage String?  @db.Text
   sentAt       DateTime @default(now())
-  
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
 }

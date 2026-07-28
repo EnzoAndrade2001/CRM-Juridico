@@ -23,6 +23,25 @@ function toRemoteJid(target) {
   return target.includes('@') ? target : `${target}@s.whatsapp.net`;
 }
 
+function normalizeSendTarget(value) {
+  const target = String(value || '').trim().toLowerCase();
+  if (
+    target.endsWith('@s.whatsapp.net')
+    || target.endsWith('@lid')
+    || target.endsWith('@g.us')
+  ) {
+    return target;
+  }
+  return evolutionService.normalizePhoneNumber(target);
+}
+
+function getResultRemoteJid(result) {
+  return result?.key?.remoteJid
+    || result?.message?.key?.remoteJid
+    || result?.data?.key?.remoteJid
+    || null;
+}
+
 function formatSendDetail(value) {
   if (Array.isArray(value)) {
     return value.map(formatSendDetail).filter(Boolean).join(', ');
@@ -729,11 +748,11 @@ async function sendMessage(req, res) {
     const finalBody = `*${agent.name}*\n${body}`;
     
     // Normaliza o número: se tiver 10 ou 11 dígitos, adiciona 55
-    const phone = evolutionService.normalizePhoneNumber(
-      ticket.contact?.whatsapp || ticket.contact?.phone || ''
+    const phone = normalizeSendTarget(
+      ticket.contact?.whatsappJid || ticket.contact?.whatsapp || ticket.contact?.phone
     );
     const isGroup = phone.includes('@g.us') || evolutionService.isGroupJid(ticket.contact?.phone);
-    const remoteJid = isGroup ? phone : `${phone}@s.whatsapp.net`;
+    const remoteJid = isGroup ? phone : toRemoteJid(phone);
 
     let quotedMsgBody = null;
     let quotedObj = null;
@@ -750,13 +769,25 @@ async function sendMessage(req, res) {
     const { result, instance: usedInstance } = await sendWithInstanceFallback({
       tenantId: req.user.tenantId,
       ticketId: id,
-      preferredInstanceId: ticket.instanceId,
+      preferredInstanceId: ticket.instanceId || ticket.contact?.instanceId,
+      strictPreferred: true,
       send: (instance) => {
-        const quoteForInstance = instance.id === ticket.instanceId ? quotedObj : null;
-        return evolutionService.sendText(evolutionUrl, evolutionKey, instance.instanceName, phone, finalBody, quoteForInstance);
+        return evolutionService.sendText(evolutionUrl, evolutionKey, instance.instanceName, phone, finalBody, quotedObj);
       },
     });
     const externalId = result?.key?.id || result?.message?.key?.id;
+    const confirmedRemoteJid = getResultRemoteJid(result);
+
+    if (
+      typeof confirmedRemoteJid === 'string'
+      && (confirmedRemoteJid.endsWith('@s.whatsapp.net') || confirmedRemoteJid.endsWith('@lid'))
+      && confirmedRemoteJid !== ticket.contact?.whatsappJid
+    ) {
+      await prisma.contact.update({
+        where: { id: ticket.contactId },
+        data: { whatsappJid: confirmedRemoteJid.toLowerCase() },
+      });
+    }
 
     // Auto-atribuição se o ticket não estiver aberto ou estiver sem agente
     if (ticket.status !== 'open' || !ticket.agentId) {
@@ -819,10 +850,11 @@ async function sendMediaMessage(req, res) {
 
     // Normaliza o número: se tiver 10 ou 11 dígitos, adiciona 55
     const phoneCandidates = [...new Set([
+      ticket.contact?.whatsappJid,
       ticket.contact?.whatsapp,
       ticket.contact?.phone,
     ]
-      .map(value => evolutionService.normalizePhoneNumber(value || ''))
+      .map(normalizeSendTarget)
       .filter(Boolean))];
     const phone = phoneCandidates[0] || '';
 
