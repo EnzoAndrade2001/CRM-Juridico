@@ -105,7 +105,8 @@ async function sendMediaMultipart(url, key, instanceName, phone, { mediatype, mi
   form.append('mediatype', mediatype);
   form.append('caption', caption || '');
   form.append('fileName', filename || path.basename(filePath) || 'arquivo');
-  form.append('media', fs.createReadStream(filePath), {
+  // Evolution API 2.4.0 recebe o arquivo multipart no campo "file".
+  form.append('file', fs.createReadStream(filePath), {
     filename: filename || path.basename(filePath) || 'arquivo',
     contentType: mimetype || 'application/octet-stream'
   });
