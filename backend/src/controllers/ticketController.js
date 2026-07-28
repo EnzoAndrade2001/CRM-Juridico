@@ -6,6 +6,19 @@ const path = require('path');
 const fs = require('fs');
 let io;
 function setIo(socketIo) { io = socketIo; }
+
+function formatSendError(error) {
+  const status = error?.response?.status;
+  const responseData = error?.response?.data;
+  let detail = responseData?.response?.message || responseData?.message || responseData?.error;
+
+  if (Array.isArray(detail)) detail = detail.join(', ');
+  if (detail && typeof detail === 'object') detail = JSON.stringify(detail);
+
+  return [status ? `HTTP ${status}` : null, detail || error?.message || 'erro desconhecido']
+    .filter(Boolean)
+    .join(' - ');
+}
 const avatarRefreshCache = new Map();
 const AVATAR_REFRESH_TTL_MS = 6 * 60 * 60 * 1000;
 const AVATAR_REFRESH_LIMIT = 10;
@@ -41,7 +54,7 @@ function getMimeTypeFromFileName(fileName = '', mediaType = 'document') {
   return 'application/octet-stream';
 }
 
-async function getInstanceFallbackQueue(tenantId, preferredInstanceId) {
+async function getInstanceFallbackQueue(tenantId, preferredInstanceId, strictPreferred = false) {
   const instances = await prisma.waInstance.findMany({
     where: {
       tenantId,
@@ -55,7 +68,13 @@ async function getInstanceFallbackQueue(tenantId, preferredInstanceId) {
     if (instance && !queue.some((item) => item.id === instance.id)) queue.push(instance);
   };
 
-  if (preferredInstanceId) push(byId.get(preferredInstanceId));
+  if (preferredInstanceId) {
+    push(byId.get(preferredInstanceId));
+    if (strictPreferred) return queue;
+  }
+
+  if (strictPreferred) return queue;
+
   instances
     .filter((instance) => String(instance.status).toLowerCase() === 'connected')
     .forEach(push);
@@ -64,10 +83,12 @@ async function getInstanceFallbackQueue(tenantId, preferredInstanceId) {
   return queue;
 }
 
-async function sendWithInstanceFallback({ tenantId, ticketId, preferredInstanceId, send }) {
-  const queue = await getInstanceFallbackQueue(tenantId, preferredInstanceId);
+async function sendWithInstanceFallback({ tenantId, ticketId, preferredInstanceId, send, strictPreferred = false }) {
+  const queue = await getInstanceFallbackQueue(tenantId, preferredInstanceId, strictPreferred);
   if (!queue.length) {
-    throw new Error('Nenhuma conexao WhatsApp encontrada ou configurada para esta empresa.');
+    throw new Error(strictPreferred
+      ? 'A instância vinculada a esta conversa não foi encontrada.'
+      : 'Nenhuma conexao WhatsApp encontrada ou configurada para esta empresa.');
   }
 
   const failures = [];
@@ -82,12 +103,13 @@ async function sendWithInstanceFallback({ tenantId, ticketId, preferredInstanceI
       }
       return { result, instance };
     } catch (err) {
-      failures.push(`${instance.instanceName}: ${err.response?.data?.message || err.message}`);
-      console.warn(`[sendWithInstanceFallback] Falha via ${instance.instanceName}; tentando proxima instancia...`, err.response?.data || err.message);
+      const errorDetail = formatSendError(err);
+      failures.push(`${instance.instanceName}: ${errorDetail}`);
+      console.warn(`[sendWithInstanceFallback] Falha via ${instance.instanceName}${strictPreferred ? '' : '; tentando proxima instancia...'}:`, errorDetail);
     }
   }
 
-  throw new Error(`Falha ao enviar por todas as conexoes disponiveis. Tentativas: ${failures.join(' | ')}`);
+  throw new Error(`${strictPreferred ? 'Falha ao enviar pela instancia vinculada a esta conversa' : 'Falha ao enviar por todas as conexoes disponiveis'}. Tentativas: ${failures.join(' | ')}`);
 }
 
 function getRecentConversation(messages = [], hours = 24, maxItems = 30) {
@@ -780,7 +802,11 @@ async function sendMediaMessage(req, res) {
     const { result, instance: usedInstance } = await sendWithInstanceFallback({
       tenantId: req.user.tenantId,
       ticketId: id,
-      preferredInstanceId: ticket.instanceId,
+      // Anexos devem permanecer na instancia da conversa. Se o ticket antigo
+      // nao tiver instancia, usamos apenas a instancia atualmente vinculada ao contato;
+      // nunca alternamos silenciosamente para outro numero do tenant.
+      preferredInstanceId: ticket.instanceId || ticket.contact?.instanceId,
+      strictPreferred: true,
       send: async (instance) => {
         const quoteForInstance = instance.id === ticket.instanceId ? quotedObj : null;
         if (mime.startsWith('image/')) {
