@@ -729,7 +729,9 @@ async function sendMessage(req, res) {
     const finalBody = `*${agent.name}*\n${body}`;
     
     // Normaliza o número: se tiver 10 ou 11 dígitos, adiciona 55
-    const phone = evolutionService.normalizePhoneNumber(ticket.contact?.phone || '');
+    const phone = evolutionService.normalizePhoneNumber(
+      ticket.contact?.whatsapp || ticket.contact?.phone || ''
+    );
     const isGroup = phone.includes('@g.us') || evolutionService.isGroupJid(ticket.contact?.phone);
     const remoteJid = isGroup ? phone : `${phone}@s.whatsapp.net`;
 
@@ -817,8 +819,8 @@ async function sendMediaMessage(req, res) {
 
     // Normaliza o número: se tiver 10 ou 11 dígitos, adiciona 55
     const phoneCandidates = [...new Set([
-      ticket.contact?.phone,
       ticket.contact?.whatsapp,
+      ticket.contact?.phone,
     ]
       .map(value => evolutionService.normalizePhoneNumber(value || ''))
       .filter(Boolean))];

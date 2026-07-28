@@ -66,13 +66,29 @@ async function getHistory(req, res) {
 async function updateContact(req, res) {
   const { id } = req.params;
   const { 
-    notes, tags, name, fantasyName, email, 
+    notes, tags, name, fantasyName, phone, whatsapp, email,
     cpfCnpj, address, city, state, zipCode,
     enableWhatsAppBilling
   } = req.body;
 
   const contact = await prisma.contact.findFirst({ where: { id, tenantId: req.user.tenantId } });
   if (!contact) return res.status(404).json({ error: 'Contato não encontrado' });
+
+  let normalizedPhone;
+  if (phone !== undefined) {
+    normalizedPhone = evolutionService.normalizePhoneNumber(phone);
+    if (!normalizedPhone) return res.status(400).json({ error: 'Telefone invalido' });
+  }
+
+  let normalizedWhatsApp;
+  if (whatsapp !== undefined) {
+    normalizedWhatsApp = String(whatsapp || '').trim()
+      ? evolutionService.normalizePhoneNumber(whatsapp)
+      : null;
+    if (String(whatsapp || '').trim() && !normalizedWhatsApp) {
+      return res.status(400).json({ error: 'WhatsApp invalido' });
+    }
+  }
 
   const updated = await prisma.contact.update({
     where: { id },
@@ -81,6 +97,8 @@ async function updateContact(req, res) {
       ...(tags !== undefined && { tags: typeof tags === 'string' ? tags : JSON.stringify(tags) }),
       ...(name !== undefined && { name }),
       ...(fantasyName !== undefined && { fantasyName: String(fantasyName) }),
+      ...(phone !== undefined && { phone: normalizedPhone }),
+      ...(whatsapp !== undefined && { whatsapp: normalizedWhatsApp }),
       ...(email !== undefined && { email }),
       ...(cpfCnpj !== undefined && { cpfCnpj }),
       ...(address !== undefined && { address }),

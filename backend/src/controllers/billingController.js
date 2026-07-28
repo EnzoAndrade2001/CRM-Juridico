@@ -178,7 +178,7 @@ async function sendBilling(req, res) {
       throw new Error('Integração com WhatsApp não configurada ou sem instâncias conectadas.');
     }
 
-    const phone = evolutionService.normalizePhoneNumber(contact.phone || '');
+    const phone = evolutionService.normalizePhoneNumber(contact.whatsapp || contact.phone || '');
     if (!phone) {
       throw new Error('Telefone do cliente inválido ou não cadastrado.');
     }

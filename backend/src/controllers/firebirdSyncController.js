@@ -113,9 +113,10 @@ async function findOrCreateContact(tenant, instance, data) {
   }
 
   const phone = normalizePhone(
-    pick(data.phone, data.fone1, data.celular, data.whatsapp, data.fone2, data.telefone),
+    pick(data.whatsapp, data.celular, data.phone, data.fone1, data.fone2, data.telefone),
     externalId
   );
+  const whatsapp = normalizePhone(pick(data.whatsapp, data.celular), null);
 
   const defaults = {
     tenantId: tenant.id,
@@ -124,6 +125,7 @@ async function findOrCreateContact(tenant, instance, data) {
     externalId,
     externalUpdatedAt: normalizeDate(pick(data.updatedAt, data.atualizado, data.modificadoEm, data.inclusao)),
     phone: phone || `FB-${externalId}`,
+    whatsapp,
     name: pick(data.name, data.nmCliente, data.razaoSocial, data.cliente) || `Cliente ${externalId}`,
     fantasyName: pick(data.fantasyName, data.fantasia, data.nomeFantasia),
     email: pick(data.email),
@@ -149,6 +151,7 @@ async function findOrCreateContact(tenant, instance, data) {
       data: {
         ...defaults,
         phone: defaults.phone || existing.phone,
+        whatsapp: defaults.whatsapp || existing.whatsapp,
         name: defaults.name || existing.name,
         fantasyName: defaults.fantasyName || existing.fantasyName,
         email: defaults.email || existing.email,

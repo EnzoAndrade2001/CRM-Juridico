@@ -25,6 +25,7 @@ export default function ContactProfileModal({ contact, onClose, onUpdated, initi
     name: contact.name || '',
     fantasyName: contact.fantasyName || '',
     phone: contact.phone || '',
+    whatsapp: contact.whatsapp || '',
     cpfCnpj: contact.cpfCnpj || '',
     email: contact.email || '',
     address: contact.address || '',
@@ -85,7 +86,7 @@ export default function ContactProfileModal({ contact, onClose, onUpdated, initi
       onUpdated();
       toast.success('Dados salvos');
     } catch (err) {
-      toast.error('Erro ao salvar');
+      toast.error(err.response?.data?.error || 'Erro ao salvar');
     }
   }
 
@@ -224,9 +225,20 @@ export default function ContactProfileModal({ contact, onClose, onUpdated, initi
             </div>
             <div style={s.inputGroup}>
               <div>
-                <label style={s.label}>Telefone</label>
+                <label style={s.label}>Telefone do cadastro</label>
                 <input style={s.input} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
               </div>
+              <div>
+                <label style={s.label}>WhatsApp para envios</label>
+                <input
+                  style={s.input}
+                  value={formData.whatsapp}
+                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                  placeholder="Ex.: 5551999999999"
+                />
+              </div>
+            </div>
+            <div style={s.inputGroup}>
               <div>
                 <label style={s.label}>E-mail</label>
                 <input style={s.input} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
