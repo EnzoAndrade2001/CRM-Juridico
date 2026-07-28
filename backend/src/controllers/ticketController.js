@@ -18,6 +18,11 @@ function isMissingWhatsAppNumberError(error) {
   return hasMissingWhatsAppNumber(error?.response?.data?.response?.message);
 }
 
+function toRemoteJid(target) {
+  if (!target) return '';
+  return target.includes('@') ? target : `${target}@s.whatsapp.net`;
+}
+
 function formatSendDetail(value) {
   if (Array.isArray(value)) {
     return value.map(formatSendDetail).filter(Boolean).join(', ');
@@ -823,6 +828,16 @@ async function sendMediaMessage(req, res) {
       return res.status(400).json({ error: 'O contato nao possui numero de WhatsApp valido.' });
     }
 
+    const recentExternalIds = (await prisma.message.findMany({
+      where: {
+        ticketId: id,
+        externalId: { not: null },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: { externalId: true },
+    })).map((message) => message.externalId).filter(Boolean);
+
     let mediaUrl = `/uploads/media/${file.filename}`;
     let mediaType = 'document';
 
@@ -855,13 +870,36 @@ async function sendMediaMessage(req, res) {
       strictPreferred: true,
       send: async (instance) => {
         let lastError;
+        let conversationJids = [];
 
-        for (let index = 0; index < phoneCandidates.length; index += 1) {
-          const targetPhone = phoneCandidates[index];
+        if (recentExternalIds.length > 0) {
+          try {
+            conversationJids = await evolutionService.findConversationJidsByMessageIds(
+              evolutionUrl,
+              evolutionKey,
+              instance.instanceName,
+              recentExternalIds
+            );
+            if (conversationJids.length > 0) {
+              console.log(
+                `[sendMediaMessage] Destinatario recuperado do historico da conversa na instancia ${instance.instanceName}.`
+              );
+            }
+          } catch (error) {
+            console.warn(
+              `[sendMediaMessage] Nao foi possivel recuperar o JID pelo historico; usando cadastro do contato: ${formatSendError(error)}`
+            );
+          }
+        }
+
+        const targetCandidates = [...new Set([...conversationJids, ...phoneCandidates])];
+
+        for (let index = 0; index < targetCandidates.length; index += 1) {
+          const targetPhone = targetCandidates[index];
           const isGroupTarget = targetPhone.includes('@g.us') || evolutionService.isGroupJid(targetPhone);
           const quoteForInstance = instance.id === ticket.instanceId && quotedObj
             ? (typeof quotedObj === 'object'
-              ? { ...quotedObj, remoteJid: isGroupTarget ? targetPhone : `${targetPhone}@s.whatsapp.net` }
+              ? { ...quotedObj, remoteJid: isGroupTarget ? targetPhone : toRemoteJid(targetPhone) }
               : quotedObj)
             : null;
 
@@ -905,7 +943,7 @@ async function sendMediaMessage(req, res) {
             });
           } catch (error) {
             lastError = error;
-            const canTryLinkedWhatsApp = index < phoneCandidates.length - 1
+            const canTryLinkedWhatsApp = index < targetCandidates.length - 1
               && isMissingWhatsAppNumberError(error);
             if (!canTryLinkedWhatsApp) throw error;
 

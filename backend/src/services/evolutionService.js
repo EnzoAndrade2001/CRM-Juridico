@@ -543,9 +543,34 @@ async function findMessages(url, key, instanceName, remoteJid, limit = 50) {
   return data;
 }
 
+async function findConversationJidsByMessageIds(url, key, instanceName, messageIds = []) {
+  const client = getClient(url, key);
+
+  for (const messageId of messageIds) {
+    if (!messageId) continue;
+
+    const { data } = await client.post(`/chat/findMessages/${instanceName}`, {
+      where: { key: { id: messageId } },
+      limit: 1,
+    });
+    const records = data?.messages?.records || data?.records || [];
+    const messageKey = records[0]?.key;
+    if (!messageKey || typeof messageKey !== 'object') continue;
+
+    const jids = [messageKey.remoteJid, messageKey.remoteJidAlt]
+      .filter((jid) => typeof jid === 'string')
+      .map((jid) => jid.trim().toLowerCase())
+      .filter((jid) => jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'));
+
+    if (jids.length > 0) return [...new Set(jids)];
+  }
+
+  return [];
+}
+
 module.exports = {
   sendText, sendMedia, sendAudio, sendMessage, getMediaBase64, saveMediaFile,
   getQrCode, getConnectionState, setWebhook, createInstance, deleteInstance, isInstanceAlreadyInUse, fetchInstanceInfo, fetchProfilePicture, revokeMessage,
   normalizePhoneNumber, buildPhoneLookupCandidates, isGroupJid,
-  findChats, findMessages
+  findChats, findMessages, findConversationJidsByMessageIds
 };
