@@ -25,6 +25,7 @@ import { toast } from '../utils/toast';
 import { useIsMobile } from '../hooks/useIsMobile';
 import CreateOsModal from '../components/CreateOsModal';
 import LinkContactModal from '../components/LinkContactModal';
+import InstanceSelectionModal from '../components/InstanceSelectionModal';
 import { ChatHeader, ContactPanel, ForwardModal, MessageComposer, MessageList, TicketSidebar, TransferModal } from './inbox/components';
 import { Empty } from './inbox/helpers.jsx';
 import { useInboxMessages, useInboxRealtime, useInboxTickets } from './inbox/hooks';
@@ -102,6 +103,8 @@ export default function Inbox() {
   const [forwardingMessage, setForwardingMessage] = useState(null);
   const [isNote, setIsNote] = useState(false);
   const [historySearch, setHistorySearch] = useState('');
+  const [showReopenInstanceModal, setShowReopenInstanceModal] = useState(false);
+  const [reopening, setReopening] = useState(false);
   const isMobile = useIsMobile();
   const { instances } = useOutletContext() || { instances: [] };
   const navigate = useNavigate();
@@ -434,14 +437,23 @@ export default function Inbox() {
   }
 
   async function handleReopen() {
-    toast.confirm('Reabrir este atendimento?', async () => {
-      try {
-        const { data } = await reopenTicket(selectedTicket.contactId);
-        setSelectedId(data.id);
-        loadTickets();
-        toast.success('Atendimento reaberto!');
-      } catch (e) { toast.error('Erro ao reabrir: ' + (e.response?.data?.error || e.message)); }
-    });
+    setShowReopenInstanceModal(true);
+  }
+
+  async function confirmReopen(instanceId) {
+    if (!instanceId || !selectedTicket) return;
+    setReopening(true);
+    try {
+      const { data } = await reopenTicket(selectedTicket.contactId, instanceId);
+      setShowReopenInstanceModal(false);
+      setSelectedId(data.id);
+      loadTickets();
+      toast.success('Atendimento reaberto na instancia selecionada!');
+    } catch (e) {
+      toast.error('Erro ao reabrir: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setReopening(false);
+    }
   }
 
   async function handleSummarize() {
@@ -676,6 +688,18 @@ export default function Inbox() {
       )}
 
       {/* Modais */}
+
+      {showReopenInstanceModal && selectedTicket ? (
+        <InstanceSelectionModal
+          instances={instances}
+          title="Reabrir conversa"
+          description={`Escolha por qual instancia a conversa com ${selectedTicket.contact?.name || selectedTicket.contact?.phone || 'este contato'} sera reaberta.`}
+          confirmLabel="Reabrir conversa"
+          loading={reopening}
+          onClose={() => setShowReopenInstanceModal(false)}
+          onConfirm={confirmReopen}
+        />
+      ) : null}
       
       {showScheduling && (
         <div style={s.overlay} onClick={() => setShowScheduling(false)}>

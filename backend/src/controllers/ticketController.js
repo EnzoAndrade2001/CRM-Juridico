@@ -1048,29 +1048,62 @@ async function sendMediaMessage(req, res) {
 }
 
 async function reopen(req, res) {
-  const { contactId, crmCustomerId } = req.body;
+  const { contactId, instanceId } = req.body;
   if (!contactId) return res.status(400).json({ error: 'contactId obrigatório' });
+  if (!instanceId) return res.status(400).json({ error: 'Selecione a instancia para abrir a conversa.' });
 
   const contact = await prisma.contact.findFirst({
     where: { id: contactId, tenantId: req.user.tenantId },
   });
   if (!contact) return res.status(404).json({ error: 'Contato não encontrado' });
 
+  const selectedInstance = await prisma.waInstance.findFirst({
+    where: {
+      id: instanceId,
+      tenantId: req.user.tenantId,
+      instanceName: { not: { startsWith: 'DELETED_' } },
+    },
+  });
+  if (!selectedInstance) {
+    return res.status(400).json({ error: 'Instancia invalida ou nao pertence a esta empresa.' });
+  }
+  if (String(selectedInstance.status).toLowerCase() !== 'connected') {
+    return res.status(400).json({ error: 'A instancia selecionada nao esta conectada.' });
+  }
+
   // Verifica se já existe ticket aberto para esse contato
   const existing = await prisma.ticket.findFirst({
-    where: { contactId, status: { in: ['pending', 'open', 'bot'] } },
+    where: {
+      contactId,
+      tenantId: req.user.tenantId,
+      status: { in: ['pending', 'open', 'bot'] },
+    },
   });
-  if (existing) return res.json(existing);
+  if (existing) {
+    if (existing.instanceId !== instanceId) {
+      return res.status(409).json({
+        error: 'Este contato ja possui uma conversa ativa em outra instancia.',
+      });
+    }
+    return res.json(existing);
+  }
+
+  if (contact.instanceId !== instanceId && contact.whatsappJid?.endsWith('@lid')) {
+    await prisma.contact.update({
+      where: { id: contact.id },
+      data: { whatsappJid: null },
+    });
+  }
 
   const ticket = await prisma.ticket.create({
     data: {
       tenantId: req.user.tenantId,
-      instanceId: contact.instanceId,
+      instanceId,
       contactId,
       agentId: req.user.userId,
       status: 'open',
     },
-    include: { contact: true }
+    include: { contact: true, instance: true }
   });
 
   // Auditoria
@@ -1078,7 +1111,11 @@ async function reopen(req, res) {
     ticketId: ticket.id,
     tenantId: req.user.tenantId,
     userId: req.user.userId,
-    type: 'reopened'
+    type: 'reopened',
+    payload: JSON.stringify({
+      instanceId: selectedInstance.id,
+      instanceName: selectedInstance.instanceName,
+    }),
   });
 
   res.json(ticket);

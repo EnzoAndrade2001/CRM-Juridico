@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { getContacts, createContact, createTicket, importContacts } from '../services/api';
 import { Edit2, MessageSquare, Plus, Search, BookUser, Upload, Printer } from 'lucide-react';
 import ContactProfileModal from '../components/ContactProfileModal';
@@ -9,6 +9,7 @@ import ActionButton from '../components/ui/ActionButton';
 import SurfaceCard from '../components/ui/SurfaceCard';
 import EmptyState from '../components/ui/EmptyState';
 import ModalShell from '../components/ui/ModalShell';
+import InstanceSelectionModal from '../components/InstanceSelectionModal';
 
 export default function Contacts() {
   const [contacts, setContacts] = useState([]);
@@ -35,7 +36,10 @@ export default function Contacts() {
   });
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
+  const [pendingChatContact, setPendingChatContact] = useState(null);
+  const [openingChat, setOpeningChat] = useState(false);
   const navigate = useNavigate();
+  const { instances } = useOutletContext() || { instances: [] };
 
   useEffect(() => {
     loadContacts();
@@ -108,12 +112,21 @@ export default function Contacts() {
     if (contact.tickets && contact.tickets.length > 0 && contact.tickets[0].status !== 'resolved') {
       navigate(`/inbox?ticketId=${contact.tickets[0].id}`);
     } else {
-      try {
-        const { data: ticket } = await createTicket(contact.id);
-        navigate(`/inbox?ticketId=${ticket.id}`);
-      } catch (err) {
-        toast.error('Erro ao iniciar conversa');
-      }
+      setPendingChatContact(contact);
+    }
+  }
+
+  async function confirmStartChat(instanceId) {
+    if (!pendingChatContact || !instanceId) return;
+    setOpeningChat(true);
+    try {
+      const { data: ticket } = await createTicket(pendingChatContact.id, instanceId);
+      setPendingChatContact(null);
+      navigate(`/inbox?ticketId=${ticket.id}`);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Erro ao iniciar conversa');
+    } finally {
+      setOpeningChat(false);
     }
   }
 
@@ -335,6 +348,17 @@ export default function Contacts() {
 
       {showProfileModal && selectedContact ? (
         <ContactProfileModal contact={selectedContact} onClose={() => setShowProfileModal(false)} onUpdated={loadContacts} />
+      ) : null}
+
+      {pendingChatContact ? (
+        <InstanceSelectionModal
+          instances={instances}
+          title="Abrir nova conversa"
+          description={`Escolha por qual instancia a conversa com ${pendingChatContact.name || pendingChatContact.phone || 'este contato'} sera aberta.`}
+          loading={openingChat}
+          onClose={() => setPendingChatContact(null)}
+          onConfirm={confirmStartChat}
+        />
       ) : null}
     </div>
   );
