@@ -7,17 +7,53 @@ const fs = require('fs');
 let io;
 function setIo(socketIo) { io = socketIo; }
 
+function hasMissingWhatsAppNumber(value) {
+  if (Array.isArray(value)) return value.some(hasMissingWhatsAppNumber);
+  if (!value || typeof value !== 'object') return false;
+  if (value.exists === false) return true;
+  return Object.values(value).some(hasMissingWhatsAppNumber);
+}
+
+function isMissingWhatsAppNumberError(error) {
+  return hasMissingWhatsAppNumber(error?.response?.data?.response?.message);
+}
+
+function formatSendDetail(value) {
+  if (Array.isArray(value)) {
+    return value.map(formatSendDetail).filter(Boolean).join(', ');
+  }
+
+  if (value && typeof value === 'object') {
+    if (value.exists === false) {
+      const number = value.number || value.jid || '';
+      return `numero ${number || 'informado'} nao encontrado no WhatsApp (exists=false)`;
+    }
+    return JSON.stringify(value);
+  }
+
+  return value == null ? '' : String(value);
+}
+
 function formatSendError(error) {
   const status = error?.response?.status;
   const responseData = error?.response?.data;
-  let detail = responseData?.response?.message || responseData?.message || responseData?.error;
+  const detail = formatSendDetail(
+    responseData?.response?.message || responseData?.message || responseData?.error
+  );
+  const composedMessage = error?.message && !error.message.includes('[object Object]')
+    ? error.message
+    : null;
 
-  if (Array.isArray(detail)) detail = detail.join(', ');
-  if (detail && typeof detail === 'object') detail = JSON.stringify(detail);
+  const parts = [
+    status ? `HTTP ${status}` : null,
+    detail || (!composedMessage ? 'erro desconhecido' : null),
+  ].filter(Boolean);
 
-  return [status ? `HTTP ${status}` : null, detail || error?.message || 'erro desconhecido']
-    .filter(Boolean)
-    .join(' - ');
+  if (composedMessage && composedMessage !== detail) {
+    parts.push(composedMessage);
+  }
+
+  return parts.join(' - ');
 }
 const avatarRefreshCache = new Map();
 const AVATAR_REFRESH_TTL_MS = 6 * 60 * 60 * 1000;
@@ -775,7 +811,17 @@ async function sendMediaMessage(req, res) {
     const mime = file.mimetype;
 
     // Normaliza o número: se tiver 10 ou 11 dígitos, adiciona 55
-    const phone = evolutionService.normalizePhoneNumber(ticket.contact?.phone || '');
+    const phoneCandidates = [...new Set([
+      ticket.contact?.phone,
+      ticket.contact?.whatsapp,
+    ]
+      .map(value => evolutionService.normalizePhoneNumber(value || ''))
+      .filter(Boolean))];
+    const phone = phoneCandidates[0] || '';
+
+    if (!phone) {
+      return res.status(400).json({ error: 'O contato nao possui numero de WhatsApp valido.' });
+    }
 
     let mediaUrl = `/uploads/media/${file.filename}`;
     let mediaType = 'document';
@@ -808,44 +854,68 @@ async function sendMediaMessage(req, res) {
       preferredInstanceId: ticket.instanceId || ticket.contact?.instanceId,
       strictPreferred: true,
       send: async (instance) => {
-        const quoteForInstance = instance.id === ticket.instanceId ? quotedObj : null;
-        if (mime.startsWith('image/')) {
-          mediaType = 'image';
-          return evolutionService.sendMedia(evolutionUrl, evolutionKey, instance.instanceName, phone, {
-            mediatype: 'image', media: base64, mimetype: mime, filename: file.originalname, caption: finalCaption, quoted: quoteForInstance, filePath: file.path
-          });
-        } else if (mime.startsWith('audio/')) {
-          mediaType = 'audio';
+        let lastError;
+
+        for (let index = 0; index < phoneCandidates.length; index += 1) {
+          const targetPhone = phoneCandidates[index];
+          const isGroupTarget = targetPhone.includes('@g.us') || evolutionService.isGroupJid(targetPhone);
+          const quoteForInstance = instance.id === ticket.instanceId && quotedObj
+            ? (typeof quotedObj === 'object'
+              ? { ...quotedObj, remoteJid: isGroupTarget ? targetPhone : `${targetPhone}@s.whatsapp.net` }
+              : quotedObj)
+            : null;
+
           try {
-            const mediaService = require('../services/mediaService');
-            const oldPath = file.path;
-            const newPath = await mediaService.normalizeAudio(oldPath);
-            const newFilename = path.basename(newPath);
-            mediaUrl = `/uploads/media/${newFilename}`;
-            const oggBase64 = (await fs.promises.readFile(newPath)).toString('base64');
-            return evolutionService.sendAudio(evolutionUrl, evolutionKey, instance.instanceName, phone, oggBase64, quoteForInstance);
-          } catch (err) {
-            console.error('[audioConvert] erro:', err.message);
-            return evolutionService.sendAudio(evolutionUrl, evolutionKey, instance.instanceName, phone, base64, quoteForInstance);
+            if (mime.startsWith('image/')) {
+              mediaType = 'image';
+              return await evolutionService.sendMedia(evolutionUrl, evolutionKey, instance.instanceName, targetPhone, {
+                mediatype: 'image', media: base64, mimetype: mime, filename: file.originalname, caption: finalCaption, quoted: quoteForInstance, filePath: file.path
+              });
+            } else if (mime.startsWith('audio/')) {
+              mediaType = 'audio';
+              try {
+                const mediaService = require('../services/mediaService');
+                const oldPath = file.path;
+                const newPath = await mediaService.normalizeAudio(oldPath);
+                const newFilename = path.basename(newPath);
+                mediaUrl = `/uploads/media/${newFilename}`;
+                const oggBase64 = (await fs.promises.readFile(newPath)).toString('base64');
+                return await evolutionService.sendAudio(evolutionUrl, evolutionKey, instance.instanceName, targetPhone, oggBase64, quoteForInstance);
+              } catch (err) {
+                console.error('[audioConvert] erro:', err.message);
+                return await evolutionService.sendAudio(evolutionUrl, evolutionKey, instance.instanceName, targetPhone, base64, quoteForInstance);
+              }
+            } else if (mime.startsWith('video/')) {
+              mediaType = 'video';
+              return await evolutionService.sendMedia(evolutionUrl, evolutionKey, instance.instanceName, targetPhone, {
+                mediatype: 'video', media: base64, mimetype: mime, filename: file.originalname, caption: finalCaption, quoted: quoteForInstance, filePath: file.path
+              });
+            }
+
+            mediaType = 'document';
+            const docCaption = caption ? finalCaption : undefined;
+            return await evolutionService.sendMedia(evolutionUrl, evolutionKey, instance.instanceName, targetPhone, {
+              mediatype: 'document',
+              media: base64,
+              mimetype: mime,
+              filename: file.originalname,
+              caption: docCaption,
+              quoted: quoteForInstance,
+              filePath: file.path
+            });
+          } catch (error) {
+            lastError = error;
+            const canTryLinkedWhatsApp = index < phoneCandidates.length - 1
+              && isMissingWhatsAppNumberError(error);
+            if (!canTryLinkedWhatsApp) throw error;
+
+            console.warn(
+              `[sendMediaMessage] Numero principal nao encontrado no WhatsApp; tentando numero vinculado na mesma instancia ${instance.instanceName}.`
+            );
           }
-        } else if (mime.startsWith('video/')) {
-          mediaType = 'video';
-          return evolutionService.sendMedia(evolutionUrl, evolutionKey, instance.instanceName, phone, {
-            mediatype: 'video', media: base64, mimetype: mime, filename: file.originalname, caption: finalCaption, quoted: quoteForInstance, filePath: file.path
-          });
         }
 
-        mediaType = 'document';
-        const docCaption = caption ? finalCaption : undefined;
-        return evolutionService.sendMedia(evolutionUrl, evolutionKey, instance.instanceName, phone, {
-          mediatype: 'document',
-          media: base64,
-          mimetype: mime,
-          filename: file.originalname,
-          caption: docCaption,
-          quoted: quoteForInstance,
-          filePath: file.path
-        });
+        throw lastError;
       },
     });
 

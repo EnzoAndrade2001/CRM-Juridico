@@ -55,6 +55,20 @@ function ensureAccepted(data, context) {
   throw new Error(`${context} sem confirmação da Evolution (status=${status}). Resposta: ${preview}`);
 }
 
+function formatEvolutionErrorValue(value) {
+  if (Array.isArray(value)) {
+    return value.map(formatEvolutionErrorValue).filter(Boolean).join(', ');
+  }
+  if (value && typeof value === 'object') return JSON.stringify(value);
+  return value == null ? '' : String(value);
+}
+
+function getEvolutionErrorDetail(error) {
+  const responseData = error?.response?.data;
+  const detail = responseData?.response?.message || responseData?.message || responseData?.error;
+  return formatEvolutionErrorValue(detail) || error?.message || 'erro desconhecido';
+}
+
 async function sendText(url, key, instanceName, phone, text, quoted = null) {
   const client = getClient(url, key);
   try {
@@ -170,7 +184,7 @@ async function sendMedia(url, key, instanceName, phone, { mediatype, media, mime
   } catch (err) {
     if (multipartError) {
       console.warn('[evolutionService] sendMedia falhou em multipart e JSON/base64.');
-      err.message = `multipart: ${multipartError.response?.data?.message || multipartError.message}; json/base64: ${err.response?.data?.message || err.message}`;
+      err.message = `multipart: ${getEvolutionErrorDetail(multipartError)}; json/base64: ${getEvolutionErrorDetail(err)}`;
     }
     throw err;
   }
