@@ -325,10 +325,12 @@ export default function Inbox() {
       'Deseja apagar esta mensagem para o cliente? (Ela continuara visivel e riscada para voce)',
       async () => {
         try {
-          await deleteMessage(selectedId, msgId);
-          setMessages(prev => prev.map(m => m.id === msgId ? { ...m, isDeleted: true } : m));
+          const { data: deletedMessage } = await deleteMessage(selectedId, msgId);
+          setMessages(prev => prev.map(m => m.id === msgId ? { ...m, ...deletedMessage, isDeleted: true } : m));
           toast.success('Mensagem apagada.');
-        } catch (e) { toast.error('Erro ao apagar mensagem'); }
+        } catch (e) {
+          toast.error('Erro ao apagar mensagem: ' + (e.response?.data?.error || e.message));
+        }
       }
     );
   }
@@ -949,7 +951,7 @@ export const inboxStyles = {
   messageHeaderTime: { fontSize: '0.72rem', color: 'var(--text-dim)', fontWeight: 500, fontVariantNumeric: 'tabular-nums' },
   messageMenuRoot: { position: 'relative' },
   messageMenuTrigger: { width: '28px', height: '28px', borderRadius: 'var(--radius-sm)', border: 'none', background: 'transparent', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  messageMenuPanel: { position: 'absolute', top: 'calc(100% + 0.35rem)', right: 0, minWidth: '210px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)', padding: '0.35rem', zIndex: 5 },
+  messageMenuPanel: { position: 'fixed', width: '230px', maxWidth: 'calc(100vw - 16px)', overflowY: 'auto', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: '0 16px 36px rgba(0,0,0,0.34)', padding: '0.35rem', zIndex: 100000, boxSizing: 'border-box' },
   messageMenuItem: { width: '100%', border: 'none', background: 'transparent', color: 'var(--text-main)', textAlign: 'left', padding: '0.75rem 0.85rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.92rem', fontWeight: 500 },
   messageMenuItemDanger: { color: '#e86a6a' },
   messageText: {

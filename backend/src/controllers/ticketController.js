@@ -1154,13 +1154,14 @@ async function summarize(req, res) {
 }
 
 async function deleteMessage(req, res) {
+  const { id: ticketId } = req.params;
   const { messageId } = req.params;
   const message = await prisma.message.findUnique({
     where: { id: messageId },
     include: { ticket: { include: { contact: true, instance: true } } }
   });
 
-  if (!message || message.ticket.tenantId !== req.user.tenantId) {
+  if (!message || message.ticketId !== ticketId || message.ticket.tenantId !== req.user.tenantId) {
     return res.status(404).json({ error: 'Mensagem não encontrada ou acesso negado' });
   }
   if (!message.fromMe) return res.status(403).json({ error: 'Você só pode apagar suas próprias mensagens no WhatsApp' });
@@ -1169,23 +1170,27 @@ async function deleteMessage(req, res) {
     const settings = await prisma.tenantSettings.findUnique({ where: { tenantId: req.user.tenantId } });
     const evolutionService = require('../services/evolutionService');
     
-    // Revoga no WhatsApp
-    try {
-      await evolutionService.revokeMessage(
-        settings.evolutionUrl,
-        settings.evolutionKey,
-        message.ticket.instance.instanceName,
-        message.ticket.contact.phone,
-        message.externalId
-      );
-    } catch (waErr) {
-      console.warn('[deleteMessage] falha ao revogar no WA (provavelmente tempo expirado):', waErr.message);
+    // Revoga no WhatsApp quando a mensagem possui os dados necessarios.
+    // A exclusao local continua funcionando mesmo sem configuracao da Evolution
+    // ou para mensagens internas/historicas sem externalId.
+    if (settings?.evolutionUrl && settings?.evolutionKey && message.externalId && message.ticket.instance?.instanceName) {
+      try {
+        await evolutionService.revokeMessage(
+          settings.evolutionUrl,
+          settings.evolutionKey,
+          message.ticket.instance.instanceName,
+          message.ticket.contact.phone,
+          message.externalId
+        );
+      } catch (waErr) {
+        console.warn('[deleteMessage] falha ao revogar no WA (provavelmente tempo expirado):', waErr.message);
+      }
     }
 
     // Marca como apagada no banco
     const updated = await prisma.message.update({
       where: { id: message.id },
-      data: { isDeleted: true, body: '🚫 Mensagem apagada' }
+      data: { isDeleted: true, body: 'Mensagem apagada' }
     });
 
     res.json(updated);

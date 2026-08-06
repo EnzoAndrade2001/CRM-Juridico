@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import api, {
   updateContact,
   getContactMedia,
@@ -1530,7 +1531,7 @@ export const MessageList = React.memo(function MessageList({
   const selectedContactName = getContactDisplayName(selectedTicket.contact, 'Cliente');
   const messageItems = Array.isArray(messages) ? messages : [];
   const [draftSearch, setDraftSearch] = useState(historySearch || '');
-  const [openMenuId, setOpenMenuId] = useState(null);
+  const [openMenu, setOpenMenu] = useState(null);
   const trimmedHistorySearch = getSafeText(historySearch).trim();
 
   useEffect(() => {
@@ -1538,19 +1539,63 @@ export const MessageList = React.memo(function MessageList({
   }, [historySearch, selectedTicket.id]);
 
   useEffect(() => {
-    setOpenMenuId(null);
+    setOpenMenu(null);
   }, [selectedTicket.id, messages.length]);
 
   useEffect(() => {
     function handleWindowClick(event) {
       if (!event.target.closest?.('[data-message-menu-root="true"]')) {
-        setOpenMenuId(null);
+        setOpenMenu(null);
       }
     }
 
     window.addEventListener('click', handleWindowClick);
     return () => window.removeEventListener('click', handleWindowClick);
   }, []);
+
+  useEffect(() => {
+    if (!openMenu) return undefined;
+
+    // A posicao deixa de ser confiavel quando a conversa rola ou a janela muda de tamanho.
+    const closeMenu = () => setOpenMenu(null);
+    window.addEventListener('resize', closeMenu);
+    document.addEventListener('scroll', closeMenu, true);
+
+    return () => {
+      window.removeEventListener('resize', closeMenu);
+      document.removeEventListener('scroll', closeMenu, true);
+    };
+  }, [openMenu]);
+
+  function getMessageMenuPosition(trigger) {
+    const rect = trigger.getBoundingClientRect();
+    const viewportMargin = 8;
+    const gap = 6;
+    const menuWidth = Math.min(230, Math.max(0, window.innerWidth - viewportMargin * 2));
+    const estimatedMenuHeight = 220;
+    const spaceBelow = window.innerHeight - rect.bottom - viewportMargin;
+    const spaceAbove = rect.top - viewportMargin;
+    const opensAbove = spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow;
+    const availableHeight = Math.max(0, window.innerHeight - viewportMargin * 2);
+    const menuHeight = Math.min(estimatedMenuHeight, availableHeight);
+    const rawTop = opensAbove
+      ? rect.top - gap - menuHeight
+      : rect.bottom + gap;
+    const top = Math.max(
+      viewportMargin,
+      Math.min(rawTop, window.innerHeight - viewportMargin - menuHeight),
+    );
+    const left = Math.max(
+      viewportMargin,
+      Math.min(rect.right - menuWidth, window.innerWidth - viewportMargin - menuWidth),
+    );
+
+    return { top, left, maxHeight: availableHeight };
+  }
+
+  const openMenuMessage = openMenu
+    ? messageItems.find((item) => getSafeText(item?.id) === openMenu.id)
+    : null;
 
   return (
     <div style={{ ...styles.messages, padding: isMobile ? '0.85rem 0.85rem 1rem' : styles.messages.padding }} ref={scrollRef}>
@@ -1715,9 +1760,6 @@ export const MessageList = React.memo(function MessageList({
                 ? (hasCardMedia ? '#1b2b49' : (message.fromBot ? 'var(--text-msg-ai)' : 'var(--text-msg-me)'))
                 : (hasCardMedia ? '#1b2b49' : 'var(--text-main)');
               const messageTime = fmt(message.createdAt);
-              const canDownload = Boolean(message.mediaUrl);
-              const isMenuOpen = openMenuId === messageKey;
-
               return (
                 <MessageRenderErrorBoundary key={messageKey} messageId={message.id}>
                   <div className="animate-fade-in-up" style={{ ...styles.bubbleWrap, justifyContent: message.fromMe ? 'flex-end' : 'flex-start' }}>
@@ -1754,7 +1796,11 @@ export const MessageList = React.memo(function MessageList({
                                 type="button"
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  setOpenMenuId((current) => current === messageKey ? null : messageKey);
+                                  const position = getMessageMenuPosition(event.currentTarget);
+                                  setOpenMenu((current) => current?.id === messageKey ? null : {
+                                    id: messageKey,
+                                    ...position,
+                                  });
                                 }}
                                 style={styles.messageMenuTrigger}
                                 title="Mais acoes"
@@ -1762,29 +1808,6 @@ export const MessageList = React.memo(function MessageList({
                                 <MoreVertical size={15} strokeWidth={2.3} />
                               </button>
 
-                              {isMenuOpen && (
-                                <div style={styles.messageMenuPanel}>
-                                  <button type="button" style={styles.messageMenuItem} onClick={() => { setReplyingTo(message); setOpenMenuId(null); }}>
-                                    Responder
-                                  </button>
-                                  <button type="button" style={styles.messageMenuItem} onClick={() => { setForwardingMessage(message); setOpenMenuId(null); }}>
-                                    Encaminhar mensagem
-                                  </button>
-                                  <button type="button" style={styles.messageMenuItem} onClick={() => { handleCopyMessage(message); setOpenMenuId(null); }}>
-                                    Copiar texto
-                                  </button>
-                                  {canDownload && (
-                                    <button type="button" style={styles.messageMenuItem} onClick={() => { triggerMediaDownload(getMediaUrl(message.mediaUrl)); setOpenMenuId(null); }}>
-                                      Baixar
-                                    </button>
-                                  )}
-                                  {message.fromMe && (
-                                    <button type="button" style={{ ...styles.messageMenuItem, ...styles.messageMenuItemDanger }} onClick={() => { handleDeleteMessage(message.id); setOpenMenuId(null); }}>
-                                      Apagar para o cliente
-                                    </button>
-                                  )}
-                                </div>
-                              )}
                             </div>
                           )}
                         </div>
@@ -1836,6 +1859,41 @@ export const MessageList = React.memo(function MessageList({
           {!messageItems.length && <Empty>{trimmedHistorySearch ? 'Nenhum resultado encontrado nesta conversa' : 'Nenhuma mensagem encontrada'}</Empty>}
         </>
       )}
+
+      {openMenu && openMenuMessage && typeof document !== 'undefined' ? createPortal(
+        <div
+          data-message-menu-root="true"
+          style={{
+            ...styles.messageMenuPanel,
+            top: openMenu.top,
+            left: openMenu.left,
+            right: 'auto',
+            maxHeight: openMenu.maxHeight,
+          }}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button type="button" style={styles.messageMenuItem} onClick={() => { setReplyingTo(openMenuMessage); setOpenMenu(null); }}>
+            Responder
+          </button>
+          <button type="button" style={styles.messageMenuItem} onClick={() => { setForwardingMessage(openMenuMessage); setOpenMenu(null); }}>
+            Encaminhar mensagem
+          </button>
+          <button type="button" style={styles.messageMenuItem} onClick={() => { handleCopyMessage(openMenuMessage); setOpenMenu(null); }}>
+            Copiar texto
+          </button>
+          {openMenuMessage.mediaUrl && (
+            <button type="button" style={styles.messageMenuItem} onClick={() => { triggerMediaDownload(getMediaUrl(openMenuMessage.mediaUrl)); setOpenMenu(null); }}>
+              Baixar
+            </button>
+          )}
+          {openMenuMessage.fromMe && (
+            <button type="button" style={{ ...styles.messageMenuItem, ...styles.messageMenuItemDanger }} onClick={() => { handleDeleteMessage(openMenuMessage.id); setOpenMenu(null); }}>
+              Apagar para o cliente
+            </button>
+          )}
+        </div>,
+        document.body,
+      ) : null}
     </div>
   );
 });
