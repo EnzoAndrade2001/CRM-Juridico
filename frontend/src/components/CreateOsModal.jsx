@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api, { BACKEND_URL, getEquipments } from '../services/api';
-import { CheckCircle2, ChevronDown, FileText, MapPin, Printer, Wand2 } from 'lucide-react';
+import { CheckCircle2, ChevronDown, FileText, LoaderCircle, MapPin, Printer, Wand2 } from 'lucide-react';
 import EquipmentPickerModal, { equipmentAddress, equipmentOperationalLocation } from './EquipmentPickerModal';
 
 export default function CreateOsModal({ ticket, onClose, onCreated }) {
