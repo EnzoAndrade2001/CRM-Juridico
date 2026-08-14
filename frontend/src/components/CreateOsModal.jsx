@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api, { BACKEND_URL, getEquipments } from '../services/api';
-import { CheckCircle2, FileText, LoaderCircle, Printer, Wand2 } from 'lucide-react';
+import { CheckCircle2, ChevronDown, FileText, MapPin, Printer, Wand2 } from 'lucide-react';
+import EquipmentPickerModal, { equipmentAddress, equipmentOperationalLocation } from './EquipmentPickerModal';
 
 export default function CreateOsModal({ ticket, onClose, onCreated }) {
   const [equipments, setEquipments] = useState([]);
@@ -12,45 +13,13 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
   const [error, setError] = useState('');
   const [pendingOrderId, setPendingOrderId] = useState('');
   const [createdOrder, setCreatedOrder] = useState(null);
+  const [equipmentPickerOpen, setEquipmentPickerOpen] = useState(false);
   const [requestKey] = useState(() => (
     globalThis.crypto?.randomUUID?.() || `os-${Date.now()}-${Math.random().toString(16).slice(2)}`
   ));
   const [formData, setFormData] = useState({ equipmentId: '', defect: '', cdOstp: '', nmsuportet: '' });
 
   const selectedEquipment = equipments.find((equipment) => equipment.id === formData.equipmentId);
-
-  function cleanLocationPart(value) {
-    const result = String(value || '').replace(/\s+/g, ' ').trim();
-    return result && result.toUpperCase() !== 'N/A' ? result : '';
-  }
-
-  function equipmentAddress(equipment) {
-    if (!equipment) return '';
-    const address = cleanLocationPart(equipment.address);
-    const complement = cleanLocationPart(equipment.complement);
-    const city = cleanLocationPart(equipment.city);
-    const state = cleanLocationPart(equipment.state);
-    const parts = [address];
-    if (complement && !address.toUpperCase().includes(complement.toUpperCase())) parts.push(complement);
-    if (city) parts.push(state ? `${city}/${state}` : city);
-    return parts.filter(Boolean).join(' — ');
-  }
-
-  function equipmentOperationalLocation(equipment) {
-    if (!equipment) return '';
-    return [
-      cleanLocationPart(equipment.department) && `Departamento: ${cleanLocationPart(equipment.department)}`,
-      cleanLocationPart(equipment.installLocation) && `Local: ${cleanLocationPart(equipment.installLocation)}`,
-    ].filter(Boolean).join(' | ');
-  }
-
-  function equipmentOptionLabel(equipment) {
-    const identity = `${equipment.model} (Série: ${equipment.serialNumber || 'S/N'})`;
-    const location = [equipmentAddress(equipment), equipmentOperationalLocation(equipment)]
-      .filter(Boolean)
-      .join(' | ');
-    return location ? `${identity} — ${location}` : identity;
-  }
 
   function getPdfUrl(order) {
     const token = encodeURIComponent(localStorage.getItem('token') || '');
@@ -163,7 +132,7 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
     modal: { background: 'var(--bg-panel)', width: '500px', maxWidth: '95%', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column' },
     title: { fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' },
     input: { width: '100%', padding: '12px', background: 'var(--bg-base)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)', outline: 'none', marginBottom: '16px' },
-    locationCard: { margin: '-8px 0 16px', padding: '10px 12px', background: 'rgba(226, 184, 44, 0.08)', border: '1px solid rgba(226, 184, 44, 0.3)', borderRadius: '8px', color: 'var(--text-main)', fontSize: '0.8rem', lineHeight: 1.45 },
+    equipmentTrigger: { width: '100%', minHeight: '54px', padding: '10px 12px', marginBottom: '16px', background: 'var(--bg-base)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-main)', cursor: 'pointer', display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '10px', textAlign: 'left' },
     label: { fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 700, marginBottom: '6px', display: 'block' },
     btnGroup: { display: 'flex', gap: '12px', marginTop: '8px' },
     saveBtn: { flex: 1, background: 'var(--accent)', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 800, cursor: 'pointer' },
@@ -205,23 +174,26 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
         ) : (
           <div>
             <label style={s.label}>EQUIPAMENTO</label>
-            <select 
-              style={s.input} 
-              value={formData.equipmentId} 
-              onChange={e => setFormData({...formData, equipmentId: e.target.value})}
-            >
-              <option value="">Selecione um equipamento...</option>
-              {equipments.map(e => (
-                <option key={e.id} value={e.id}>{equipmentOptionLabel(e)}</option>
-              ))}
-            </select>
-            {selectedEquipment && (equipmentAddress(selectedEquipment) || equipmentOperationalLocation(selectedEquipment)) ? (
-              <div style={s.locationCard}>
-                <div style={{ color: 'var(--accent)', fontWeight: 800, marginBottom: '2px' }}>LOCAL DO EQUIPAMENTO</div>
-                {equipmentAddress(selectedEquipment) ? <div>{equipmentAddress(selectedEquipment)}</div> : null}
-                {equipmentOperationalLocation(selectedEquipment) ? <div>{equipmentOperationalLocation(selectedEquipment)}</div> : null}
-              </div>
-            ) : null}
+            <button type="button" style={s.equipmentTrigger} onClick={() => setEquipmentPickerOpen(true)}>
+              <MapPin size={18} color={selectedEquipment ? 'var(--accent)' : 'var(--text-muted)'} />
+              <span style={{ minWidth: 0 }}>
+                {selectedEquipment ? (
+                  <>
+                    <strong style={{ display: 'block', fontSize: '0.9rem', marginBottom: '3px' }}>{selectedEquipment.model} · Série {selectedEquipment.serialNumber || 'S/N'}</strong>
+                    <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.74rem', lineHeight: 1.35 }}>{equipmentAddress(selectedEquipment) || equipmentOperationalLocation(selectedEquipment) || 'Localização não informada'}</span>
+                  </>
+                ) : <span style={{ color: 'var(--text-muted)' }}>Selecionar equipamento...</span>}
+              </span>
+              <ChevronDown size={17} color="var(--text-muted)" />
+            </button>
+
+            <EquipmentPickerModal
+              open={equipmentPickerOpen}
+              equipments={equipments}
+              selectedId={formData.equipmentId}
+              onClose={() => setEquipmentPickerOpen(false)}
+              onSelect={(equipment) => setFormData((current) => ({ ...current, equipmentId: equipment.id }))}
+            />
 
             <label style={s.label}>TIPO DE O.S. / SERVIÇO</label>
             <select 
