@@ -57,6 +57,9 @@ model TenantSettings {
   webhookUrl         String?
   outOfOfficeMessage String? @db.Text
   notificationPhone  String?
+  serviceOrderManagerCopyEnabled    Boolean @default(false)
+  serviceOrderManagerPhone          String?
+  serviceOrderManagerInstanceId     String?
   ratingEnabled      Boolean @default(false)
   ratingMessage      String? @default("Como você avalia nosso atendimento de 1 a 5?") @db.Text
 
@@ -423,6 +426,7 @@ model ServiceOrder {
   technicalNotes    String? // Notas do técnico (peças trocadas, pendências)
   meters            String? // Medidores em JSON (ex: {"mono": 1000, "cor": 500})
   userId            String? // Atendente que criou a O.S.
+  managerCopySentAt DateTime?
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt

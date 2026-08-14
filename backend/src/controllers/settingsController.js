@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const { normalizePhoneNumber } = require('../services/evolutionService');
 
 async function getSettings(req, res) {
   const settings = await prisma.tenantSettings.findUnique({
@@ -26,6 +27,7 @@ async function saveSettings(req, res) {
     botEnabled, geminiKey, botName, systemPrompt, transferKeyword, 
     evolutionUrl, evolutionKey, webhookUrl, outOfOfficeMessage,
     ratingEnabled, ratingMessage, notificationPhone,
+    serviceOrderManagerCopyEnabled, serviceOrderManagerPhone, serviceOrderManagerInstanceId,
     companyName, companyCnpj, companyIE, companyAddress, companyBairro, companyCep, companyPhone,
     companyCity, companyState,
     serpApiKey,
@@ -46,6 +48,31 @@ async function saveSettings(req, res) {
   const parsedContractValue = kpiContractValue !== undefined && kpiContractValue !== '' ? parseFloat(kpiContractValue) : null;
   const parsedServiceValue = kpiServiceValue !== undefined && kpiServiceValue !== '' ? parseFloat(kpiServiceValue) : null;
   const parsedSlaLimitHours = kpiSlaLimitHours !== undefined && kpiSlaLimitHours !== '' ? parseInt(kpiSlaLimitHours) : null;
+  const managerCopyEnabled = serviceOrderManagerCopyEnabled === undefined
+    ? undefined
+    : Boolean(serviceOrderManagerCopyEnabled);
+  const managerPhone = serviceOrderManagerPhone === undefined
+    ? undefined
+    : (serviceOrderManagerPhone ? normalizePhoneNumber(serviceOrderManagerPhone) : null);
+  const managerInstanceId = serviceOrderManagerInstanceId === undefined
+    ? undefined
+    : (serviceOrderManagerInstanceId || null);
+
+  if (managerCopyEnabled) {
+    if (!managerPhone || managerPhone.length < 12) {
+      return res.status(400).json({ error: 'Informe um WhatsApp valido para o gestor, com DDD.' });
+    }
+    if (!managerInstanceId) {
+      return res.status(400).json({ error: 'Selecione a instancia usada para enviar a copia da O.S.' });
+    }
+    const selectedInstance = await prisma.waInstance.findFirst({
+      where: { id: managerInstanceId, tenantId: req.user.tenantId },
+      select: { id: true },
+    });
+    if (!selectedInstance) {
+      return res.status(400).json({ error: 'A instancia selecionada nao pertence a esta empresa.' });
+    }
+  }
 
   const settings = await prisma.tenantSettings.upsert({
     where: { tenantId: req.user.tenantId },
@@ -62,6 +89,9 @@ async function saveSettings(req, res) {
       ratingEnabled,
       ratingMessage,
       notificationPhone,
+      serviceOrderManagerCopyEnabled: managerCopyEnabled,
+      serviceOrderManagerPhone: managerPhone,
+      serviceOrderManagerInstanceId: managerInstanceId,
       companyName,
       companyCnpj,
       companyIE,
@@ -101,6 +131,9 @@ async function saveSettings(req, res) {
       ratingEnabled,
       ratingMessage,
       notificationPhone,
+      serviceOrderManagerCopyEnabled: managerCopyEnabled,
+      serviceOrderManagerPhone: managerPhone,
+      serviceOrderManagerInstanceId: managerInstanceId,
       companyName,
       companyCnpj,
       companyIE,

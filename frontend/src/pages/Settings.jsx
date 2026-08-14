@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
 import {
   getSettings,
+  getInstances,
   saveSettings,
   updateProfile,
   getMe,
@@ -41,6 +42,9 @@ export default function Settings() {
     ratingEnabled: false,
     ratingMessage: '',
     notificationPhone: '',
+    serviceOrderManagerCopyEnabled: false,
+    serviceOrderManagerPhone: '',
+    serviceOrderManagerInstanceId: '',
     companyName: '',
     companyFantasyName: '',
     companyCnpj: '',
@@ -71,6 +75,7 @@ export default function Settings() {
   const [triggeringBilling, setTriggeringBilling] = useState(false);
   const [tenant, setTenant] = useState(null);
   const [hours, setHours] = useState([]);
+  const [instances, setInstances] = useState([]);
   const [saving, setSaving] = useState(false);
   const [, setSaved] = useState(false);
   const [, setSaveError] = useState('');
@@ -102,6 +107,13 @@ export default function Settings() {
       setTenant(data.tenant);
     } catch {
       // erro ao carregar perfil
+    }
+
+    try {
+      const { data } = await getInstances();
+      setInstances(Array.isArray(data) ? data : []);
+    } catch {
+      setInstances([]);
     }
 
     try {
@@ -557,6 +569,65 @@ export default function Settings() {
 
               <button style={s.saveBtn} onClick={handleSave} disabled={saving}>
                 {saving ? 'Salvando...' : 'Salvar configuracoes de ausencia'}
+              </button>
+            </div>
+          </div>
+
+          <div style={s.card}>
+            <h2 style={s.cardTitle}>Cópia automática de O.S.</h2>
+            <div style={s.form}>
+              <div style={s.field}>
+                <label style={s.label}>Enviar ao gestor após abrir no iLux</label>
+                <div style={s.toggleCard}>
+                  <div style={s.toggleInfo}>
+                    <span style={{ ...s.toggleStatus, color: form.serviceOrderManagerCopyEnabled ? 'var(--accent)' : 'var(--text-dim)' }}>
+                      {form.serviceOrderManagerCopyEnabled ? 'Ativa' : 'Desativada'}
+                    </span>
+                    <p style={s.toggleHint}>O envio ocorre somente após o banco do iLux confirmar o número da O.S.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    style={s.switch}
+                    checked={Boolean(form.serviceOrderManagerCopyEnabled)}
+                    onChange={(e) => setForm({ ...form, serviceOrderManagerCopyEnabled: e.target.checked })}
+                  />
+                </div>
+              </div>
+
+              <div style={s.field}>
+                <label style={s.label}>WhatsApp do gestor</label>
+                <input
+                  type="tel"
+                  style={s.input}
+                  value={form.serviceOrderManagerPhone || ''}
+                  disabled={!form.serviceOrderManagerCopyEnabled}
+                  onChange={(e) => setForm({ ...form, serviceOrderManagerPhone: e.target.value })}
+                  placeholder="5551999999999"
+                />
+                <p style={s.hint}>Informe país, DDD e número. Exemplo: 5551999999999.</p>
+              </div>
+
+              <div style={s.field}>
+                <label style={s.label}>Instância de saída</label>
+                <select
+                  style={s.input}
+                  value={form.serviceOrderManagerInstanceId || ''}
+                  disabled={!form.serviceOrderManagerCopyEnabled}
+                  onChange={(e) => setForm({ ...form, serviceOrderManagerInstanceId: e.target.value })}
+                >
+                  <option value="">Selecione uma instância...</option>
+                  {instances.map((instance) => {
+                    const connected = instance.status === 'connected' || instance.state === 'open';
+                    return <option key={instance.id} value={instance.id}>{instance.instanceName} — {connected ? 'Conectada' : 'Desconectada'}</option>;
+                  })}
+                </select>
+                <p style={s.hint}>
+                  {instances.length ? 'A mensagem será enviada exclusivamente pela instância selecionada.' : 'Nenhuma instância de WhatsApp cadastrada.'}
+                </p>
+              </div>
+
+              <button style={s.saveBtn} onClick={handleSave} disabled={saving}>
+                {saving ? 'Salvando...' : 'Salvar cópia automática'}
               </button>
             </div>
           </div>

@@ -1412,9 +1412,14 @@ async function generatePdf(req, res) {
 
     const doc = pdfmake.createPdf({ ...docDefinition, footer: () => ({ text: '' }), content: fullIluxContent });
     const stream = await doc.getStream();
+    const filename = `OS_${os.externalId || os.id.substring(os.id.length - 6)}.pdf`;
+
+    if (typeof res.capturePdf === 'function') {
+      return res.capturePdf(stream, filename);
+    }
     
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="OS_${os.id.substring(os.id.length - 6)}.pdf"`);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     
     stream.pipe(res);
     stream.end();
@@ -1424,6 +1429,37 @@ async function generatePdf(req, res) {
       res.status(500).send('Erro ao gerar PDF: ' + err.message);
     }
   }
+}
+
+async function generatePdfBuffer(tenantId, id) {
+  return new Promise((resolve, reject) => {
+    const response = {
+      headersSent: false,
+      statusCode: 200,
+      setHeader() {},
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(payload) {
+        reject(new Error(payload?.error || `Erro ${this.statusCode} ao gerar PDF da O.S.`));
+        return this;
+      },
+      send(payload) {
+        reject(new Error(String(payload || `Erro ${this.statusCode} ao gerar PDF da O.S.`)));
+        return this;
+      },
+      capturePdf(stream, filename) {
+        const chunks = [];
+        stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+        stream.once('error', reject);
+        stream.once('end', () => resolve({ buffer: Buffer.concat(chunks), filename }));
+        stream.end();
+      },
+    };
+
+    Promise.resolve(generatePdf({ params: { id }, user: { tenantId } }, response)).catch(reject);
+  });
 }
 
 async function draftOS(req, res) {
@@ -1469,4 +1505,4 @@ async function draftOS(req, res) {
   }
 }
 
-module.exports = { getEquipments, addEquipment, updateEquipment, deleteEquipment, getOSList, createOS, getOSStatus, updateOS, generatePdf, draftOS, getOSTypes, getOSTechnicians };
+module.exports = { getEquipments, addEquipment, updateEquipment, deleteEquipment, getOSList, createOS, getOSStatus, updateOS, generatePdf, generatePdfBuffer, draftOS, getOSTypes, getOSTechnicians };

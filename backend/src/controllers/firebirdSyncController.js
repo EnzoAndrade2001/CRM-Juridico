@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const prisma = require('../lib/prisma');
 const evolutionService = require('../services/evolutionService');
+const { sendServiceOrderManagerCopy } = require('../services/serviceOrderManagerCopyService');
 const { mapEquipmentType } = require('../utils/equipmentMapper');
 
 function pick(...values) {
@@ -717,6 +718,14 @@ async function commandCallback(req, res) {
           });
         }
       }
+      setImmediate(() => {
+        sendServiceOrderManagerCopy(tenant.id, serviceOrder.id).catch((managerCopyError) => {
+          console.error(
+            `[pending-commands] O.S. ${result.seqOs} confirmada, mas a cópia para o gestor não foi enviada:`,
+            managerCopyError.message,
+          );
+        });
+      });
       console.log(`[pending-commands] OS ${id} associada ao SEQOS ${result.seqOs} com sucesso.`);
     } else {
       await prisma.serviceOrder.updateMany({
