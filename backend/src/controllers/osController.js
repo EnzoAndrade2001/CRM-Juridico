@@ -3,6 +3,7 @@ const pdfmake = require('pdfmake');
 const path = require('path');
 const fs = require('fs');
 const { draftServiceOrder } = require('../services/geminiService');
+const { renderOfficialOsTemplate } = require('../templates/officialOsTemplate');
 
 const OS_CONFIRMATION_TIMEOUT_MS = Math.max(
   5_000,
@@ -552,7 +553,7 @@ async function generatePdf(req, res) {
       const phone = firstValue(record.fone1, record.fone, record.telefone, record.celular);
       const ddd = firstValue(record.ddd, record.dddfone);
       if (!phone) return '';
-      return ddd && !String(phone).startsWith(String(ddd)) ? `${ddd} ${phone}` : String(phone);
+      return ddd && !String(phone).startsWith('(') ? `(${ddd}) ${phone}` : String(phone);
     };
 
     // Fallback inteligente para dados da empresa
@@ -687,7 +688,7 @@ async function generatePdf(req, res) {
       return match ? match[1] : String(value);
     };
     const visitDate = formatHistoryDate(
-      lastPrintAttendance.dtatendimento || lastPrintAttendance.datahora || ''
+      lastPrintAttendance.dtatendimento || lastPrintAttendance.datahora || currentPrintOrder.dtatendimento || ''
     );
     const visitStart = timeText(firstPrintAttendance.hratendimento || firstPrintAttendance.datahora);
     const visitEnd = timeText(lastPrintAttendance.hratendimentofin || lastPrintAttendance.hratendimento1);
@@ -701,7 +702,11 @@ async function generatePdf(req, res) {
     const clientDocument = firstValue(firebirdClient.cnpj, firebirdClient.cpf, crmCustomer?.cpfCnpj, clientData.cpfCnpj, 'N/A');
     const clientStateRegistration = firstValue(firebirdClient.inscest, firebirdClient.inscmun, 'N/A');
     const clientContact = firstValue(currentPrintOrder.contato, firebirdClient.contato, crmCustomer?.contactName, solicitante, 'N/A');
-    const clientPhone = firstValue(joinPhone(currentPrintOrder), joinPhone(firebirdClient), crmCustomer?.phone, os.contact.phone, 'N/A');
+    const primaryClientPhone = firstValue(joinPhone(currentPrintOrder), joinPhone(firebirdClient), crmCustomer?.phone, os.contact.phone, 'N/A');
+    const clientCellPhone = currentPrintOrder.celular && !String(primaryClientPhone).includes(String(currentPrintOrder.celular))
+      ? String(currentPrintOrder.celular)
+      : '';
+    const clientPhone = [primaryClientPhone, clientCellPhone].filter(Boolean).join(' ');
     const equipmentExternalId = firstValue(currentPrintOrder.cdequipamento, firebirdEquipment.cdequipamento, os.equipment.externalId, 'N/A');
     const equipmentModel = firstValue(firebirdEquipment.modelo, os.equipment.model, 'N/A');
     const equipmentSerial = firstValue(firebirdEquipment.serie, os.equipment.serialNumber, 'N/A');
@@ -730,6 +735,103 @@ async function generatePdf(req, res) {
     const isAttendance = ['A', 'ATENDIMENTO'].includes(String(currentPrintOrder.tporcatend || 'A').toUpperCase());
     const isWarranty = ['G', 'GARANTIA'].includes(String(currentPrintOrder.tpchamado || '').toUpperCase());
     const isBudget = ['2', 'O', 'ORCAMENTO'].includes(String(currentPrintOrder.tipo_os || '').toUpperCase());
+
+    const symptom = [...printAttendances].reverse().find((item) => item.sintoma)?.sintoma || '';
+    const meterAttendance = firstPrintAttendance;
+    let logoDataUri = '';
+    try {
+      if (os.tenant.logoUrl) {
+        const { uploadsPath } = require('../utils/uploads');
+        const logoFilename = os.tenant.logoUrl.split('/').pop();
+        const logoPath = path.resolve(uploadsPath, logoFilename);
+        const extension = path.extname(logoFilename).toLowerCase();
+        if (['.png', '.jpg', '.jpeg'].includes(extension) && fs.existsSync(logoPath)) {
+          const mimeType = extension === '.png' ? 'image/png' : 'image/jpeg';
+          logoDataUri = `data:${mimeType};base64,${fs.readFileSync(logoPath).toString('base64')}`;
+        }
+      }
+    } catch (logoError) {
+      console.warn('[generatePdf] não foi possível carregar a logomarca oficial:', logoError.message);
+    }
+
+    const officialHtml = renderOfficialOsTemplate({
+      number: os.externalId || os.id.slice(-6).toUpperCase(),
+      date: currentOsDate,
+      time: currentOsTime,
+      openedBy: String(attendantName).toUpperCase(),
+      technician: String(currentTechnician).toUpperCase(),
+      expectedDate: currentPrintOrder.dtpreventrega ? formatHistoryDate(currentPrintOrder.dtpreventrega) : '',
+      expectedTime: timeText(currentPrintOrder.hrpreventrega),
+      priority: currentPrintOrder.prioridade || '',
+      type: String(displayOsType).toUpperCase(),
+      isAttendance,
+      isWarranty,
+      isBudget,
+      logoDataUri,
+      company: {
+        name: company.name,
+        cnpj: company.cnpj,
+        stateRegistration: company.ie,
+        address: company.address,
+        neighborhood: company.bairro,
+        zipCode: company.cep,
+        city: company.city,
+        state: company.state,
+        phone: company.phone,
+      },
+      client: {
+        code: clientExternalId,
+        name: clientName,
+        address: clientAddress,
+        neighborhood: clientNeighborhood,
+        zipCode: clientZipCode,
+        city: clientCity,
+        state: clientState,
+        document: clientDocument,
+        stateRegistration: clientStateRegistration,
+        contact: clientContact,
+        phone: clientPhone,
+      },
+      equipment: {
+        code: equipmentExternalId,
+        model: equipmentModel,
+        serial: equipmentSerial,
+        asset: equipmentAsset,
+        contractType,
+        territory,
+        department,
+        location: installLocation,
+      },
+      visit: {
+        date: visitDate === '-' ? '' : visitDate,
+        start: visitStart,
+        end: visitEnd,
+        meterCode: meterAttendance.cdmedidor || '',
+        meterValue: meterAttendance.medidor ?? 0,
+      },
+      defect: currentDefect,
+      symptom,
+      cause: lastPrintAttendance.causa || '',
+      action: lastPrintAttendance.acao || '',
+      followUp: currentFollowUp,
+      history: previousOrders.map((item) => ({
+        number: item.externalId,
+        date: formatHistoryDate(item.createdAt),
+        time: item.time || '',
+        type: item.osType,
+        equipment: item.equipmentExternalId,
+        openedBy: item.attendant,
+        status: item.status,
+        defect: item.defect,
+        closing: item.closing,
+        closedBy: item.closedBy,
+        technician: item.technician,
+      })),
+    });
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `inline; filename="OS_${os.externalId || os.id.substring(os.id.length - 6)}.html"`);
+    return res.send(officialHtml);
 
     let companyLogoContent = { text: 'LCD', bold: true, fontSize: 23, color: '#D71920', alignment: 'center', width: 58 };
     try {

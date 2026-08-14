@@ -280,7 +280,7 @@ export default function ServiceOrders() {
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
                         style={{color: 'var(--accent)', opacity: 0.7, display: 'flex', alignItems: 'center'}}
-                        title="Imprimir PDF Rápido"
+                        title="Abrir e imprimir O.S."
                       >
                         <FileText size={12} />
                       </a>
@@ -406,7 +406,7 @@ export default function ServiceOrders() {
             </div>
 
             <div style={s.btnGroup}>
-              <a href={`${BACKEND_URL}/api/os/${selectedOs.id}/pdf?token=${localStorage.getItem('token')}`} target="_blank" rel="noreferrer" style={s.pdfBtn}>Gerar / Imprimir PDF</a>
+              <a href={`${BACKEND_URL}/api/os/${selectedOs.id}/pdf?token=${localStorage.getItem('token')}`} target="_blank" rel="noreferrer" style={s.pdfBtn}>Abrir / Imprimir O.S.</a>
               <button style={s.saveBtn} onClick={() => handleUpdate()}>Salvar Atualizações</button>
             </div>
           </div>

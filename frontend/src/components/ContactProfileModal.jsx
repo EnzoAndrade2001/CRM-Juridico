@@ -341,7 +341,7 @@ export default function ContactProfileModal({ contact, onClose, onUpdated, initi
                     rel="noreferrer"
                     style={s.osLink}
                   >
-                    Ver PDF
+                    Ver O.S.
                   </a>
                 </div>
               </div>
