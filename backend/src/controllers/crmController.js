@@ -184,6 +184,11 @@ function orderTimestamp(order) {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
+function orderOpenedTimestamp(order) {
+  const timestamp = order?.openedAt ? new Date(order.openedAt).getTime() : 0;
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
 function mergeOrders(...groups) {
   const merged = new Map();
   for (const order of groups.flat()) {
@@ -195,6 +200,75 @@ function mergeOrders(...groups) {
     }
   }
   return [...merged.values()].sort((a, b) => orderTimestamp(b) - orderTimestamp(a));
+}
+
+function hoursBetween(start, end) {
+  if (!start || !end) return null;
+  const startAt = new Date(start).getTime();
+  const endAt = new Date(end).getTime();
+  if (Number.isNaN(startAt) || Number.isNaN(endAt) || endAt < startAt) return null;
+  return (endAt - startAt) / 3600000;
+}
+
+function locationPart(value) {
+  return text(value) || '';
+}
+
+function buildCustomerUnits(customer) {
+  const units = new Map();
+  const customerAddress = [customer.address, customer.neighborhood, customer.city, customer.state]
+    .map(locationPart)
+    .join('|')
+    .toLowerCase();
+
+  for (const equipment of customer.equipments || []) {
+    const address = first(equipment.address, customer.address);
+    const city = first(equipment.city, customer.city);
+    const state = first(equipment.state, customer.state);
+    const neighborhood = first(rawValue(equipment.raw || {}, 'bairro', 'nmbairro'), customer.neighborhood);
+    const key = [address, neighborhood, city, state].map(locationPart).join('|').toLowerCase() || customerAddress || 'sem-endereco';
+    if (!units.has(key)) {
+      units.set(key, {
+        id: `unit-${units.size + 1}`,
+        name: first(equipment.installLocation, equipment.sector, address, 'Unidade principal'),
+        address,
+        neighborhood,
+        city,
+        state,
+        equipments: [],
+        departments: [],
+      });
+    }
+    const unit = units.get(key);
+    unit.equipments.push(equipment);
+    const department = first(equipment.sector, equipment.installLocation);
+    if (department && !unit.departments.includes(department)) unit.departments.push(department);
+  }
+
+  if (!units.size) {
+    units.set(customerAddress || 'sem-endereco', {
+      id: 'unit-1',
+      name: 'Unidade principal',
+      address: customer.address,
+      neighborhood: customer.neighborhood,
+      city: customer.city,
+      state: customer.state,
+      equipments: [],
+      departments: [],
+    });
+  }
+
+  return [...units.values()].map((unit) => ({
+    ...unit,
+    equipmentCount: unit.equipments.length,
+    activeEquipmentCount: unit.equipments.filter((equipment) => equipment.isActive !== false).length,
+  }));
+}
+
+function timelineDate(item) {
+  const value = item?.occurredAt;
+  const timestamp = value ? new Date(value).getTime() : 0;
+  return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
 async function findTenantCustomer(tenantId, id) {
@@ -485,6 +559,195 @@ async function getCustomerServiceOrders(req, res) {
   res.json({ items: orders, total: orders.length, limit });
 }
 
+async function getCustomer360(req, res) {
+  const tenantId = req.user.tenantId;
+  const customer = await findTenantCustomer(tenantId, req.params.id);
+  if (!customer) return res.status(404).json({ error: 'Cliente CRM nao encontrado' });
+
+  const contactIds = customer.whatsappContacts.map((contact) => contact.id);
+  const [contracts, orders, settings, tickets, messages] = await Promise.all([
+    loadContracts(tenantId, customer.externalId),
+    loadCustomerOrders(tenantId, customer, HISTORY_MAX_LIMIT),
+    prisma.tenantSettings.findUnique({
+      where: { tenantId },
+      select: { kpiSlaLimitHours: true },
+    }),
+    contactIds.length
+      ? prisma.ticket.findMany({
+        where: { tenantId, contactId: { in: contactIds } },
+        select: {
+          id: true,
+          subject: true,
+          status: true,
+          createdAt: true,
+          resolvedAt: true,
+          firstResponseAt: true,
+          slaDueAt: true,
+          agent: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      })
+      : [],
+    contactIds.length
+      ? prisma.message.findMany({
+        where: { ticket: { tenantId, contactId: { in: contactIds } }, isDeleted: false },
+        select: {
+          id: true,
+          body: true,
+          fromMe: true,
+          fromBot: true,
+          mediaType: true,
+          createdAt: true,
+          agent: { select: { name: true } },
+          ticket: { select: { id: true, subject: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 40,
+      })
+      : [],
+  ]);
+
+  const slaTargetHours = Math.max(1, Number(settings?.kpiSlaLimitHours || 24));
+  const now = Date.now();
+  const closedOrders = orders.filter((order) => isOrderClosedForAnalytics(order));
+  const resolutionHours = closedOrders
+    .map((order) => hoursBetween(order.openedAt, order.closedAt || order.attendedAt))
+    .filter((hours) => hours !== null);
+  const withinSla = resolutionHours.filter((hours) => hours <= slaTargetHours).length;
+  const openOrders = orders.filter((order) => !isOrderClosedForAnalytics(order));
+  const overdueOrders = openOrders.filter((order) => {
+    const openedAt = order.openedAt ? new Date(order.openedAt).getTime() : now;
+    return !Number.isNaN(openedAt) && now - openedAt > slaTargetHours * 3600000;
+  });
+
+  const equipmentOccurrences = new Map();
+  const recurrenceSince = now - 90 * 86400000;
+  for (const order of orders) {
+    const openedAt = order.openedAt ? new Date(order.openedAt).getTime() : 0;
+    if (openedAt < recurrenceSince) continue;
+    const key = first(order.equipmentExternalId, order.serialNumber, order.equipmentModel);
+    if (!key) continue;
+    const current = equipmentOccurrences.get(key) || {
+      equipmentExternalId: order.equipmentExternalId,
+      model: order.equipmentModel,
+      serialNumber: order.serialNumber,
+      count: 0,
+    };
+    current.count += 1;
+    equipmentOccurrences.set(key, current);
+  }
+  const recurringEquipments = [...equipmentOccurrences.values()]
+    .filter((equipment) => equipment.count >= 2)
+    .sort((a, b) => b.count - a.count);
+
+  const expiringContracts = contracts.filter((contract) => {
+    if (!contract.isActive || !contract.endsAt) return false;
+    const end = new Date(contract.endsAt).getTime();
+    return !Number.isNaN(end) && end >= now && end - now <= 90 * 86400000;
+  });
+  const activeContracts = contracts.filter((contract) => contract.isActive);
+  const unlinkedEquipments = customer.equipments.filter((equipment) => (
+    equipment.isActive !== false && !text(equipment.contractExternalId)
+  ));
+  // Bases antigas podem nao trazer SEQCONTRATO no equipamento. Com apenas um
+  // contrato ativo, o vinculo e inequivoco e nao deve gerar um falso alerta.
+  if (activeContracts.length === 1) unlinkedEquipments.length = 0;
+  const missingFields = [
+    !text(customer.cpfCnpj) && 'CNPJ/CPF',
+    !text(customer.phone) && 'telefone',
+    !text(customer.address) && 'endereco',
+  ].filter(Boolean);
+
+  const alerts = [];
+  if (overdueOrders.length) alerts.push({
+    id: 'overdue-orders', severity: 'critical', category: 'sla',
+    title: `${overdueOrders.length} O.S. fora do prazo`,
+    description: `Chamados abertos ha mais de ${slaTargetHours} horas.`, count: overdueOrders.length,
+  });
+  if (recurringEquipments.length) alerts.push({
+    id: 'recurrence', severity: 'warning', category: 'recurrence',
+    title: `${recurringEquipments.length} equipamento(s) com reincidencia`,
+    description: 'Equipamentos com duas ou mais O.S. nos ultimos 90 dias.', count: recurringEquipments.length,
+  });
+  if (unlinkedEquipments.length) alerts.push({
+    id: 'unlinked-equipments', severity: 'warning', category: 'contract',
+    title: `${unlinkedEquipments.length} equipamento(s) sem contrato`,
+    description: 'Equipamentos ativos sem vinculo de contrato identificado.', count: unlinkedEquipments.length,
+  });
+  if (expiringContracts.length) alerts.push({
+    id: 'expiring-contracts', severity: 'info', category: 'contract',
+    title: `${expiringContracts.length} contrato(s) proximo(s) do vencimento`,
+    description: 'Vencimento previsto nos proximos 90 dias.', count: expiringContracts.length,
+  });
+  if (missingFields.length) alerts.push({
+    id: 'incomplete-registration', severity: 'info', category: 'registration',
+    title: 'Cadastro incompleto',
+    description: `Campos ausentes: ${missingFields.join(', ')}.`, count: missingFields.length,
+  });
+
+  const timeline = [];
+  for (const order of orders) timeline.push({
+    id: `os-${order.externalId || order.id}`,
+    type: 'service_order',
+    occurredAt: order.openedAt || order.updatedAt,
+    title: `O.S. #${order.number || order.externalId || '-'}`,
+    description: order.defect || 'Atendimento tecnico',
+    status: order.status,
+    meta: first(order.equipmentModel, order.technician),
+  });
+  for (const message of messages) timeline.push({
+    id: `message-${message.id}`,
+    type: 'whatsapp',
+    occurredAt: message.createdAt,
+    title: message.fromMe ? 'Mensagem enviada' : 'Mensagem recebida',
+    description: text(message.body)?.slice(0, 220) || (message.mediaType ? `Midia: ${message.mediaType}` : 'Mensagem sem texto'),
+    meta: first(message.agent?.name, message.ticket?.subject, message.fromBot ? 'Bot' : null),
+  });
+  for (const ticket of tickets) timeline.push({
+    id: `ticket-${ticket.id}`,
+    type: 'ticket',
+    occurredAt: ticket.createdAt,
+    title: 'Atendimento iniciado no WhatsApp',
+    description: ticket.subject || 'Conversa de atendimento',
+    status: ticket.status,
+    meta: ticket.agent?.name || null,
+  });
+  for (const contract of contracts) if (contract.startsAt) timeline.push({
+    id: `contract-${contract.externalId}`,
+    type: 'contract',
+    occurredAt: contract.startsAt,
+    title: `Contrato #${contract.number || contract.externalId || '-'}`,
+    description: contract.type || 'Contrato iniciado',
+    status: contract.isActive ? 'ATIVO' : 'INATIVO',
+  });
+
+  res.json({
+    generatedAt: new Date().toISOString(),
+    sla: {
+      targetHours: slaTargetHours,
+      orders30Days: orders.filter((order) => orderOpenedTimestamp(order) >= now - 30 * 86400000).length,
+      orders90Days: orders.filter((order) => orderOpenedTimestamp(order) >= now - 90 * 86400000).length,
+      orders365Days: orders.filter((order) => orderOpenedTimestamp(order) >= now - 365 * 86400000).length,
+      averageResolutionHours: resolutionHours.length
+        ? Math.round((resolutionHours.reduce((total, hours) => total + hours, 0) / resolutionHours.length) * 10) / 10
+        : null,
+      withinSlaPercent: resolutionHours.length ? Math.round((withinSla / resolutionHours.length) * 100) : null,
+      openOrders: openOrders.length,
+      overdueOpenOrders: overdueOrders.length,
+      recurringEquipments,
+      mostRecurringEquipment: recurringEquipments[0] || null,
+    },
+    units: buildCustomerUnits(customer),
+    alerts,
+    timeline: timeline.filter((item) => item.occurredAt).sort((a, b) => timelineDate(b) - timelineDate(a)).slice(0, 100),
+  });
+}
+
+function isOrderClosedForAnalytics(order) {
+  return order.status === 'FINALIZADA' || Boolean(order.closedAt);
+}
+
 async function listEquipments(req, res) {
   const tenantId = req.user.tenantId;
   const q = String(req.query.q || '').trim();
@@ -528,5 +791,6 @@ module.exports = {
   getCustomer,
   getCustomerContracts,
   getCustomerServiceOrders,
+  getCustomer360,
   listEquipments,
 };

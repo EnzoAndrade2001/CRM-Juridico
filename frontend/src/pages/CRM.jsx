@@ -14,10 +14,14 @@ import {
   Hash,
   Mail,
   MapPin,
+  MapPinned,
+  MessageCircle,
   Phone,
   Printer,
   RefreshCw,
   Search,
+  ShieldCheck,
+  Siren,
   User,
   Wrench,
   X,
@@ -26,6 +30,7 @@ import {
   getCrmCustomer,
   getCrmCustomerContracts,
   getCrmCustomerServiceOrders,
+  getCrmCustomer360,
   getCrmCustomers,
   getCrmSummary,
 } from '../services/api';
@@ -72,28 +77,31 @@ export default function CRM() {
       setModalLoading(false);
       setRelatedLoading(true);
 
-      const [contractsResult, ordersResult] = await Promise.allSettled([
+      const [contractsResult, ordersResult, view360Result] = await Promise.allSettled([
         getCrmCustomerContracts(customer.id),
         getCrmCustomerServiceOrders(customer.id, 25),
+        getCrmCustomer360(customer.id),
       ]);
       const contracts = contractsResult.status === 'fulfilled' ? contractsResult.value.data?.items || [] : [];
       const serviceOrders = ordersResult.status === 'fulfilled' ? ordersResult.value.data?.items || [] : [];
+      const customer360 = view360Result.status === 'fulfilled' ? view360Result.value.data || null : null;
 
       setSelectedCustomer((current) => ({
         ...(current || fullCustomer),
         contracts,
         serviceOrders,
+        customer360,
         operationalSummary: {
           ...(current?.operationalSummary || fullCustomer.operationalSummary || {}),
           contracts: contracts.length,
           activeContracts: contracts.filter(isContractActive).length,
-          contractValue: contracts.filter(isContractActive).reduce((total, contract) => total + Number(contract.value || 0), 0),
+          contractValue: contracts.filter(isContractActive).reduce((total, contract) => total + Number(contract.monthlyValue || contract.value || 0), 0),
           openServiceOrders: serviceOrders.filter((order) => !isOrderClosed(order)).length,
           lastServiceOrderAt: serviceOrders[0]?.openedAt || null,
         },
       }));
 
-      if (contractsResult.status === 'rejected' || ordersResult.status === 'rejected') {
+      if (contractsResult.status === 'rejected' || ordersResult.status === 'rejected' || view360Result.status === 'rejected') {
         setModalError('Algumas informações complementares não puderam ser carregadas. Você pode tentar novamente.');
       }
     } catch (error) {
@@ -209,6 +217,7 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
   const equipments = arrayOf(customer.equipments);
   const contracts = arrayOf(customer.contracts);
   const serviceOrders = arrayOf(customer.serviceOrders, customer.orders, customer.osHistory);
+  const customer360 = customer.customer360 || {};
 
   useEffect(() => {
     function onKeyDown(event) { if (event.key === 'Escape') onClose(); }
@@ -237,6 +246,8 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
 
         <nav style={s.tabs}>
           <Tab active={activeTab === 'overview'} icon={<User size={16} />} label="Visão geral" onClick={() => setActiveTab('overview')} />
+          <Tab active={activeTab === 'timeline'} icon={<MessageCircle size={16} />} label="Linha do tempo" onClick={() => setActiveTab('timeline')} />
+          <Tab active={activeTab === 'units'} icon={<MapPinned size={16} />} label={`Unidades (${arrayOf(customer360.units).length})`} onClick={() => setActiveTab('units')} />
           <Tab active={activeTab === 'equipments'} icon={<Printer size={16} />} label={`Equipamentos (${equipments.length})`} onClick={() => setActiveTab('equipments')} />
           <Tab active={activeTab === 'contracts'} icon={<FileText size={16} />} label={`Contratos (${contracts.length})`} onClick={() => setActiveTab('contracts')} />
           <Tab active={activeTab === 'os'} icon={<ClipboardList size={16} />} label={`Histórico O.S. (${serviceOrders.length})`} onClick={() => setActiveTab('os')} />
@@ -245,9 +256,11 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
 
         <div style={s.modalBody}>
           {loading ? <div style={s.loadingBox}><RefreshCw size={18} /> Carregando informações atualizadas do ILUX...</div> : null}
-          {!loading && relatedLoading ? <div style={s.loadingInline}><RefreshCw size={16} /> Carregando contratos e histórico de O.S. em segundo plano...</div> : null}
+          {!loading && relatedLoading ? <div style={s.loadingInline}><RefreshCw size={16} /> Montando a visão 360 do cliente em segundo plano...</div> : null}
           {!loading && error ? <div style={s.errorBox}><AlertCircle size={17} /><span style={{ flex: 1 }}>{error}</span><button type="button" style={s.retryBtn} onClick={onRetry}>Tentar novamente</button></div> : null}
-          {!loading && activeTab === 'overview' ? <OverviewTab customer={customer} equipments={equipments} contracts={contracts} serviceOrders={serviceOrders} /> : null}
+          {!loading && activeTab === 'overview' ? <OverviewTab customer={customer} equipments={equipments} contracts={contracts} serviceOrders={serviceOrders} customer360={customer360} /> : null}
+          {!loading && activeTab === 'timeline' ? <TimelineTab timeline={arrayOf(customer360.timeline)} /> : null}
+          {!loading && activeTab === 'units' ? <UnitsTab units={arrayOf(customer360.units)} /> : null}
           {!loading && activeTab === 'equipments' ? <EquipmentsTab equipments={equipments} /> : null}
           {!loading && activeTab === 'contracts' ? <ContractsTab contracts={contracts} /> : null}
           {!loading && activeTab === 'os' ? <OsTab serviceOrders={serviceOrders} /> : null}
@@ -263,8 +276,10 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
   );
 }
 
-function OverviewTab({ customer, equipments, contracts, serviceOrders }) {
+function OverviewTab({ customer, equipments, contracts, serviceOrders, customer360 }) {
   const operational = customer.operationalSummary || {};
+  const alerts = arrayOf(customer360?.alerts);
+  const sla = customer360?.sla || null;
   const activeContracts = pick(operational, 'activeContracts') ?? contracts.filter(isContractActive).length;
   const openOrders = pick(operational, 'openServiceOrders') ?? serviceOrders.filter((order) => !isOrderClosed(order)).length;
   const monthlyValue = Number(operational.monthlyRevenue || 0)
@@ -278,6 +293,10 @@ function OverviewTab({ customer, equipments, contracts, serviceOrders }) {
         <MiniStat icon={<AlertCircle size={18} />} value={openOrders} label="O.S. em aberto" warning={openOrders > 0} />
         <MiniStat icon={<CircleDollarSign size={18} />} value={formatCurrency(monthlyValue)} label="Valor mensal" />
       </div>
+      {alerts.length ? <AlertsPanel alerts={alerts} /> : (
+        customer360?.generatedAt ? <div style={s.healthyBox}><ShieldCheck size={18} /> Nenhum alerta operacional identificado para este cliente.</div> : null
+      )}
+      {sla ? <SlaPanel sla={sla} /> : null}
       <InfoSection title="Identificação" icon={<User size={17} />}>
         <div style={s.infoGrid}>
           <Info label="Razão social" value={customer.name} wide />
@@ -304,6 +323,104 @@ function OverviewTab({ customer, equipments, contracts, serviceOrders }) {
         </div>
       </InfoSection>
       {customer.notes ? <InfoSection title="Observações" icon={<ClipboardList size={17} />}><p style={s.notes}>{customer.notes}</p></InfoSection> : null}
+    </div>
+  );
+}
+
+function AlertsPanel({ alerts }) {
+  return (
+    <InfoSection title={`Alertas inteligentes (${alerts.length})`} icon={<Siren size={17} />}>
+      <div style={s.alertGrid}>
+        {alerts.map((alert) => (
+          <div key={alert.id} style={{ ...s.smartAlert, ...(alert.severity === 'critical' ? s.criticalAlert : alert.severity === 'warning' ? s.warningAlert : s.infoAlert) }}>
+            <AlertCircle size={17} />
+            <div><strong>{alert.title}</strong><span>{alert.description}</span></div>
+          </div>
+        ))}
+      </div>
+    </InfoSection>
+  );
+}
+
+function SlaPanel({ sla }) {
+  const recurrence = sla.mostRecurringEquipment;
+  return (
+    <InfoSection title={`Atendimento e SLA — meta de ${sla.targetHours || 24}h`} icon={<ShieldCheck size={17} />}>
+      <div style={s.slaGrid}>
+        <Metric value={sla.orders30Days ?? 0} label="O.S. nos últimos 30 dias" />
+        <Metric value={formatHours(sla.averageResolutionHours)} label="Tempo médio de solução" />
+        <Metric value={sla.withinSlaPercent === null || sla.withinSlaPercent === undefined ? '—' : `${sla.withinSlaPercent}%`} label="Concluídas dentro do SLA" />
+        <Metric value={sla.overdueOpenOrders ?? 0} label="O.S. fora do prazo" danger={Number(sla.overdueOpenOrders) > 0} />
+      </div>
+      {recurrence ? (
+        <div style={s.recurrenceBox}>
+          <Printer size={17} />
+          <div><span>Maior reincidência em 90 dias</span><strong>{recurrence.model || `Equipamento ${recurrence.equipmentExternalId || ''}`} — {recurrence.count} O.S.</strong></div>
+        </div>
+      ) : null}
+    </InfoSection>
+  );
+}
+
+function Metric({ value, label, danger = false }) {
+  return <div style={{ ...s.metricCard, ...(danger ? s.metricDanger : {}) }}><strong>{value}</strong><span>{label}</span></div>;
+}
+
+function TimelineTab({ timeline }) {
+  const [filter, setFilter] = useState('all');
+  const visible = filter === 'all' ? timeline : timeline.filter((item) => item.type === filter);
+  if (!timeline.length) return <Empty icon={<MessageCircle size={28} />} title="Linha do tempo vazia" text="Ainda não há conversas, contratos ou atendimentos sincronizados para este cliente." />;
+  return (
+    <div style={s.sectionStack}>
+      <div style={s.timelineToolbar}>
+        <div><strong>Linha do tempo do relacionamento</strong><span>{timeline.length} eventos recentes</span></div>
+        <div style={s.filterGroup}>
+          {[['all', 'Tudo'], ['whatsapp', 'WhatsApp'], ['service_order', 'O.S.'], ['ticket', 'Atendimentos'], ['contract', 'Contratos']].map(([value, label]) => (
+            <button key={value} type="button" style={{ ...s.filterBtn, ...(filter === value ? s.activeFilterBtn : {}) }} onClick={() => setFilter(value)}>{label}</button>
+          ))}
+        </div>
+      </div>
+      <div style={s.timelineList}>
+        {visible.map((item) => (
+          <article key={item.id} style={s.timelineItem}>
+            <div style={s.timelineMarker}>{timelineIcon(item.type)}</div>
+            <div style={s.timelineContent}>
+              <div style={s.timelineHeading}><strong>{item.title}</strong><time>{formatDate(item.occurredAt)}</time></div>
+              <p>{item.description}</p>
+              {(item.meta || item.status) ? <div style={s.timelineMeta}>{item.meta ? <span>{item.meta}</span> : null}{item.status ? <span>{humanStatus(item.status)}</span> : null}</div> : null}
+            </div>
+          </article>
+        ))}
+        {!visible.length ? <div style={s.noFilterResult}>Nenhum evento neste filtro.</div> : null}
+      </div>
+    </div>
+  );
+}
+
+function UnitsTab({ units }) {
+  if (!units.length) return <Empty icon={<MapPinned size={28} />} title="Nenhuma unidade identificada" text="Os endereços aparecerão após a sincronização dos equipamentos." />;
+  return (
+    <div style={s.unitsGrid}>
+      {units.map((unit, index) => (
+        <article key={unit.id || index} style={s.unitCard}>
+          <header style={s.unitHeader}>
+            <div style={s.unitIcon}><Building2 size={19} /></div>
+            <div style={{ minWidth: 0, flex: 1 }}><span>Unidade {index + 1}</span><strong>{unit.name || 'Unidade principal'}</strong></div>
+            <span style={s.unitCount}>{unit.equipmentCount || 0} equip.</span>
+          </header>
+          <div style={s.unitAddress}><MapPin size={15} /><span>{unitLocation(unit) || 'Endereço não informado'}</span></div>
+          {arrayOf(unit.departments).length ? <div style={s.departmentList}>{unit.departments.map((department) => <span key={department}>{department}</span>)}</div> : null}
+          <div style={s.unitEquipmentList}>
+            {arrayOf(unit.equipments).map((equipment) => (
+              <div key={equipment.id || equipment.externalId} style={s.unitEquipment}>
+                <Printer size={15} />
+                <div><strong>{equipment.model || 'Equipamento sem modelo'}</strong><span>Série: {equipment.serialNumber || 'não informada'} · {equipment.installLocation || equipment.sector || 'setor não informado'}</span></div>
+              </div>
+            ))}
+            {!arrayOf(unit.equipments).length ? <span style={s.mutedText}>Nenhum equipamento nesta unidade.</span> : null}
+          </div>
+        </article>
+      ))}
     </div>
   );
 }
@@ -513,6 +630,18 @@ function hasValue(value) { return value !== null && value !== undefined && value
 function joinLocation(item) { return [item.address, item.complement, item.neighborhood, [item.city, item.state].filter(Boolean).join(' / ')].filter(Boolean).join(' • '); }
 function equipmentLocation(item) { return [item.address, item.complement, pick(item, 'department', 'sector'), item.installLocation, [item.city, item.state].filter(Boolean).join(' / ')].filter(Boolean).join(' • '); }
 function searchableEquipment(item) { return [item.model, item.manufacturer, item.serialNumber, item.assetTag, equipmentLocation(item), item.externalId].filter(Boolean).join(' ').toLowerCase(); }
+function unitLocation(item) { return [item.address, item.neighborhood, [item.city, item.state].filter(Boolean).join(' / ')].filter(Boolean).join(' • '); }
+
+function timelineIcon(type) {
+  if (type === 'whatsapp') return <MessageCircle size={16} />;
+  if (type === 'service_order') return <ClipboardList size={16} />;
+  if (type === 'contract') return <FileText size={16} />;
+  return <User size={16} />;
+}
+
+function humanStatus(value) {
+  return String(value || '').replaceAll('_', ' ').toLowerCase().replace(/^./, (letter) => letter.toUpperCase());
+}
 
 function isContractActive(contract) {
   if (typeof contract.isActive === 'boolean') return contract.isActive;
@@ -531,6 +660,12 @@ function isOrderClosed(order) {
 
 function sumMonthlyValue(contracts) { return contracts.filter(isContractActive).reduce((sum, contract) => sum + Number(pick(contract, 'monthlyValue', 'value', 'amount') || 0), 0); }
 function formatCurrency(value) { const number = Number(value || 0); return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+function formatHours(value) {
+  if (value === null || value === undefined) return '—';
+  const hours = Number(value);
+  if (hours < 24) return `${hours.toLocaleString('pt-BR')}h`;
+  return `${(hours / 24).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}d`;
+}
 function formatPeriod(start, end) { const a = formatShortDate(start); const b = formatShortDate(end); return a || b ? `${a || 'Início não informado'} até ${b || 'vigente'}` : 'Não informada'; }
 function formatDate(value) { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('pt-BR'); }
 function formatShortDate(value) { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('pt-BR'); }
@@ -591,6 +726,16 @@ const s = {
   retryBtn: { flex: '0 0 auto', border: '1px solid rgba(239,68,68,.35)', borderRadius: 8, padding: '0.4rem 0.65rem', background: 'transparent', color: '#fecaca', fontWeight: 850, cursor: 'pointer' },
   sectionStack: { display: 'grid', gap: '1rem' },
   profileStats: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '0.7rem' },
+  healthyBox: { display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.85rem 1rem', borderRadius: 13, color: '#4ade80', background: 'rgba(34,197,94,.07)', border: '1px solid rgba(34,197,94,.2)', fontSize: '0.8rem', fontWeight: 750 },
+  alertGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: '0.65rem' },
+  smartAlert: { display: 'flex', alignItems: 'flex-start', gap: '0.6rem', padding: '0.75rem', borderRadius: 11, fontSize: '0.77rem' },
+  criticalAlert: { color: '#fca5a5', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.25)' },
+  warningAlert: { color: '#fbbf24', background: 'rgba(245,158,11,.08)', border: '1px solid rgba(245,158,11,.22)' },
+  infoAlert: { color: '#93c5fd', background: 'rgba(59,130,246,.08)', border: '1px solid rgba(59,130,246,.2)' },
+  slaGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(145px,1fr))', gap: '0.65rem' },
+  metricCard: { display: 'grid', gap: 3, padding: '0.75rem', borderRadius: 11, border: '1px solid var(--border-color)', background: 'var(--bg-base)' },
+  metricDanger: { borderColor: 'rgba(239,68,68,.32)', background: 'rgba(239,68,68,.06)', color: '#fca5a5' },
+  recurrenceBox: { display: 'flex', alignItems: 'center', gap: '0.65rem', marginTop: '0.7rem', padding: '0.7rem', color: '#fbbf24', borderRadius: 10, background: 'rgba(245,158,11,.07)' },
   miniStat: { display: 'flex', alignItems: 'center', gap: '0.7rem', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: 13, background: 'var(--bg-base)' },
   miniIcon: { width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: 10, background: 'var(--accent-light)', color: 'var(--accent)' },
   miniText: { display: 'grid', gap: 2, color: 'var(--text-muted)', fontSize: '0.72rem' },
@@ -604,6 +749,23 @@ const s = {
   wideInfo: { gridColumn: '1 / -1' },
   notes: { margin: 0, color: 'var(--text-muted)', whiteSpace: 'pre-wrap', lineHeight: 1.55 },
   equipmentLayout: { display: 'grid', gridTemplateColumns: 'minmax(290px,.42fr) minmax(400px,1fr)', gap: '1rem', alignItems: 'start' },
+  timelineToolbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.8rem', color: 'var(--text-main)' },
+  timelineList: { display: 'grid', gap: 0, position: 'relative' },
+  timelineItem: { display: 'grid', gridTemplateColumns: '38px 1fr', gap: '0.7rem', minWidth: 0 },
+  timelineMarker: { width: 32, height: 32, display: 'grid', placeItems: 'center', color: 'var(--accent)', background: 'var(--accent-light)', border: '1px solid var(--accent-border)', borderRadius: 10, position: 'relative', zIndex: 1 },
+  timelineContent: { display: 'grid', gap: '0.35rem', marginBottom: '0.7rem', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: 12, background: 'rgba(8,12,22,.3)', minWidth: 0 },
+  timelineHeading: { display: 'flex', justifyContent: 'space-between', gap: '0.8rem', flexWrap: 'wrap' },
+  timelineMeta: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', color: 'var(--text-dim)', fontSize: '0.7rem' },
+  unitsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(330px,1fr))', gap: '0.85rem' },
+  unitCard: { display: 'grid', gap: '0.8rem', alignContent: 'start', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 15, background: 'rgba(8,12,22,.3)' },
+  unitHeader: { display: 'flex', alignItems: 'center', gap: '0.7rem' },
+  unitIcon: { width: 38, height: 38, flex: '0 0 auto', display: 'grid', placeItems: 'center', color: 'var(--accent)', background: 'var(--accent-light)', borderRadius: 11 },
+  unitCount: { padding: '0.3rem 0.55rem', borderRadius: 999, color: 'var(--accent)', background: 'var(--accent-light)', fontSize: '0.68rem', fontWeight: 900 },
+  unitAddress: { display: 'flex', alignItems: 'flex-start', gap: '0.45rem', color: 'var(--text-muted)', fontSize: '0.78rem' },
+  departmentList: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem' },
+  unitEquipmentList: { display: 'grid', gap: '0.45rem' },
+  unitEquipment: { display: 'flex', alignItems: 'center', gap: '0.55rem', padding: '0.65rem', borderRadius: 10, color: 'var(--text-muted)', background: 'var(--bg-base)', border: '1px solid var(--border-color)' },
+  mutedText: { color: 'var(--text-dim)', fontSize: '0.75rem' },
   equipmentAside: { display: 'grid', gap: '0.7rem', minWidth: 0 },
   innerSearch: { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem', background: 'var(--bg-base)', border: '1px solid var(--border-color)', borderRadius: 11, color: 'var(--text-muted)' },
   equipmentList: { display: 'grid', gap: '0.55rem', maxHeight: '61vh', overflowY: 'auto', paddingRight: 3 },
