@@ -31,13 +31,16 @@ import {
   X,
 } from 'lucide-react';
 import {
+  BACKEND_URL,
   getCrmCustomer,
   getCrmCustomerContracts,
   getCrmCustomerServiceOrders,
   getCrmCustomer360,
   getCrmCustomers,
   getCrmSummary,
+  sendOSManagerCopy,
 } from '../services/api';
+import { toast } from '../utils/toast';
 
 const EMPTY_SUMMARY = { customers: 0, equipments: 0, linkedEquipments: 0, activeContracts: 0, openServiceOrders: 0 };
 
@@ -342,7 +345,7 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
           {!loading && activeTab === 'equipments' ? <EquipmentsTab equipments={equipments} evolution={arrayOf(customer360.equipmentEvolution)} /> : null}
           {!loading && activeTab === 'contracts' ? <ContractsTab contracts={contracts} /> : null}
           {!loading && activeTab === 'financial' ? <FinancialTab financial={customer360.financial} /> : null}
-          {!loading && activeTab === 'os' ? <OsTab serviceOrders={serviceOrders} /> : null}
+          {!loading && activeTab === 'os' ? <OsTab serviceOrders={serviceOrders} onRefresh={onRetry} /> : null}
           {!loading && activeTab === 'raw' ? <RawFieldsTab title="Campos originais do cliente no ILUX" raw={customer.raw} /> : null}
         </div>
 
@@ -671,9 +674,33 @@ function ContractsTab({ contracts }) {
   );
 }
 
-function OsTab({ serviceOrders }) {
+function OsTab({ serviceOrders, onRefresh }) {
   const [status, setStatus] = useState('all');
+  const [sendingId, setSendingId] = useState(null);
   const filtered = status === 'all' ? serviceOrders : serviceOrders.filter((order) => status === 'closed' ? isOrderClosed(order) : !isOrderClosed(order));
+
+  function openPdf(order) {
+    const identifier = order.id || order.externalId || order.number;
+    if (!identifier) return;
+    const token = encodeURIComponent(localStorage.getItem('token') || '');
+    window.open(`${BACKEND_URL}/api/os/${encodeURIComponent(identifier)}/pdf?token=${token}`, '_blank', 'noopener,noreferrer');
+  }
+
+  async function sendToManager(order) {
+    const identifier = order.id || order.externalId || order.number;
+    if (!identifier || sendingId) return;
+    setSendingId(identifier);
+    try {
+      const { data } = await sendOSManagerCopy(identifier);
+      toast.success(`O.S. ${data.externalId} enviada ao gestor como ${data.filename}.`);
+      await Promise.resolve(onRefresh?.());
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Não foi possível enviar a O.S. ao gestor.');
+    } finally {
+      setSendingId(null);
+    }
+  }
+
   if (!serviceOrders.length) return <Empty icon={<ClipboardList size={28} />} title="Nenhuma O.S. sincronizada" text="O histórico aparecerá aqui assim que a sincronização incremental importar os chamados do ILUX." />;
   return (
     <div style={s.sectionStack}>
@@ -686,6 +713,8 @@ function OsTab({ serviceOrders }) {
       <div style={s.osList}>
         {filtered.map((order, index) => {
           const closed = isOrderClosed(order);
+          const identifier = order.id || order.externalId || order.number;
+          const sending = sendingId === identifier;
           return (
             <article key={order.id || order.externalId || index} style={s.osCard}>
               <div style={s.osStatusRail} />
@@ -699,6 +728,14 @@ function OsTab({ serviceOrders }) {
                   {pick(order, 'closedAt', 'finishedAt') ? <span><CalendarDays size={13} /> Fechada em {formatDate(pick(order, 'closedAt', 'finishedAt'))}</span> : null}
                 </div>
                 {pick(order, 'resolution', 'closingNotes', 'solution', 'fechamento', 'closing') ? <div style={s.resolution}><strong>Fechamento:</strong> {pick(order, 'resolution', 'closingNotes', 'solution', 'fechamento', 'closing')}</div> : null}
+                <div style={s.osActions}>
+                  <button type="button" style={s.osActionBtn} disabled={!identifier} onClick={() => openPdf(order)}><FileText size={14} /> Abrir PDF / Reimprimir</button>
+                  <button type="button" style={s.osActionPrimary} disabled={!identifier || Boolean(sendingId)} onClick={() => sendToManager(order)}>
+                    {sending ? <RefreshCw size={14} /> : <Send size={14} />} {sending ? 'Enviando...' : 'Enviar ao gestor'}
+                  </button>
+                  {order.managerCopySentAt ? <span style={s.copySent}>Enviado ao gestor</span> : null}
+                  {!order.managerCopySentAt && order.managerCopyLastError ? <span style={s.copyError} title={order.managerCopyLastError}>Falha no último envio</span> : null}
+                </div>
               </div>
             </article>
           );
@@ -962,6 +999,11 @@ const s = {
   statusClosed: { display: 'inline-flex', alignItems: 'center', gap: 4, color: '#22c55e', fontSize: '0.68rem', fontWeight: 900 },
   statusOpen: { display: 'inline-flex', alignItems: 'center', gap: 4, color: '#f59e0b', fontSize: '0.68rem', fontWeight: 900 },
   osMeta: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem', color: 'var(--text-dim)', fontSize: '0.72rem' },
+  osActions: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.55rem', paddingTop: '0.2rem' },
+  osActionBtn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.5rem 0.7rem', borderRadius: 9, border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--text-main)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 800 },
+  osActionPrimary: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.5rem 0.7rem', borderRadius: 9, border: '1px solid var(--accent-border)', background: 'var(--accent)', color: '#111827', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 900 },
+  copySent: { color: '#22c55e', fontSize: '0.68rem', fontWeight: 800 },
+  copyError: { color: '#ef4444', fontSize: '0.68rem', fontWeight: 800 },
   resolution: { padding: '0.55rem 0.7rem', borderRadius: 9, background: 'rgba(34,197,94,.07)', color: 'var(--text-muted)', fontSize: '0.76rem' },
   rawPanel: { display: 'grid', gap: '0.9rem' },
   technicalNotice: { display: 'flex', gap: '0.65rem', padding: '0.85rem', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: 12, background: 'var(--bg-base)' },

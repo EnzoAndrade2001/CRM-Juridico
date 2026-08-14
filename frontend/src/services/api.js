@@ -159,6 +159,7 @@ export const updateEquipment = (id, data) => api.patch(`/os/equipments/${id}`, d
 export const deleteEquipment = (id) => api.delete(`/os/equipments/${id}`);
 export const createOS = (data) => api.post('/os', data);
 export const getOSList = (filters) => api.get('/os', { params: filters });
+export const sendOSManagerCopy = (id) => api.post(`/os/${id}/send-manager-copy`);
 
 // Leads / Prospecção
 export const searchLeads = (data) => api.post('/leads/search', data);

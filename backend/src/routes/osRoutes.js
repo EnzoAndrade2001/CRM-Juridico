@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const authenticate = require('../middlewares/authenticate');
 const { getEquipments, addEquipment, updateEquipment, deleteEquipment, getOSList, createOS, getOSStatus, updateOS, generatePdf, draftOS, getOSTypes, getOSTechnicians } = require('../controllers/osController');
+const { sendManagerCopy } = require('../controllers/serviceOrderManagerController');
 
 router.use(authenticate);
 
@@ -19,6 +20,7 @@ router.get('/', getOSList);
 router.post('/', createOS);
 router.post('/draft', draftOS);
 router.get('/:id/status', getOSStatus);
+router.post('/:id/send-manager-copy', sendManagerCopy);
 router.patch('/:id', updateOS);
 router.get('/:id/pdf', generatePdf);
 

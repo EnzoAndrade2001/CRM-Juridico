@@ -427,6 +427,7 @@ model ServiceOrder {
   meters            String? // Medidores em JSON (ex: {"mono": 1000, "cor": 500})
   userId            String? // Atendente que criou a O.S.
   managerCopySentAt DateTime?
+  managerCopyLastError String? @db.Text
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt

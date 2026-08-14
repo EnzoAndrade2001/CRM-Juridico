@@ -14,6 +14,18 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function osPdfFilename(number, customerName) {
+  const safeCustomer = String(customerName || 'CLIENTE')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9 ._-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase()
+    .slice(0, 80) || 'CLIENTE';
+  return `OS ${number || 'SEM NUMERO'} - ${safeCustomer}.pdf`;
+}
+
 async function waitForIluxConfirmation(id, tenantId) {
   const deadline = Date.now() + OS_CONFIRMATION_TIMEOUT_MS;
   while (Date.now() < deadline) {
@@ -375,7 +387,10 @@ async function updateOS(req, res) {
 async function generatePdf(req, res) {
   const { id } = req.params;
   const os = await prisma.serviceOrder.findFirst({
-    where: { id, tenantId: req.user.tenantId },
+    where: {
+      tenantId: req.user.tenantId,
+      OR: [{ id }, { externalId: String(id) }],
+    },
     include: { 
       contact: true, 
       equipment: true, 
@@ -1412,7 +1427,10 @@ async function generatePdf(req, res) {
 
     const doc = pdfmake.createPdf({ ...docDefinition, footer: () => ({ text: '' }), content: fullIluxContent });
     const stream = await doc.getStream();
-    const filename = `OS_${os.externalId || os.id.substring(os.id.length - 6)}.pdf`;
+    const filename = osPdfFilename(
+      os.externalId || os.id.substring(os.id.length - 6),
+      clientData?.name || os.contact?.name,
+    );
 
     if (typeof res.capturePdf === 'function') {
       return res.capturePdf(stream, filename);

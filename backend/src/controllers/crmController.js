@@ -209,8 +209,10 @@ function normalizeLocalOrder(order) {
     statusLabel: order.status,
     defect: text(order.defect),
     closing: text(order.technicalNotes),
-    technician: text(order.closedBy?.name),
+    technician: first(order.nmsuportet, order.closedBy?.name),
     attendant: text(order.user?.name),
+    managerCopySentAt: order.managerCopySentAt,
+    managerCopyLastError: text(order.managerCopyLastError),
     openedAt: order.createdAt,
     attendedAt: order.resolvedAt,
     closedAt: order.closedAt,
@@ -236,9 +238,12 @@ function mergeOrders(...groups) {
     if (!order) continue;
     const key = order.externalId ? `external:${order.externalId}` : `local:${order.id}`;
     const previous = merged.get(key);
-    if (!previous || orderTimestamp(order) >= orderTimestamp(previous)) {
-      merged.set(key, { ...previous, ...order });
-    }
+    const populatedFields = Object.fromEntries(
+      Object.entries(order).filter(([, value]) => value !== null && value !== undefined && value !== '')
+    );
+    if (!previous) merged.set(key, populatedFields);
+    else if (orderTimestamp(order) >= orderTimestamp(previous)) merged.set(key, { ...previous, ...populatedFields });
+    else merged.set(key, { ...populatedFields, ...previous });
   }
   return [...merged.values()].sort((a, b) => orderTimestamp(b) - orderTimestamp(a));
 }
