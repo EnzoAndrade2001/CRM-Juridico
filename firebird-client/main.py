@@ -133,7 +133,7 @@ class AppConfig:
     crm_sync_token: str = ""
     sync_interval_seconds: int = 300
     batch_size: int = 250
-    sync_service_orders: bool = False
+    sync_service_orders: bool = True
     state_file: Path = field(default_factory=lambda: ROOT / "state.json")
     log_dir: Path = field(default_factory=lambda: ROOT / "logs")
     log_file: Path = field(default_factory=lambda: ROOT / "logs" / "client.log")
@@ -185,7 +185,10 @@ class AppConfig:
             crm_sync_token=os.getenv("CRM_SYNC_TOKEN", ""),
             sync_interval_seconds=env_int("SYNC_INTERVAL_SECONDS", 300),
             batch_size=env_int("BATCH_SIZE", 250),
-            sync_service_orders=env_bool("SYNC_SERVICE_ORDERS", False),
+            # Variável nova de propósito: instalações antigas costumam ter
+            # SYNC_SERVICE_ORDERS=false para bloquear o antigo scan completo.
+            # O incremental seguro fica ativo por padrão sem exigir editar .env.
+            sync_service_orders=env_bool("SYNC_SERVICE_ORDERS_INCREMENTAL", True),
             state_file=state_file,
             log_dir=log_dir,
             log_file=log_file,
@@ -207,6 +210,7 @@ class StateStore:
                 "equipments": 0,
                 "contracts": 0,
                 "serviceOrders": 0,
+                "serviceOrderAttendances": 0,
             },
             "last_sync_at": None,
         }
@@ -732,12 +736,14 @@ class FirebirdRepository:
         """
         yield from self._rows(sql, (cursor,))
 
-    def fetch_service_orders(self, cursor: int) -> Iterator[dict[str, Any]]:
-        sql = """
-            select
+    def _service_orders_select(self, where_clause: str, limit: int | None = None) -> str:
+        first = f"first {max(1, int(limit))}" if limit is not None else ""
+        return f"""
+            select {first}
                 os.CDCLIENTE, os.NMCLIENTE, os.CDEQUIPAMENTO, os.SEQOS,
                 os.DTINCLUSAO, os.HRINCLUSAO, os.DTATENDIMENTO, os.HRATENDIMENTO, os.DTFECHAMENTO,
-                tp.NMOSTP, st.NMSTATUS, os.STATUS, os.NMSUPORTET, os.OBSDEFEITOCLI, os.OBSDEFEITOATS,
+                tp.NMOSTP, st.NMSTATUS, os.STATUS, os.NMSUPORTEA, os.NMSUPORTET, os.NMSUPORTEL,
+                os.USUARIO_FECHAMENTO, os.OBSDEFEITOCLI, os.OBSDEFEITOATS,
                 os.DEPARTAMENTO, os.LOCALINSTAL, os.CIDADE, os.UF, os.ENDERECO, os.CEP,
                 os.DDD, os.FONE, os.CELULAR, os.EMAIL,
                 eq.CDPRODUTO as CDPRODUTOE, eq.SERIE, eq.MODELO as MODELOE, eq.FABRICANTE
@@ -745,10 +751,74 @@ class FirebirdRepository:
             left join IXLOSTP tp on tp.CDOSTP = os.CDOSTP
             left join IXLOSSTATUS st on st.CDSTATUS = os.CDSTATUS
             left join IXLEQUIPAMENTO eq on eq.CDEQUIPAMENTO = os.CDEQUIPAMENTO
-            where os.SEQOS > ?
+            where {where_clause}
             order by os.SEQOS
         """
+
+    def fetch_service_orders(
+        self,
+        cursor: int,
+        limit: int | None = None,
+    ) -> Iterator[dict[str, Any]]:
+        sql = self._service_orders_select("os.SEQOS > ?", limit)
         yield from self._rows(sql, (cursor,))
+
+    def get_service_order_watermarks(self) -> tuple[int, int]:
+        """Return current high-water marks without reading O.S. rows."""
+        con = self.connect()
+        try:
+            cur = con.cursor()
+            cur.execute("select coalesce(max(SEQOS), 0) from IXLOS")
+            max_seq_os = int(cur.fetchone()[0] or 0)
+            cur.execute(
+                "select coalesce(max(ID_ATENDIMENTO), 0) from IXLOSATENDIMENTO"
+            )
+            max_attendance = int(cur.fetchone()[0] or 0)
+            return max_seq_os, max_attendance
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+
+    def fetch_service_orders_changed_by_attendance(
+        self,
+        attendance_cursor: int,
+        limit: int,
+    ) -> tuple[list[dict[str, Any]], int]:
+        """Read O.S. touched by new attendance rows using a global integer cursor."""
+        con = self.connect()
+        try:
+            cur = con.cursor()
+            cur.execute(
+                f"""
+                select first {max(1, int(limit))} ID_ATENDIMENTO, SEQOS
+                from IXLOSATENDIMENTO
+                where ID_ATENDIMENTO > ?
+                order by ID_ATENDIMENTO
+                """,
+                (attendance_cursor,),
+            )
+            events = cur.fetchall()
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+
+        if not events:
+            return [], attendance_cursor
+
+        max_attendance = max(int(row[0]) for row in events)
+        seq_os_values = sorted({int(row[1]) for row in events if row[1] is not None})
+        if not seq_os_values:
+            return [], max_attendance
+
+        placeholders = ", ".join("?" for _ in seq_os_values)
+        sql = self._service_orders_select(
+            f"os.SEQOS in ({placeholders})",
+        )
+        return list(self._rows(sql, tuple(seq_os_values))), max_attendance
 
     def fetch_os_types(self) -> Iterator[dict[str, Any]]:
         sql = "select CDOSTP, NMOSTP from IXLOSTP"
@@ -1120,13 +1190,13 @@ def normalize_service_order(record: dict[str, Any]) -> dict[str, Any]:
         "equipmentModel": first_non_empty(record.get("modeloe")),
         "manufacturer": first_non_empty(record.get("fabricante")),
         "serialNumber": first_non_empty(record.get("serie")),
-        "status": first_non_empty(record.get("nmstatus")),
+        "status": first_non_empty(record.get("nmstatus"), record.get("status")),
         "nmSuporteT": first_non_empty(record.get("nmsuportet")),
         "defect": first_non_empty(record.get("obsdefeitocli"), record.get("nmdefeito"), record.get("causa"), record.get("sintoma")),
         "action": first_non_empty(record.get("acao")),
         "observacao": first_non_empty(record.get("observacao"), record.get("obsdefeitoats"), record.get("nmostp")),
-        "resolvedAt": parse_firebird_timestamp(record.get("dtatendimento")),
-        "updatedAt": parse_firebird_timestamp(record.get("dtatendimento")) or parse_firebird_timestamp(record.get("dtinclusao")),
+        "resolvedAt": parse_firebird_timestamp(record.get("dtfechamento")) or parse_firebird_timestamp(record.get("dtatendimento")),
+        "updatedAt": parse_firebird_timestamp(record.get("dtfechamento")) or parse_firebird_timestamp(record.get("dtatendimento")) or parse_firebird_timestamp(record.get("dtinclusao")),
         "address": first_non_empty(record.get("endereco")),
         "city": first_non_empty(record.get("cidade")),
         "state": first_non_empty(record.get("uf")),
@@ -1233,6 +1303,82 @@ def sync_entity(
     return True
 
 
+def sync_service_orders_incremental(
+    repo: FirebirdRepository,
+    crm: CRMClient,
+    state: StateStore,
+    batch_size: int,
+    stop_event: threading.Event | None = None,
+) -> bool:
+    """Sync a bounded set of new/changed O.S. without scanning IXLOS."""
+    if stop_event is not None and stop_event.is_set():
+        return False
+
+    recent_bootstrap_size = 250
+    cycle_limit = max(25, min(int(batch_size), 100))
+    seq_cursor = state.get_cursor("serviceOrders")
+    attendance_cursor_exists = "serviceOrderAttendances" in state.data.get("cursors", {})
+    attendance_cursor = state.get_cursor("serviceOrderAttendances")
+
+    if seq_cursor <= 0 or not attendance_cursor_exists:
+        max_seq_os, max_attendance = repo.get_service_order_watermarks()
+        if seq_cursor <= 0:
+            # Importa só uma janela recente em uma instalação nova. Os ciclos
+            # seguintes concluem essa janela em lotes limitados.
+            seq_cursor = max(0, max_seq_os - recent_bootstrap_size)
+            state.set_cursor("serviceOrders", seq_cursor)
+            # Uma instalação nova também deve saltar os atendimentos antigos.
+            attendance_cursor = max_attendance
+            state.set_cursor("serviceOrderAttendances", attendance_cursor)
+        elif not attendance_cursor_exists:
+            # A janela recente já traz o estado atual dessas O.S.; iniciar no
+            # MAX evita reproduzir todo o histórico de atendimentos.
+            attendance_cursor = max_attendance
+            state.set_cursor("serviceOrderAttendances", attendance_cursor)
+        state.save()
+
+    new_rows = list(repo.fetch_service_orders(seq_cursor, limit=cycle_limit))
+    changed_rows, max_attendance = repo.fetch_service_orders_changed_by_attendance(
+        attendance_cursor,
+        cycle_limit,
+    )
+
+    rows_by_seq: dict[int, dict[str, Any]] = {}
+    for raw in new_rows + changed_rows:
+        raw_seq = raw.get("seqos")
+        if raw_seq is not None:
+            rows_by_seq[int(raw_seq)] = raw
+
+    if stop_event is not None and stop_event.is_set():
+        return False
+
+    normalized = [
+        normalize_service_order(rows_by_seq[seq_os])
+        for seq_os in sorted(rows_by_seq)
+    ]
+    if normalized:
+        crm.push("serviceOrders", normalized)
+
+    if new_rows:
+        seq_cursor = max(
+            seq_cursor,
+            max(int(row["seqos"]) for row in new_rows if row.get("seqos") is not None),
+        )
+    state.set_cursor("serviceOrders", seq_cursor)
+    state.set_cursor("serviceOrderAttendances", max_attendance)
+    state.set_last_sync_at(datetime.now().isoformat(timespec="seconds"))
+    state.save()
+
+    if normalized:
+        logging.info(
+            "O.S.: %s registro(s) novo(s)/alterado(s) sincronizado(s)",
+            len(normalized),
+        )
+    else:
+        logging.debug("O.S.: nenhuma alteração desde o último ciclo")
+    return True
+
+
 def run_cycle(
     config: AppConfig,
     state: StateStore,
@@ -1248,6 +1394,7 @@ def run_cycle(
             "equipments": 0,
             "contracts": 0,
             "serviceOrders": 0,
+            "serviceOrderAttendances": 0,
         }
         state.save()
 
@@ -1257,7 +1404,7 @@ def run_cycle(
     sync_static_entities(repo, crm)
 
     entities = ["contacts", "equipments", "contracts"]
-    if config.sync_service_orders or full:
+    if full:
         entities.append("serviceOrders")
 
     for entity in entities:
@@ -1265,6 +1412,25 @@ def run_cycle(
             return
         logging.info("Iniciando sincronização de %s", entity)
         if not sync_entity(repo, crm, state, entity, config.batch_size, stop_event):
+            return
+
+    if full:
+        # A carga completa ja enviou o estado atual de todas as O.S. Portanto,
+        # os dois cursores devem partir do topo para que o proximo ciclo nao
+        # percorra novamente todo o historico de atendimentos.
+        max_seq_os, max_attendance = repo.get_service_order_watermarks()
+        state.set_cursor("serviceOrders", max_seq_os)
+        state.set_cursor("serviceOrderAttendances", max_attendance)
+        state.save()
+
+    if config.sync_service_orders and not full:
+        if not sync_service_orders_incremental(
+            repo,
+            crm,
+            state,
+            config.batch_size,
+            stop_event,
+        ):
             return
 
     # Process billing files

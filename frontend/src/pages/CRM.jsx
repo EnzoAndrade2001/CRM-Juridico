@@ -1,33 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
+  AlertCircle,
   Building2,
+  CalendarDays,
+  CheckCircle2,
+  ChevronDown,
   ChevronRight,
+  CircleDollarSign,
   ClipboardList,
+  Clock3,
   Database,
+  FileText,
   Hash,
+  Mail,
   MapPin,
   Phone,
   Printer,
   RefreshCw,
   Search,
   User,
+  Wrench,
   X,
 } from 'lucide-react';
 import { getCrmCustomer, getCrmCustomers, getCrmSummary } from '../services/api';
 
+const EMPTY_SUMMARY = { customers: 0, equipments: 0, linkedEquipments: 0, activeContracts: 0, openServiceOrders: 0 };
+
 export default function CRM() {
-  const [summary, setSummary] = useState({ customers: 0, equipments: 0, linkedEquipments: 0 });
+  const [summary, setSummary] = useState(EMPTY_SUMMARY);
   const [customers, setCustomers] = useState([]);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [selectedEquipment, setSelectedEquipment] = useState(null);
-  const [activeTab, setActiveTab] = useState('data');
+  const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(''); }, []);
 
   async function load(search = q) {
     setLoading(true);
@@ -36,10 +44,22 @@ export default function CRM() {
         getCrmSummary(),
         getCrmCustomers({ q: search, limit: 120 }),
       ]);
-      setSummary(summaryResponse.data || {});
+      setSummary({ ...EMPTY_SUMMARY, ...(summaryResponse.data || {}) });
       setCustomers(Array.isArray(customersResponse.data) ? customersResponse.data : []);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function openCustomer(customer, tab = 'overview') {
+    setSelectedCustomer(customer);
+    setActiveTab(tab);
+    setModalLoading(true);
+    try {
+      const response = await getCrmCustomer(customer.id);
+      setSelectedCustomer(response.data || customer);
+    } finally {
+      setModalLoading(false);
     }
   }
 
@@ -48,407 +68,529 @@ export default function CRM() {
     load(q);
   }
 
-  async function openCustomer(customer, tab = 'data', equipmentId = null) {
-    setSelectedCustomer(customer);
-    setSelectedEquipment(null);
-    setActiveTab(tab);
-    setModalLoading(true);
-    try {
-      const response = await getCrmCustomer(customer.id);
-      const fullCustomer = response.data;
-      setSelectedCustomer(fullCustomer);
-      if (equipmentId) {
-        setSelectedEquipment((fullCustomer.equipments || []).find((equipment) => equipment.id === equipmentId) || null);
-      }
-    } finally {
-      setModalLoading(false);
-    }
-  }
-
-  function closeModal() {
-    setSelectedCustomer(null);
-    setSelectedEquipment(null);
-    setActiveTab('data');
-  }
-
   return (
     <div style={s.container}>
       <div style={s.header}>
         <div>
-          <p style={s.kicker}>Base ILUX</p>
-          <h1 style={s.title}>CRM</h1>
-          <p style={s.subtitle}>Clientes e equipamentos importados do Firebird, separados dos contatos do WhatsApp.</p>
+          <p style={s.kicker}>Central de relacionamento ILUX</p>
+          <h1 style={s.title}>CRM operacional</h1>
+          <p style={s.subtitle}>Informações comerciais e técnicas reunidas para agilizar o atendimento.</p>
         </div>
         <button type="button" style={s.refreshBtn} onClick={() => load()} disabled={loading}>
-          <RefreshCw size={16} />
-          Atualizar
+          <RefreshCw size={16} className={loading ? 'spin' : ''} /> Atualizar dados
         </button>
       </div>
 
       <div style={s.syncNotice}>
         <Database size={18} />
         <div>
-          <strong>Sincronizacao ILUX {'->'} CRM</strong>
-          <span>
-            Esta tela e a base oficial importada do ILUX. Por enquanto ela e somente leitura: mudancas feitas aqui ainda
-            nao gravam no Firebird.
-          </span>
+          <strong style={{ color: 'var(--text-main)' }}>Dados sincronizados com o ILUX</strong>
+          <span>Esta visão é somente para consulta. As alterações operacionais continuam sendo realizadas no ILUX Desktop.</span>
         </div>
       </div>
 
       <div style={s.statsGrid}>
-        <Stat icon={<Building2 size={18} />} label="Clientes CRM" value={summary.customers || 0} />
-        <Stat icon={<Printer size={18} />} label="Equipamentos" value={summary.equipments || 0} />
-        <Stat icon={<Hash size={18} />} label="Equip. vinculados" value={summary.linkedEquipments || 0} />
+        <Stat icon={<Building2 size={19} />} label="Clientes" value={pick(summary, 'customers', 'totalCustomers')} />
+        <Stat icon={<Printer size={19} />} label="Equipamentos" value={pick(summary, 'equipments', 'totalEquipments')} />
+        <Stat icon={<FileText size={19} />} label="Contratos ativos" value={summary.contracts?.active ?? pick(summary, 'activeContracts')} />
+        <Stat icon={<ClipboardList size={19} />} label="O.S. abertas" value={summary.serviceOrders?.open ?? pick(summary, 'openServiceOrders', 'openOrders', 'serviceOrdersOpen')} tone="warning" />
+        <Stat
+          icon={<CircleDollarSign size={19} />}
+          label="Mensalidade ativa"
+          value={formatCurrency(pick(summary, 'monthlyContractValue', 'activeMonthlyValue', 'monthlyValue', 'monthlyRevenue') ?? summary.contracts?.value)}
+          formatted
+        />
       </div>
 
       <form style={s.searchBar} onSubmit={submitSearch}>
-        <Search size={18} color="var(--text-dim)" />
+        <Search size={19} color="var(--text-dim)" />
         <input
           style={s.searchInput}
           value={q}
           onChange={(event) => setQ(event.target.value)}
-          placeholder="Buscar por nome, fantasia, CNPJ, telefone ou cidade"
+          placeholder="Busque por cliente, CNPJ, telefone, série, patrimônio, endereço ou código ILUX"
         />
-        <button type="submit" style={s.searchBtn} disabled={loading}>
-          {loading ? 'Buscando...' : 'Buscar'}
-        </button>
+        {q ? <button type="button" style={s.clearSearch} onClick={() => { setQ(''); load(''); }} aria-label="Limpar busca"><X size={16} /></button> : null}
+        <button type="submit" style={s.searchBtn} disabled={loading}>{loading ? 'Buscando...' : 'Buscar'}</button>
       </form>
+
+      <div style={s.resultHeader}>
+        <strong>{customers.length.toLocaleString('pt-BR')} clientes encontrados</strong>
+        {q ? <span>Resultado para “{q}”</span> : <span>Ordenados por nome</span>}
+      </div>
 
       <div style={s.customerGrid}>
         {customers.map((customer) => (
           <article key={customer.id} style={s.customerCard} onClick={() => openCustomer(customer)}>
-            <div style={s.customerMain}>
-              <div style={s.customerTitleRow}>
-                <h2 style={s.customerName}>{customer.fantasyName || customer.name}</h2>
-              </div>
-              {customer.fantasyName && customer.name !== customer.fantasyName ? (
-                <p style={s.legalName}>{customer.name}</p>
-              ) : null}
-              <div style={s.metaRow}>
-                {customer.cpfCnpj ? <Meta icon={<Hash size={14} />} text={customer.cpfCnpj} /> : null}
-                {customer.phone ? <Meta icon={<Phone size={14} />} text={customer.phone} /> : null}
-                {[customer.city, customer.state].filter(Boolean).length ? (
-                  <Meta icon={<MapPin size={14} />} text={[customer.city, customer.state].filter(Boolean).join(' / ')} />
-                ) : null}
+            <div style={s.customerTop}>
+              <div style={s.avatar}><Building2 size={20} /></div>
+              <div style={{ minWidth: 0 }}>
+                <h2 style={s.customerName}>{customer.fantasyName || customer.name || 'Cliente sem nome'}</h2>
+                {customer.fantasyName && customer.name !== customer.fantasyName ? <p style={s.legalName}>{customer.name}</p> : null}
               </div>
             </div>
+            <div style={s.metaGrid}>
+              <Meta icon={<Hash size={14} />} text={customer.cpfCnpj || `ILUX ${customer.externalId || '—'}`} />
+              <Meta icon={<Phone size={14} />} text={customer.phone || 'Telefone não informado'} />
+              <Meta icon={<MapPin size={14} />} text={joinLocation(customer) || 'Localização não informada'} wide />
+            </div>
             <div style={s.cardFooter}>
-              <span style={s.badge}>{customer._count?.equipments || 0} equipamentos</span>
-              <span style={s.openHint}>
-                Ver perfil
-                <ChevronRight size={15} />
-              </span>
+              <div style={s.counts}>
+                <span style={s.badge}><Printer size={13} /> {countOf(customer, 'equipments')} equip.</span>
+                {hasValue(customer.contractsCount) || Array.isArray(customer.contracts) ? <span style={s.badgeMuted}><FileText size={13} /> {countOf(customer, 'contracts')} contratos</span> : null}
+              </div>
+              <span style={s.openHint}>Abrir perfil <ChevronRight size={16} /></span>
             </div>
           </article>
         ))}
-
-        {!loading && customers.length === 0 ? (
-          <div style={s.emptyState}>Nenhum cliente CRM encontrado.</div>
-        ) : null}
+        {!loading && customers.length === 0 ? <div style={s.emptyState}>Nenhum cliente encontrado com os filtros informados.</div> : null}
       </div>
 
       {selectedCustomer ? (
         <CustomerModal
           customer={selectedCustomer}
-          selectedEquipment={selectedEquipment}
-          setSelectedEquipment={setSelectedEquipment}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           loading={modalLoading}
-          onClose={closeModal}
+          onClose={() => { setSelectedCustomer(null); setActiveTab('overview'); }}
         />
       ) : null}
     </div>
   );
 }
 
-function CustomerModal({
-  customer,
-  selectedEquipment,
-  setSelectedEquipment,
-  activeTab,
-  setActiveTab,
-  loading,
-  onClose,
-}) {
-  const equipments = customer.equipments || [];
-  const currentEquipment = selectedEquipment || equipments[0] || null;
+function CustomerModal({ customer, activeTab, setActiveTab, loading, onClose }) {
+  const equipments = arrayOf(customer.equipments);
+  const contracts = arrayOf(customer.contracts);
+  const serviceOrders = arrayOf(customer.serviceOrders, customer.orders, customer.osHistory);
 
-  function selectEquipment(equipment) {
-    setSelectedEquipment(equipment);
-  }
+  useEffect(() => {
+    function onKeyDown(event) { if (event.key === 'Escape') onClose(); }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
 
   return (
     <div style={s.modalBackdrop} onMouseDown={onClose}>
       <section style={s.modal} onMouseDown={(event) => event.stopPropagation()}>
         <header style={s.modalHeader}>
-          <div>
-            <p style={s.modalKicker}>Perfil do cliente ILUX</p>
-            <h2 style={s.modalTitle}>{customer.fantasyName || customer.name}</h2>
-            <span style={s.readOnlyPill}>Somente leitura</span>
+          <div style={s.modalIdentity}>
+            <div style={s.modalAvatar}><Building2 size={22} /></div>
+            <div>
+              <p style={s.modalKicker}>Cliente ILUX #{customer.externalId || '—'}</p>
+              <h2 style={s.modalTitle}>{customer.fantasyName || customer.name}</h2>
+              <div style={s.headerMeta}>
+                {customer.cpfCnpj ? <span>{customer.cpfCnpj}</span> : null}
+                {customer.phone ? <span>{customer.phone}</span> : null}
+                {joinLocation(customer) ? <span>{joinLocation(customer)}</span> : null}
+              </div>
+            </div>
           </div>
-          <button type="button" style={s.closeBtn} onClick={onClose} aria-label="Fechar">
-            <X size={18} />
-          </button>
+          <button type="button" style={s.closeBtn} onClick={onClose} aria-label="Fechar"><X size={19} /></button>
         </header>
 
         <nav style={s.tabs}>
-          <Tab active={activeTab === 'data'} icon={<User size={15} />} label="Dados" onClick={() => setActiveTab('data')} />
-          <Tab
-            active={activeTab === 'equipments'}
-            icon={<Printer size={15} />}
-            label={`Equipamentos (${equipments.length})`}
-            onClick={() => setActiveTab('equipments')}
-          />
-          <Tab active={activeTab === 'raw'} icon={<Database size={15} />} label="Campos ILUX" onClick={() => setActiveTab('raw')} />
-          <Tab active={activeTab === 'os'} icon={<ClipboardList size={15} />} label="Historico O.S." onClick={() => setActiveTab('os')} />
+          <Tab active={activeTab === 'overview'} icon={<User size={16} />} label="Visão geral" onClick={() => setActiveTab('overview')} />
+          <Tab active={activeTab === 'equipments'} icon={<Printer size={16} />} label={`Equipamentos (${equipments.length})`} onClick={() => setActiveTab('equipments')} />
+          <Tab active={activeTab === 'contracts'} icon={<FileText size={16} />} label={`Contratos (${contracts.length})`} onClick={() => setActiveTab('contracts')} />
+          <Tab active={activeTab === 'os'} icon={<ClipboardList size={16} />} label={`Histórico O.S. (${serviceOrders.length})`} onClick={() => setActiveTab('os')} />
+          <Tab active={activeTab === 'raw'} icon={<Database size={16} />} label="Dados técnicos" onClick={() => setActiveTab('raw')} />
         </nav>
 
         <div style={s.modalBody}>
-          {loading ? <div style={s.loadingBox}>Carregando dados completos do ILUX...</div> : null}
-
-          {activeTab === 'data' ? <CustomerDataTab customer={customer} /> : null}
-          {activeTab === 'equipments' ? (
-            <EquipmentsTab
-              equipments={equipments}
-              currentEquipment={currentEquipment}
-              onSelectEquipment={selectEquipment}
-            />
-          ) : null}
-          {activeTab === 'raw' ? <RawFieldsTab title="Campos originais do cliente no ILUX" raw={customer.raw} /> : null}
-          {activeTab === 'os' ? <OsTab /> : null}
+          {loading ? <div style={s.loadingBox}><RefreshCw size={18} /> Carregando informações atualizadas do ILUX...</div> : null}
+          {!loading && activeTab === 'overview' ? <OverviewTab customer={customer} equipments={equipments} contracts={contracts} serviceOrders={serviceOrders} /> : null}
+          {!loading && activeTab === 'equipments' ? <EquipmentsTab equipments={equipments} /> : null}
+          {!loading && activeTab === 'contracts' ? <ContractsTab contracts={contracts} /> : null}
+          {!loading && activeTab === 'os' ? <OsTab serviceOrders={serviceOrders} /> : null}
+          {!loading && activeTab === 'raw' ? <RawFieldsTab title="Campos originais do cliente no ILUX" raw={customer.raw} /> : null}
         </div>
 
         <footer style={s.modalFooter}>
-          <button type="button" style={s.secondaryBtn} onClick={onClose}>
-            Fechar
-          </button>
+          <span><Clock3 size={14} /> Atualizado em {formatDate(customer.updatedAt) || 'data não informada'}</span>
+          <button type="button" style={s.secondaryBtn} onClick={onClose}>Fechar</button>
         </footer>
       </section>
     </div>
   );
 }
 
-function CustomerDataTab({ customer }) {
+function OverviewTab({ customer, equipments, contracts, serviceOrders }) {
+  const operational = customer.operationalSummary || {};
+  const activeContracts = pick(operational, 'activeContracts') ?? contracts.filter(isContractActive).length;
+  const openOrders = pick(operational, 'openServiceOrders') ?? serviceOrders.filter((order) => !isOrderClosed(order)).length;
+  const monthlyValue = pick(operational, 'monthlyRevenue', 'contractValue') ?? sumMonthlyValue(contracts);
   return (
-    <div style={s.formGrid}>
-      <ReadOnlyField label="Codigo ILUX" value={customer.externalId} />
-      <ReadOnlyField label="Origem" value={customer.externalSource} />
-      <ReadOnlyField label="Nome / Razao social" value={customer.name} wide />
-      <ReadOnlyField label="Nome fantasia / Departamento" value={customer.fantasyName} wide />
-      <ReadOnlyField label="Telefone" value={customer.phone} />
-      <ReadOnlyField label="E-mail" value={customer.email} />
-      <ReadOnlyField label="CNPJ / CPF" value={customer.cpfCnpj} wide />
-      <ReadOnlyField label="Contato" value={customer.contactName} />
-      <ReadOnlyField label="CEP" value={customer.zipCode} />
-      <ReadOnlyField label="Endereco" value={customer.address} wide />
-      <ReadOnlyField label="Bairro" value={customer.neighborhood} />
-      <ReadOnlyField label="Cidade" value={customer.city} />
-      <ReadOnlyField label="Estado (UF)" value={customer.state} />
-      <ReadOnlyField label="Observacoes" value={customer.notes} wide />
-      <ReadOnlyField label="Ultima atualizacao no CRM" value={formatDate(customer.updatedAt)} />
-    </div>
-  );
-}
-
-function EquipmentsTab({ equipments, currentEquipment, onSelectEquipment }) {
-  if (!equipments.length) {
-    return <div style={s.emptyState}>Este cliente nao possui equipamentos vinculados no CRM.</div>;
-  }
-
-  return (
-    <div style={s.equipmentTabGrid}>
-      <div style={s.equipmentColumn}>
-        {equipments.map((equipment) => (
-          <button
-            key={equipment.id}
-            type="button"
-            style={{
-              ...s.equipmentCard,
-              ...(currentEquipment?.id === equipment.id ? s.activeEquipmentCard : {}),
-            }}
-            onClick={() => onSelectEquipment(equipment)}
-          >
-            <strong>{equipment.model || 'Equipamento sem modelo'}</strong>
-            <span>{[equipment.manufacturer, equipment.type].filter(Boolean).join(' | ') || 'Sem fabricante/tipo'}</span>
-            <small>
-              Serie: {equipment.serialNumber || 'Nao informado'} | Setor: {equipment.sector || 'Nao informado'}
-            </small>
-          </button>
-        ))}
+    <div style={s.sectionStack}>
+      <div style={s.profileStats}>
+        <MiniStat icon={<Printer size={18} />} value={pick(operational, 'equipments') ?? equipments.length} label="Equipamentos" />
+        <MiniStat icon={<FileText size={18} />} value={activeContracts} label="Contratos ativos" />
+        <MiniStat icon={<AlertCircle size={18} />} value={openOrders} label="O.S. em aberto" warning={openOrders > 0} />
+        <MiniStat icon={<CircleDollarSign size={18} />} value={formatCurrency(monthlyValue)} label="Valor mensal" />
       </div>
-
-      <div style={s.equipmentDetail}>
-        <h3>Detalhes do equipamento</h3>
-        <div style={s.formGrid}>
-          <ReadOnlyField label="Codigo ILUX" value={currentEquipment.externalId} />
-          <ReadOnlyField label="Status" value={currentEquipment.isActive === false ? 'Inativo' : 'Ativo'} />
-          <ReadOnlyField label="Marca / Fabricante" value={currentEquipment.manufacturer} />
-          <ReadOnlyField label="Modelo" value={currentEquipment.model} />
-          <ReadOnlyField label="Numero de serie" value={currentEquipment.serialNumber} />
-          <ReadOnlyField label="Setor" value={currentEquipment.sector} />
-          <ReadOnlyField label="Tipo" value={currentEquipment.type} />
-          <ReadOnlyField label="Patrimonio" value={currentEquipment.assetTag} />
-          <ReadOnlyField label="Contrato ILUX" value={currentEquipment.contractExternalId} />
-          <ReadOnlyField label="Local especifico" value={currentEquipment.installLocation} />
-          <ReadOnlyField label="Endereco" value={currentEquipment.address} wide />
-          <ReadOnlyField label="Cidade" value={currentEquipment.city} />
-          <ReadOnlyField label="Estado" value={currentEquipment.state} />
-          <ReadOnlyField label="Telefone local" value={currentEquipment.phone} />
-          <ReadOnlyField label="Ultima atualizacao no CRM" value={formatDate(currentEquipment.updatedAt)} />
+      <InfoSection title="Identificação" icon={<User size={17} />}>
+        <div style={s.infoGrid}>
+          <Info label="Razão social" value={customer.name} wide />
+          <Info label="Nome fantasia" value={customer.fantasyName} />
+          <Info label="Código ILUX" value={customer.externalId} />
+          <Info label="CNPJ / CPF" value={customer.cpfCnpj} />
+          <Info label="Inscrição estadual" value={pick(customer, 'stateRegistration', 'inscEst', 'ie') || pick(customer.raw || {}, 'INSCEST', 'inscest')} />
         </div>
-        <RawFieldsTab title="Campos originais deste equipamento no ILUX" raw={currentEquipment.raw} compact />
-      </div>
+      </InfoSection>
+      <InfoSection title="Contato" icon={<Phone size={17} />}>
+        <div style={s.infoGrid}>
+          <Info label="Responsável" value={customer.contactName} />
+          <Info label="Telefone" value={customer.phone} />
+          <Info label="E-mail" value={customer.email} wide />
+        </div>
+      </InfoSection>
+      <InfoSection title="Endereço principal" icon={<MapPin size={17} />}>
+        <div style={s.infoGrid}>
+          <Info label="Endereço" value={[customer.address, customer.addressNumber].filter(Boolean).join(', ')} wide />
+          <Info label="Complemento" value={customer.complement} />
+          <Info label="Bairro" value={customer.neighborhood} />
+          <Info label="Cidade / UF" value={[customer.city, customer.state].filter(Boolean).join(' / ')} />
+          <Info label="CEP" value={customer.zipCode} />
+        </div>
+      </InfoSection>
+      {customer.notes ? <InfoSection title="Observações" icon={<ClipboardList size={17} />}><p style={s.notes}>{customer.notes}</p></InfoSection> : null}
     </div>
   );
 }
 
-function RawFieldsTab({ title, raw, compact = false }) {
-  const entries = raw && typeof raw === 'object' ? Object.entries(raw) : [];
+function EquipmentsTab({ equipments }) {
+  const [selectedId, setSelectedId] = useState(equipments[0]?.id || null);
+  const [filter, setFilter] = useState('');
+  const visible = useMemo(() => equipments.filter((equipment) => searchableEquipment(equipment).includes(filter.toLowerCase())), [equipments, filter]);
+  const selected = equipments.find((equipment) => equipment.id === selectedId) || visible[0] || null;
+
+  if (!equipments.length) return <Empty icon={<Printer size={28} />} title="Nenhum equipamento" text="Este cliente não possui equipamentos vinculados no CRM." />;
 
   return (
-    <section style={compact ? s.rawCompact : s.rawPanel}>
-      <h3>{title}</h3>
-      {!entries.length ? (
-        <div style={s.emptyEquipments}>Nenhum campo bruto foi armazenado para este registro.</div>
-      ) : (
-        <div style={s.rawTable}>
-          {entries.map(([key, value]) => (
-            <div key={key} style={s.rawRow}>
-              <span>{key}</span>
-              <strong>{formatRawValue(value)}</strong>
-            </div>
+    <div style={s.equipmentLayout}>
+      <aside style={s.equipmentAside}>
+        <div style={s.innerSearch}><Search size={16} /><input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="Modelo, série ou local" /></div>
+        <div style={s.equipmentList}>
+          {visible.map((equipment) => (
+            <button key={equipment.id || equipment.externalId} type="button" style={{ ...s.equipmentCard, ...(selected?.id === equipment.id ? s.activeEquipmentCard : {}) }} onClick={() => setSelectedId(equipment.id)}>
+              <div style={s.equipmentCardTop}>
+                <strong>{equipment.model || equipment.description || 'Equipamento sem modelo'}</strong>
+                <span style={equipment.isActive === false ? s.inactiveDot : s.activeDot}>{equipment.isActive === false ? 'Inativo' : 'Ativo'}</span>
+              </div>
+              <span>Série: {equipment.serialNumber || 'não informada'}</span>
+              <small><MapPin size={13} /> {equipmentLocation(equipment) || 'Local não informado'}</small>
+            </button>
           ))}
+          {!visible.length ? <div style={s.noFilterResult}>Nenhum equipamento corresponde à busca.</div> : null}
         </div>
-      )}
+      </aside>
+      {selected ? <EquipmentDetail equipment={selected} /> : null}
+    </div>
+  );
+}
+
+function EquipmentDetail({ equipment }) {
+  return (
+    <div style={s.detailPanel}>
+      <div style={s.detailHeader}>
+        <div><p style={s.detailKicker}>Equipamento ILUX #{equipment.externalId || '—'}</p><h3>{equipment.model || 'Equipamento sem modelo'}</h3></div>
+        <span style={equipment.isActive === false ? s.statusInactive : s.statusActive}>{equipment.isActive === false ? 'Inativo' : 'Ativo'}</span>
+      </div>
+      <InfoSection title="Identificação" icon={<Printer size={17} />} compact>
+        <div style={s.infoGrid}>
+          <Info label="Fabricante" value={equipment.manufacturer} />
+          <Info label="Modelo" value={equipment.model} />
+          <Info label="Número de série" value={equipment.serialNumber} />
+          <Info label="Patrimônio" value={equipment.assetTag} />
+          <Info label="Tipo" value={equipment.type} />
+          <Info label="Contrato ILUX" value={equipment.contractExternalId} />
+        </div>
+      </InfoSection>
+      <div style={s.locationPanel}>
+        <div style={s.locationIcon}><MapPin size={20} /></div>
+        <div><span>Localização do equipamento</span><strong>{equipmentLocation(equipment) || 'Não informada'}</strong></div>
+      </div>
+      <InfoSection title="Detalhes do local" icon={<Building2 size={17} />} compact>
+        <div style={s.infoGrid}>
+          <Info label="Departamento / Setor" value={pick(equipment, 'department', 'sector')} />
+          <Info label="Local de instalação" value={equipment.installLocation} />
+          <Info label="Complemento" value={equipment.complement} />
+          <Info label="Telefone local" value={equipment.phone} />
+          <Info label="Endereço" value={equipment.address} wide />
+          <Info label="Cidade / UF" value={[equipment.city, equipment.state].filter(Boolean).join(' / ')} />
+        </div>
+      </InfoSection>
+      <RawDetails title="Ver campos técnicos deste equipamento" raw={equipment.raw} />
+    </div>
+  );
+}
+
+function ContractsTab({ contracts }) {
+  if (!contracts.length) return <Empty icon={<FileText size={28} />} title="Nenhum contrato" text="Não há contratos sincronizados para este cliente." />;
+  return (
+    <div style={s.listStack}>
+      {contracts.map((contract, index) => {
+        const active = isContractActive(contract);
+        const equipmentCount = Number(pick(contract, 'equipmentCount', 'equipmentsCount') || contract.equipments?.length || 0);
+        return (
+          <article key={contract.id || contract.externalId || index} style={s.contractCard}>
+            <div style={s.contractHeader}>
+              <div style={s.contractIcon}><FileText size={19} /></div>
+              <div style={{ flex: 1 }}>
+                <p style={s.detailKicker}>Contrato ILUX #{pick(contract, 'contractNumber', 'number', 'externalId', 'seqContrato') || '—'}</p>
+                <h3 style={s.contractTitle}>{pick(contract, 'name', 'typeName', 'contractType', 'type', 'description') || 'Contrato de equipamentos'}</h3>
+              </div>
+              <span style={active ? s.statusActive : s.statusInactive}>{active ? 'Ativo' : 'Inativo'}</span>
+            </div>
+            <div style={s.contractGrid}>
+              <Info label="Vigência" value={formatPeriod(pick(contract, 'startDate', 'startsAt'), pick(contract, 'endDate', 'endsAt'))} />
+              <Info label="Valor do contrato" value={formatCurrency(pick(contract, 'monthlyValue', 'value', 'amount'))} />
+              <Info label="Equipamentos" value={`${equipmentCount} vinculado${equipmentCount === 1 ? '' : 's'}`} />
+              <Info label="Tipo" value={pick(contract, 'typeName', 'contractType', 'type')} />
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function OsTab({ serviceOrders }) {
+  const [status, setStatus] = useState('all');
+  const filtered = status === 'all' ? serviceOrders : serviceOrders.filter((order) => status === 'closed' ? isOrderClosed(order) : !isOrderClosed(order));
+  if (!serviceOrders.length) return <Empty icon={<ClipboardList size={28} />} title="Nenhuma O.S. sincronizada" text="O histórico aparecerá aqui assim que a sincronização incremental importar os chamados do ILUX." />;
+  return (
+    <div style={s.sectionStack}>
+      <div style={s.osToolbar}>
+        <div style={s.toolbarTitle}><strong>Histórico de ordens de serviço</strong><span>{serviceOrders.length} registros sincronizados</span></div>
+        <div style={s.filterGroup}>
+          {[['all', 'Todas'], ['open', 'Abertas'], ['closed', 'Fechadas']].map(([value, label]) => <button key={value} type="button" style={{ ...s.filterBtn, ...(status === value ? s.activeFilterBtn : {}) }} onClick={() => setStatus(value)}>{label}</button>)}
+        </div>
+      </div>
+      <div style={s.osList}>
+        {filtered.map((order, index) => {
+          const closed = isOrderClosed(order);
+          return (
+            <article key={order.id || order.externalId || index} style={s.osCard}>
+              <div style={s.osStatusRail} />
+              <div style={s.osNumber}><span>O.S.</span><strong>#{pick(order, 'number', 'externalId', 'seqos', 'sequence') || '—'}</strong><small>{formatShortDate(pick(order, 'openedAt', 'createdAt', 'date', 'dtAbertura'))}</small></div>
+              <div style={s.osContent}>
+                <div style={s.osTitleRow}><strong>{pick(order, 'typeName', 'serviceType', 'type', 'osType') || 'Atendimento técnico'}</strong><span style={closed ? s.statusClosed : s.statusOpen}>{closed ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}{closed ? 'Fechada' : 'Em aberto'}</span></div>
+                <p>{pick(order, 'defect', 'description', 'problem', 'reportedIssue', 'chamado') || 'Defeito não informado'}</p>
+                <div style={s.osMeta}>
+                  <span><Printer size={13} /> {pick(order, 'equipmentModel', 'equipment', 'model') || `Equip. ${pick(order, 'equipmentExternalId', 'equipmentId', 'cdequipamento') || '—'}`}</span>
+                  <span><Wrench size={13} /> {pick(order, 'technicianName', 'technician', 'assignedTo') || 'Técnico não informado'}</span>
+                  {pick(order, 'closedAt', 'finishedAt') ? <span><CalendarDays size={13} /> Fechada em {formatDate(pick(order, 'closedAt', 'finishedAt'))}</span> : null}
+                </div>
+                {pick(order, 'resolution', 'closingNotes', 'solution', 'fechamento', 'closing') ? <div style={s.resolution}><strong>Fechamento:</strong> {pick(order, 'resolution', 'closingNotes', 'solution', 'fechamento', 'closing')}</div> : null}
+              </div>
+            </article>
+          );
+        })}
+        {!filtered.length ? <div style={s.noFilterResult}>Nenhuma O.S. neste filtro.</div> : null}
+      </div>
+    </div>
+  );
+}
+
+function RawFieldsTab({ title, raw }) {
+  const entries = raw && typeof raw === 'object' ? Object.entries(raw) : [];
+  return (
+    <section style={s.rawPanel}>
+      <div style={s.technicalNotice}><Database size={18} /><div><strong>Área técnica</strong><span>Estes são os campos originais recebidos do Firebird. Use-os somente para conferência e suporte.</span></div></div>
+      <h3 style={{ margin: 0 }}>{title}</h3>
+      {!entries.length ? <div style={s.emptyState}>Nenhum campo bruto armazenado para este registro.</div> : <RawTable entries={entries} />}
     </section>
   );
 }
 
-function OsTab() {
-  return (
-    <div style={s.osEmpty}>
-      <ClipboardList size={28} />
-      <h3>Historico de O.S. ainda nao importado</h3>
-      <p>
-        Pausamos esta parte de proposito. Antes de trazer O.S., precisamos definir a regra para abrir O.S. pelo nosso
-        sistema e salvar corretamente no ILUX.
-      </p>
-    </div>
-  );
+function RawDetails({ title, raw }) {
+  const entries = raw && typeof raw === 'object' ? Object.entries(raw) : [];
+  if (!entries.length) return null;
+  return <details style={s.rawDetails}><summary style={s.rawSummary}><Database size={15} /> {title}<ChevronDown size={15} /></summary><RawTable entries={entries} /></details>;
 }
 
-function ReadOnlyField({ label, value, wide = false }) {
-  return (
-    <label style={{ ...s.field, ...(wide ? s.wideField : {}) }}>
-      <span style={s.fieldLabel}>{label}</span>
-      <input style={s.fieldInput} value={value || ''} readOnly placeholder="Nao informado" />
-    </label>
-  );
+function RawTable({ entries }) {
+  return <div style={s.rawTable}>{entries.map(([key, value]) => <div key={key} style={s.rawRow}><span>{key}</span><strong>{formatRawValue(value)}</strong></div>)}</div>;
+}
+
+function InfoSection({ title, icon, children, compact = false }) {
+  return <section style={{ ...s.infoSection, ...(compact ? s.compactSection : {}) }}><h3 style={s.sectionTitle}>{icon}{title}</h3>{children}</section>;
+}
+
+function Info({ label, value, wide = false }) {
+  return <div style={{ ...s.infoItem, ...(wide ? s.wideInfo : {}) }}><span style={s.infoLabel}>{label}</span><strong style={s.infoValue}>{hasValue(value) ? String(value) : 'Não informado'}</strong></div>;
+}
+
+function Empty({ icon, title, text }) {
+  return <div style={s.emptyContent}>{icon}<h3>{title}</h3><p>{text}</p></div>;
 }
 
 function Tab({ active, icon, label, onClick }) {
-  return (
-    <button type="button" style={{ ...s.tab, ...(active ? s.activeTab : {}) }} onClick={onClick}>
-      {icon}
-      {label}
-    </button>
-  );
+  return <button type="button" style={{ ...s.tab, ...(active ? s.activeTab : {}) }} onClick={onClick}>{icon}{label}</button>;
 }
 
-function Stat({ icon, label, value }) {
-  return (
-    <div style={s.statCard}>
-      <div style={s.statIcon}>{icon}</div>
-      <div>
-        <div style={s.statLabel}>{label}</div>
-        <div style={s.statValue}>{Number(value || 0).toLocaleString('pt-BR')}</div>
-      </div>
-    </div>
-  );
+function Stat({ icon, label, value, formatted = false, tone }) {
+  return <div style={s.statCard}><div style={{ ...s.statIcon, ...(tone === 'warning' ? s.warningIcon : {}) }}>{icon}</div><div><div style={s.statLabel}>{label}</div><div style={s.statValue}>{formatted ? value : Number(value || 0).toLocaleString('pt-BR')}</div></div></div>;
 }
 
-function Meta({ icon, text }) {
-  return (
-    <span style={s.meta}>
-      {icon}
-      {text}
-    </span>
-  );
+function MiniStat({ icon, value, label, warning }) {
+  return <div style={s.miniStat}><div style={{ ...s.miniIcon, ...(warning ? s.warningIcon : {}) }}>{icon}</div><div style={s.miniText}><strong>{value}</strong><span>{label}</span></div></div>;
 }
 
-function formatDate(value) {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleString('pt-BR');
+function Meta({ icon, text, wide = false }) {
+  return <span style={{ ...s.meta, ...(wide ? s.metaWide : {}) }}>{icon}<span>{text}</span></span>;
 }
 
-function formatRawValue(value) {
-  if (value === null || value === undefined || value === '') return 'Nao informado';
-  if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
+function pick(object, ...keys) {
+  if (!object) return undefined;
+  for (const key of keys) if (object[key] !== undefined && object[key] !== null && object[key] !== '') return object[key];
+  return undefined;
 }
+
+function arrayOf(...values) {
+  return values.find(Array.isArray) || [];
+}
+
+function countOf(customer, relation) {
+  if (Array.isArray(customer[relation])) return customer[relation].length;
+  return Number(customer._count?.[relation] || customer[`${relation}Count`] || 0);
+}
+
+function hasValue(value) { return value !== null && value !== undefined && value !== ''; }
+function joinLocation(item) { return [item.address, item.complement, item.neighborhood, [item.city, item.state].filter(Boolean).join(' / ')].filter(Boolean).join(' • '); }
+function equipmentLocation(item) { return [item.address, item.complement, pick(item, 'department', 'sector'), item.installLocation, [item.city, item.state].filter(Boolean).join(' / ')].filter(Boolean).join(' • '); }
+function searchableEquipment(item) { return [item.model, item.manufacturer, item.serialNumber, item.assetTag, equipmentLocation(item), item.externalId].filter(Boolean).join(' ').toLowerCase(); }
+
+function isContractActive(contract) {
+  if (typeof contract.isActive === 'boolean') return contract.isActive;
+  const status = String(pick(contract, 'status', 'situation', 'active') || '').toLowerCase();
+  if (['inactive', 'inativo', 'cancelado', 'cancelled', 'encerrado'].some((term) => status.includes(term))) return false;
+  if (pick(contract, 'endDate', 'endsAt') && new Date(pick(contract, 'endDate', 'endsAt')) < new Date()) return false;
+  return true;
+}
+
+function isOrderClosed(order) {
+  if (typeof order.isClosed === 'boolean') return order.isClosed;
+  if (pick(order, 'closedAt', 'finishedAt')) return true;
+  const status = String(pick(order, 'status', 'situation', 'statusCode') || '').trim().toLowerCase();
+  return ['o', 'f', 'fechada', 'fechado', 'finalizada', 'finalizado', 'closed', 'concluida', 'concluído'].includes(status);
+}
+
+function sumMonthlyValue(contracts) { return contracts.filter(isContractActive).reduce((sum, contract) => sum + Number(pick(contract, 'monthlyValue', 'value', 'amount') || 0), 0); }
+function formatCurrency(value) { const number = Number(value || 0); return number.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+function formatPeriod(start, end) { const a = formatShortDate(start); const b = formatShortDate(end); return a || b ? `${a || 'Início não informado'} até ${b || 'vigente'}` : 'Não informada'; }
+function formatDate(value) { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('pt-BR'); }
+function formatShortDate(value) { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('pt-BR'); }
+function formatRawValue(value) { if (!hasValue(value)) return 'Não informado'; return typeof value === 'object' ? JSON.stringify(value) : String(value); }
 
 const s = {
   container: { flex: 1, overflowY: 'auto', padding: '2rem', background: 'var(--bg-base)', color: 'var(--text-main)' },
   header: { display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', marginBottom: '1rem' },
-  kicker: { margin: 0, color: 'var(--accent)', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' },
-  title: { margin: '0.25rem 0', fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-display)' },
+  kicker: { margin: 0, color: 'var(--accent)', fontWeight: 900, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.1em' },
+  title: { margin: '0.3rem 0', fontSize: '1.85rem', fontWeight: 900, fontFamily: 'var(--font-display)' },
   subtitle: { margin: 0, color: 'var(--text-muted)', fontSize: '0.92rem' },
-  refreshBtn: { display: 'inline-flex', alignItems: 'center', gap: '0.45rem', background: 'var(--bg-surface)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '0.75rem 1rem', cursor: 'pointer', fontWeight: 800 },
-  syncNotice: { display: 'flex', gap: '0.75rem', alignItems: 'flex-start', marginBottom: '1.25rem', padding: '0.9rem 1rem', borderRadius: '14px', border: '1px solid rgba(220, 180, 48, 0.35)', background: 'linear-gradient(135deg, rgba(220, 180, 48, 0.14), rgba(17, 24, 39, 0.4))', color: 'var(--text-muted)' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.25rem' },
-  statCard: { display: 'flex', alignItems: 'center', gap: '0.8rem', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '1rem' },
-  statIcon: { width: '38px', height: '38px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--accent-light)', color: 'var(--accent)' },
-  statLabel: { color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase' },
-  statValue: { color: 'var(--text-main)', fontSize: '1.25rem', fontWeight: 900, marginTop: '0.1rem' },
-  searchBar: { display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '0.75rem', marginBottom: '1rem' },
-  searchInput: { flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-main)', fontSize: '0.95rem' },
-  searchBtn: { background: 'var(--accent)', color: 'var(--text-inverse)', border: 'none', borderRadius: '10px', padding: '0.7rem 1rem', fontWeight: 900, cursor: 'pointer' },
-  customerGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: '0.9rem' },
-  customerCard: { minHeight: '170px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1rem', cursor: 'pointer', transition: 'transform 0.16s ease, border-color 0.16s ease, background 0.16s ease' },
-  customerMain: { minWidth: 0 },
-  customerTitleRow: { display: 'flex', alignItems: 'center', gap: '0.7rem', flexWrap: 'wrap' },
-  customerName: { margin: 0, fontSize: '1rem', color: 'var(--text-main)', fontWeight: 900 },
-  legalName: { margin: '0.35rem 0 0', color: 'var(--text-muted)', fontSize: '0.84rem' },
-  badge: { background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent-border)', borderRadius: '999px', padding: '0.25rem 0.55rem', fontSize: '0.72rem', fontWeight: 900 },
-  metaRow: { display: 'flex', gap: '0.65rem', flexWrap: 'wrap', marginTop: '0.75rem' },
-  meta: { display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-muted)', fontSize: '0.8rem' },
-  cardFooter: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', paddingTop: '0.8rem', borderTop: '1px solid var(--border-color)' },
-  openHint: { display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 900 },
-  equipmentPreview: { display: 'grid', gap: '0.5rem' },
-  equipmentItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left', gap: '0.75rem', background: 'var(--bg-base)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '0.7rem', cursor: 'pointer' },
-  emptyEquipments: { color: 'var(--text-dim)', fontSize: '0.84rem', padding: '0.8rem', border: '1px dashed var(--border-color)', borderRadius: '10px' },
-  emptyState: { textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '14px' },
-  modalBackdrop: { position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0, 0, 0, 0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' },
-  modal: { width: 'min(980px, 96vw)', maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '22px', boxShadow: '0 28px 90px rgba(0, 0, 0, 0.5)' },
-  modalHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', padding: '1.35rem 1.5rem', borderBottom: '1px solid var(--border-color)' },
-  modalKicker: { margin: 0, color: 'var(--accent)', fontSize: '0.72rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em' },
-  modalTitle: { margin: '0.35rem 0 0.55rem', fontSize: '1.25rem', fontWeight: 950 },
-  readOnlyPill: { display: 'inline-flex', width: 'fit-content', padding: '0.25rem 0.6rem', borderRadius: '999px', border: '1px solid var(--border-color)', color: 'var(--text-muted)', fontSize: '0.74rem', fontWeight: 800 },
-  closeBtn: { width: '36px', height: '36px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)', cursor: 'pointer' },
-  tabs: { display: 'flex', gap: '0.25rem', padding: '0 1.5rem', borderBottom: '1px solid var(--border-color)', overflowX: 'auto' },
-  tab: { display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '1rem 0.8rem', border: 'none', borderBottom: '2px solid transparent', background: 'transparent', color: 'var(--text-muted)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' },
-  activeTab: { color: 'var(--accent)', borderBottomColor: 'var(--accent)' },
-  modalBody: { padding: '1.5rem', overflowY: 'auto' },
-  modalFooter: { display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', background: 'rgba(8, 12, 22, 0.45)' },
-  secondaryBtn: { minWidth: '180px', background: 'var(--bg-surface)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '0.85rem 1rem', fontWeight: 900, cursor: 'pointer' },
-  loadingBox: { marginBottom: '1rem', padding: '0.8rem', borderRadius: '12px', color: 'var(--text-muted)', border: '1px solid var(--border-color)' },
-  formGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.9rem' },
-  field: { display: 'grid', gap: '0.35rem', minWidth: 0 },
-  fieldLabel: { color: 'var(--accent)', fontSize: '0.76rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.03em' },
-  fieldInput: { width: '100%', minWidth: 0, boxSizing: 'border-box', background: 'var(--bg-base)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '0.9rem 0.95rem', fontWeight: 800, outline: 'none' },
-  wideField: { gridColumn: '1 / -1' },
-  equipmentTabGrid: { display: 'grid', gridTemplateColumns: 'minmax(250px, 0.45fr) minmax(360px, 1fr)', gap: '1rem', alignItems: 'start' },
-  equipmentColumn: { display: 'grid', gap: '0.65rem', maxHeight: '62vh', overflowY: 'auto', paddingRight: '0.25rem' },
-  equipmentCard: { display: 'grid', gap: '0.25rem', textAlign: 'left', background: 'var(--bg-base)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '0.9rem', cursor: 'pointer' },
-  activeEquipmentCard: { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px rgba(220, 180, 48, 0.2) inset' },
-  equipmentDetail: { background: 'rgba(8, 12, 22, 0.38)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '1rem' },
+  refreshBtn: { display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-surface)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '0.75rem 1rem', cursor: 'pointer', fontWeight: 800 },
+  syncNotice: { display: 'flex', gap: '0.75rem', alignItems: 'flex-start', marginBottom: '1.25rem', padding: '0.85rem 1rem', borderRadius: '14px', border: '1px solid rgba(220,180,48,.3)', background: 'linear-gradient(135deg, rgba(220,180,48,.12), rgba(17,24,39,.35))', color: 'var(--accent)' },
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.85rem', marginBottom: '1.2rem' },
+  statCard: { display: 'flex', alignItems: 'center', gap: '0.8rem', minHeight: '74px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '15px', padding: '0.9rem' },
+  statIcon: { width: 40, height: 40, flex: '0 0 auto', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--accent-light)', color: 'var(--accent)' },
+  warningIcon: { color: '#f59e0b', background: 'rgba(245,158,11,.12)' },
+  statLabel: { color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.035em' },
+  statValue: { color: 'var(--text-main)', fontSize: '1.2rem', fontWeight: 900, marginTop: 2 },
+  searchBar: { display: 'flex', alignItems: 'center', gap: '0.7rem', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '0.7rem', marginBottom: '0.6rem' },
+  searchInput: { flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-main)', fontSize: '0.93rem' },
+  clearSearch: { display: 'grid', placeItems: 'center', color: 'var(--text-muted)', background: 'transparent', border: 0, cursor: 'pointer' },
+  searchBtn: { background: 'var(--accent)', color: 'var(--text-inverse)', border: 0, borderRadius: 10, padding: '0.7rem 1.1rem', fontWeight: 900, cursor: 'pointer' },
+  resultHeader: { display: 'flex', justifyContent: 'space-between', color: 'var(--text-dim)', fontSize: '0.77rem', padding: '0.25rem 0.15rem 0.8rem' },
+  customerGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '0.9rem' },
+  customerCard: { minHeight: 180, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.9rem', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '1rem', cursor: 'pointer' },
+  customerTop: { display: 'flex', gap: '0.75rem', alignItems: 'flex-start' },
+  avatar: { width: 40, height: 40, flex: '0 0 auto', borderRadius: 12, display: 'grid', placeItems: 'center', color: 'var(--accent)', background: 'var(--accent-light)' },
+  customerName: { margin: 0, fontSize: '1rem', color: 'var(--text-main)', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis' },
+  legalName: { margin: '0.3rem 0 0', color: 'var(--text-muted)', fontSize: '0.8rem' },
+  metaGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: '0.5rem' },
+  meta: { display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--text-muted)', fontSize: '0.79rem', minWidth: 0 },
+  metaWide: { gridColumn: '1 / -1' },
+  cardFooter: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' },
+  counts: { display: 'flex', gap: '0.35rem', flexWrap: 'wrap' },
+  badge: { display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent-border)', borderRadius: 999, padding: '0.25rem 0.5rem', fontSize: '0.7rem', fontWeight: 900 },
+  badgeMuted: { display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: 999, padding: '0.25rem 0.5rem', fontSize: '0.7rem', fontWeight: 800 },
+  openHint: { display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--text-muted)', fontSize: '0.76rem', fontWeight: 900, whiteSpace: 'nowrap' },
+  emptyState: { gridColumn: '1 / -1', textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14 },
+  modalBackdrop: { position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.76)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' },
+  modal: { width: 'min(1180px, 97vw)', height: 'min(860px, 94vh)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 22, boxShadow: '0 28px 90px rgba(0,0,0,.55)' },
+  modalHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', padding: '1.15rem 1.4rem', borderBottom: '1px solid var(--border-color)' },
+  modalIdentity: { display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 },
+  modalAvatar: { width: 46, height: 46, flex: '0 0 auto', borderRadius: 14, display: 'grid', placeItems: 'center', background: 'var(--accent-light)', color: 'var(--accent)' },
+  modalKicker: { margin: 0, color: 'var(--accent)', fontSize: '0.69rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.08em' },
+  modalTitle: { margin: '0.2rem 0', fontSize: '1.25rem', fontWeight: 900 },
+  headerMeta: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem', color: 'var(--text-muted)', fontSize: '0.76rem' },
+  closeBtn: { width: 38, height: 38, display: 'grid', placeItems: 'center', borderRadius: 11, border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)', cursor: 'pointer' },
+  tabs: { display: 'flex', gap: '0.15rem', padding: '0 1.35rem', borderBottom: '1px solid var(--border-color)', overflowX: 'auto' },
+  tab: { display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.9rem 0.75rem', border: 0, borderBottom: '2px solid transparent', background: 'transparent', color: 'var(--text-muted)', fontWeight: 850, cursor: 'pointer', whiteSpace: 'nowrap' },
+  activeTab: { color: 'var(--accent)', borderBottom: '2px solid var(--accent)' },
+  modalBody: { flex: 1, minHeight: 0, padding: '1.25rem 1.4rem', overflowY: 'auto' },
+  modalFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1.4rem', borderTop: '1px solid var(--border-color)', background: 'rgba(8,12,22,.35)', color: 'var(--text-dim)', fontSize: '0.74rem' },
+  secondaryBtn: { minWidth: 130, background: 'var(--bg-surface)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: 11, padding: '0.7rem 1rem', fontWeight: 900, cursor: 'pointer' },
+  loadingBox: { display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '1rem', borderRadius: 12, color: 'var(--text-muted)', border: '1px solid var(--border-color)' },
+  sectionStack: { display: 'grid', gap: '1rem' },
+  profileStats: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '0.7rem' },
+  miniStat: { display: 'flex', alignItems: 'center', gap: '0.7rem', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: 13, background: 'var(--bg-base)' },
+  miniIcon: { width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: 10, background: 'var(--accent-light)', color: 'var(--accent)' },
+  miniText: { display: 'grid', gap: 2, color: 'var(--text-muted)', fontSize: '0.72rem' },
+  infoSection: { padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 15, background: 'rgba(8,12,22,.24)' },
+  compactSection: { borderRadius: 12, background: 'transparent' },
+  sectionTitle: { display: 'flex', alignItems: 'center', gap: '0.45rem', margin: '0 0 0.85rem', color: 'var(--text-main)', fontSize: '0.87rem' },
+  infoGrid: { display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: '0.75rem 1.1rem' },
+  infoItem: { display: 'grid', gap: '0.22rem', minWidth: 0 },
+  infoLabel: { color: 'var(--text-dim)', fontSize: '0.68rem', fontWeight: 850, textTransform: 'uppercase', letterSpacing: '.025em' },
+  infoValue: { color: 'var(--text-main)', fontSize: '0.84rem', overflowWrap: 'anywhere' },
+  wideInfo: { gridColumn: '1 / -1' },
+  notes: { margin: 0, color: 'var(--text-muted)', whiteSpace: 'pre-wrap', lineHeight: 1.55 },
+  equipmentLayout: { display: 'grid', gridTemplateColumns: 'minmax(290px,.42fr) minmax(400px,1fr)', gap: '1rem', alignItems: 'start' },
+  equipmentAside: { display: 'grid', gap: '0.7rem', minWidth: 0 },
+  innerSearch: { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem', background: 'var(--bg-base)', border: '1px solid var(--border-color)', borderRadius: 11, color: 'var(--text-muted)' },
+  equipmentList: { display: 'grid', gap: '0.55rem', maxHeight: '61vh', overflowY: 'auto', paddingRight: 3 },
+  equipmentCard: { display: 'grid', gap: '0.32rem', textAlign: 'left', background: 'var(--bg-base)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: 13, padding: '0.8rem', cursor: 'pointer' },
+  activeEquipmentCard: { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px rgba(220,180,48,.18) inset', background: 'rgba(220,180,48,.06)' },
+  equipmentCardTop: { display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'flex-start' },
+  activeDot: { color: '#22c55e', fontSize: '0.65rem', fontWeight: 900 },
+  inactiveDot: { color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 900 },
+  noFilterResult: { color: 'var(--text-muted)', textAlign: 'center', padding: '1.25rem', border: '1px dashed var(--border-color)', borderRadius: 12 },
+  detailPanel: { display: 'grid', gap: '0.85rem', minWidth: 0 },
+  detailHeader: { display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' },
+  detailKicker: { margin: 0, color: 'var(--text-dim)', fontSize: '0.68rem', fontWeight: 900, textTransform: 'uppercase' },
+  statusActive: { display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0.3rem 0.6rem', borderRadius: 999, color: '#22c55e', background: 'rgba(34,197,94,.12)', fontSize: '0.69rem', fontWeight: 900 },
+  statusInactive: { display: 'inline-flex', alignItems: 'center', padding: '0.3rem 0.6rem', borderRadius: 999, color: 'var(--text-muted)', background: 'rgba(148,163,184,.1)', fontSize: '0.69rem', fontWeight: 900 },
+  locationPanel: { display: 'flex', gap: '0.75rem', alignItems: 'center', padding: '0.9rem', border: '1px solid var(--accent-border)', borderRadius: 13, background: 'var(--accent-light)' },
+  locationIcon: { width: 38, height: 38, flex: '0 0 auto', borderRadius: 11, display: 'grid', placeItems: 'center', color: 'var(--accent)', background: 'rgba(220,180,48,.14)' },
+  listStack: { display: 'grid', gap: '0.75rem' },
+  contractCard: { padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 15, background: 'rgba(8,12,22,.3)' },
+  contractHeader: { display: 'flex', alignItems: 'center', gap: '0.7rem', paddingBottom: '0.8rem', borderBottom: '1px solid var(--border-color)' },
+  contractIcon: { width: 38, height: 38, display: 'grid', placeItems: 'center', color: 'var(--accent)', background: 'var(--accent-light)', borderRadius: 10 },
+  contractTitle: { margin: '0.15rem 0 0', fontSize: '0.95rem' },
+  contractGrid: { display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: '0.8rem', paddingTop: '0.8rem' },
+  osToolbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' },
+  toolbarTitle: { display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.35rem 0.65rem' },
+  filterGroup: { display: 'flex', padding: 3, background: 'var(--bg-base)', border: '1px solid var(--border-color)', borderRadius: 10 },
+  filterBtn: { border: 0, color: 'var(--text-muted)', background: 'transparent', borderRadius: 8, padding: '0.45rem 0.7rem', cursor: 'pointer', fontWeight: 800 },
+  activeFilterBtn: { color: 'var(--text-main)', background: 'var(--bg-surface)' },
+  osList: { display: 'grid', gap: '0.65rem' },
+  osCard: { position: 'relative', display: 'grid', gridTemplateColumns: '105px 1fr', overflow: 'hidden', border: '1px solid var(--border-color)', borderRadius: 14, background: 'rgba(8,12,22,.3)' },
+  osStatusRail: { position: 'absolute', inset: '0 auto 0 0', width: 3, background: 'var(--accent)' },
+  osNumber: { display: 'grid', alignContent: 'center', gap: 2, padding: '0.9rem', borderRight: '1px solid var(--border-color)', textAlign: 'center' },
+  osContent: { display: 'grid', gap: '0.55rem', padding: '0.9rem' },
+  osTitleRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' },
+  statusClosed: { display: 'inline-flex', alignItems: 'center', gap: 4, color: '#22c55e', fontSize: '0.68rem', fontWeight: 900 },
+  statusOpen: { display: 'inline-flex', alignItems: 'center', gap: 4, color: '#f59e0b', fontSize: '0.68rem', fontWeight: 900 },
+  osMeta: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem', color: 'var(--text-dim)', fontSize: '0.72rem' },
+  resolution: { padding: '0.55rem 0.7rem', borderRadius: 9, background: 'rgba(34,197,94,.07)', color: 'var(--text-muted)', fontSize: '0.76rem' },
   rawPanel: { display: 'grid', gap: '0.9rem' },
-  rawCompact: { marginTop: '1rem', display: 'grid', gap: '0.75rem' },
-  rawTable: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.65rem' },
-  rawRow: { display: 'grid', gap: '0.25rem', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '12px', background: 'var(--bg-base)', minWidth: 0 },
-  osEmpty: { minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--border-color)', borderRadius: '16px', padding: '2rem' },
+  technicalNotice: { display: 'flex', gap: '0.65rem', padding: '0.85rem', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: 12, background: 'var(--bg-base)' },
+  rawDetails: { marginTop: 2, borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' },
+  rawSummary: { display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.76rem', fontWeight: 800 },
+  rawTable: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: '0.55rem', marginTop: '0.75rem' },
+  rawRow: { display: 'grid', gap: 3, padding: '0.7rem', border: '1px solid var(--border-color)', borderRadius: 10, background: 'var(--bg-base)', minWidth: 0 },
+  emptyContent: { minHeight: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--border-color)', borderRadius: 15, padding: '2rem' },
 };
