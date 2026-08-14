@@ -96,6 +96,47 @@ function normalizeContract(record) {
   };
 }
 
+function normalizeReceivable(record) {
+  const payload = record?.payload || record || {};
+  const dueAt = asDate(rawValue(payload, 'dueAt', 'dtvectorec'));
+  const paidAt = asDate(rawValue(payload, 'paidAt', 'dtpagtorec'));
+  const value = asNumber(rawValue(payload, 'value', 'valreceita')) || 0;
+  const paidValue = asNumber(rawValue(payload, 'paidValue', 'valreceitapaga')) || 0;
+  const openValue = Math.max(0, asNumber(rawValue(payload, 'openValue')) ?? (value - paidValue));
+  const isPaid = Boolean(paidAt) || (value > 0 && openValue <= 0);
+  const isOverdue = !isPaid && dueAt && new Date(dueAt).getTime() < Date.now();
+  return {
+    id: record?.id || null,
+    externalId: first(record?.externalId, rawValue(payload, 'externalId', 'seqreceita')),
+    clientExternalId: first(rawValue(payload, 'clientExternalId', 'cdcliente')),
+    issuedAt: asDate(rawValue(payload, 'issuedAt', 'dtemissaorec')),
+    dueAt,
+    paidAt,
+    value,
+    paidValue,
+    openValue,
+    invoiceNumber: first(rawValue(payload, 'invoiceNumber', 'numnf')),
+    paymentMethod: first(rawValue(payload, 'paymentMethod', 'nmformapagto')),
+    statusLabel: first(rawValue(payload, 'statusLabel', 'ds_receita_status')),
+    status: isPaid ? 'paid' : isOverdue ? 'overdue' : 'open',
+  };
+}
+
+function normalizeEquipmentMeter(record) {
+  const payload = record?.payload || record || {};
+  return {
+    id: record?.id || null,
+    externalId: first(record?.externalId, rawValue(payload, 'externalId')),
+    equipmentExternalId: first(rawValue(payload, 'equipmentExternalId', 'cdequipamento')),
+    meterCode: first(rawValue(payload, 'meterCode', 'cdmedidor')),
+    currentValue: asNumber(rawValue(payload, 'currentValue', 'medidor')) || 0,
+    previousValue: asNumber(rawValue(payload, 'previousValue', 'medidorult')) || 0,
+    currentReadingAt: asDate(rawValue(payload, 'currentReadingAt', 'dtleitura')),
+    previousReadingAt: asDate(rawValue(payload, 'previousReadingAt', 'dtleiturault')),
+    updatedAt: asDate(rawValue(payload, 'updatedAt', 'atualizado')),
+  };
+}
+
 function normalizeOrderStatus(status, closedAt, closing) {
   const value = String(status || '').trim().toUpperCase();
   if (closedAt || ['O', 'F', 'C', 'FINALIZADA', 'FINALIZADO', 'CONCLUIDA', 'CONCLUÍDA', 'FECHADA'].includes(value)) {
@@ -565,7 +606,9 @@ async function getCustomer360(req, res) {
   if (!customer) return res.status(404).json({ error: 'Cliente CRM nao encontrado' });
 
   const contactIds = customer.whatsappContacts.map((contact) => contact.id);
-  const [contracts, orders, settings, tickets, messages] = await Promise.all([
+  const equipmentExternalIds = customer.equipments.map((equipment) => text(equipment.externalId)).filter(Boolean);
+  const canViewFinancial = ['admin', 'superadmin'].includes(String(req.user.role || '').toLowerCase());
+  const [contracts, orders, settings, tickets, messages, receivableRecords, meterRecords] = await Promise.all([
     loadContracts(tenantId, customer.externalId),
     loadCustomerOrders(tenantId, customer, HISTORY_MAX_LIMIT),
     prisma.tenantSettings.findUnique({
@@ -577,6 +620,7 @@ async function getCustomer360(req, res) {
         where: { tenantId, contactId: { in: contactIds } },
         select: {
           id: true,
+          contactId: true,
           subject: true,
           status: true,
           createdAt: true,
@@ -606,7 +650,38 @@ async function getCustomer360(req, res) {
         take: 40,
       })
       : [],
+    canViewFinancial && customer.externalId
+      ? prisma.externalSyncRecord.findMany({
+        where: {
+          tenantId,
+          source: 'firebird',
+          entity: 'receivables',
+          payload: { path: ['clientExternalId'], equals: String(customer.externalId) },
+        },
+        select: { id: true, externalId: true, payload: true, receivedAt: true, syncedAt: true },
+        orderBy: { receivedAt: 'desc' },
+        take: 120,
+      })
+      : [],
+    equipmentExternalIds.length
+      ? prisma.externalSyncRecord.findMany({
+        where: {
+          tenantId,
+          source: 'firebird',
+          entity: 'equipmentMeters',
+          OR: equipmentExternalIds.map((externalId) => ({
+            payload: { path: ['equipmentExternalId'], equals: externalId },
+          })),
+        },
+        select: { id: true, externalId: true, payload: true, receivedAt: true, syncedAt: true },
+        orderBy: { receivedAt: 'desc' },
+      })
+      : [],
   ]);
+
+  const receivables = receivableRecords.map(normalizeReceivable)
+    .sort((a, b) => new Date(b.dueAt || b.issuedAt || 0) - new Date(a.dueAt || a.issuedAt || 0));
+  const meters = meterRecords.map(normalizeEquipmentMeter);
 
   const slaTargetHours = Math.max(1, Number(settings?.kpiSlaLimitHours || 24));
   const now = Date.now();
@@ -659,7 +734,80 @@ async function getCustomer360(req, res) {
     !text(customer.address) && 'endereco',
   ].filter(Boolean);
 
+  const openReceivables = receivables.filter((item) => item.status !== 'paid');
+  const overdueReceivables = receivables.filter((item) => item.status === 'overdue');
+  const paidReceivables = receivables.filter((item) => item.status === 'paid');
+  const nextReceivable = openReceivables
+    .filter((item) => item.dueAt && new Date(item.dueAt).getTime() >= now)
+    .sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt))[0] || null;
+  const lastPayment = paidReceivables
+    .filter((item) => item.paidAt)
+    .sort((a, b) => new Date(b.paidAt) - new Date(a.paidAt))[0] || null;
+
+  const relationshipContacts = [];
+  const contactKeys = new Set();
+  const addRelationshipContact = (entry) => {
+    const key = [entry.name, entry.phone, entry.email, entry.source].map((value) => text(value) || '').join('|').toLowerCase();
+    if (!key.replaceAll('|', '') || contactKeys.has(key)) return;
+    contactKeys.add(key);
+    relationshipContacts.push(entry);
+  };
+  addRelationshipContact({
+    id: 'ilux-main', role: 'Contato principal', source: 'Cadastro iLux',
+    name: customer.contactName, phone: customer.phone, email: customer.email,
+  });
+  for (const contact of customer.whatsappContacts) addRelationshipContact({
+    id: `whatsapp-${contact.id}`, role: 'Contato WhatsApp', source: 'Multiatendimento',
+    name: contact.name, phone: first(contact.whatsapp, contact.phone), contactId: contact.id,
+  });
+  for (const equipment of customer.equipments) {
+    const localContact = first(rawValue(equipment, 'contact', 'contato'));
+    const localPhone = first(equipment.phone, rawValue(equipment, 'fone'));
+    if (localContact || localPhone) addRelationshipContact({
+      id: `equipment-${equipment.id}`, role: first(equipment.sector, equipment.installLocation, 'Contato do equipamento'),
+      source: 'Local de instalacao', name: localContact, phone: localPhone,
+      equipmentExternalId: equipment.externalId,
+    });
+  }
+
+  const supplyPattern = /\b(toner|cartucho|cilindro|fusor|fusao|fusão|revelador|unidade de imagem|peca|peça|kit)\b/gi;
+  const equipmentEvolution = customer.equipments.map((equipment) => {
+    const equipmentOrders = orders.filter((order) => (
+      text(order.equipmentExternalId) === text(equipment.externalId)
+      || (equipment.serialNumber && text(order.serialNumber) === text(equipment.serialNumber))
+    ));
+    const mentions = [];
+    for (const order of equipmentOrders) {
+      const description = [order.defect, order.closing].filter(Boolean).join(' | ');
+      if (supplyPattern.test(description)) mentions.push({
+        orderNumber: order.number || order.externalId,
+        occurredAt: order.closedAt || order.attendedAt || order.openedAt,
+        description,
+      });
+      supplyPattern.lastIndex = 0;
+    }
+    const equipmentMeters = meters.filter((meter) => text(meter.equipmentExternalId) === text(equipment.externalId));
+    const closedEquipmentOrders = equipmentOrders.filter(isOrderClosedForAnalytics);
+    return {
+      equipmentExternalId: equipment.externalId,
+      meters: equipmentMeters,
+      serviceOrderCount: equipmentOrders.length,
+      lastMaintenance: closedEquipmentOrders[0] || null,
+      technicalMentions: mentions.slice(0, 8),
+    };
+  });
+
+  const activeTicket = tickets.find((ticket) => !['resolved', 'closed'].includes(String(ticket.status).toLowerCase())) || tickets[0] || null;
+  const preferredContact = customer.whatsappContacts.find((contact) => contact.id === activeTicket?.contactId)
+    || customer.whatsappContacts[0] || null;
+
   const alerts = [];
+  if (canViewFinancial && overdueReceivables.length) alerts.push({
+    id: 'overdue-receivables', severity: 'critical', category: 'financial',
+    title: `${overdueReceivables.length} titulo(s) vencido(s)`,
+    description: `Saldo vencido de ${overdueReceivables.reduce((total, item) => total + item.openValue, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}.`,
+    count: overdueReceivables.length,
+  });
   if (overdueOrders.length) alerts.push({
     id: 'overdue-orders', severity: 'critical', category: 'sla',
     title: `${overdueOrders.length} O.S. fora do prazo`,
@@ -721,6 +869,15 @@ async function getCustomer360(req, res) {
     description: contract.type || 'Contrato iniciado',
     status: contract.isActive ? 'ATIVO' : 'INATIVO',
   });
+  for (const receivable of receivables.slice(0, 30)) timeline.push({
+    id: `receivable-${receivable.externalId}`,
+    type: 'financial',
+    occurredAt: receivable.paidAt || receivable.issuedAt || receivable.dueAt,
+    title: receivable.status === 'paid' ? 'Pagamento recebido' : `Titulo #${receivable.externalId}`,
+    description: `${receivable.invoiceNumber ? `NF ${receivable.invoiceNumber} · ` : ''}${receivable.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+    status: receivable.status,
+    meta: receivable.paymentMethod,
+  });
 
   res.json({
     generatedAt: new Date().toISOString(),
@@ -739,6 +896,26 @@ async function getCustomer360(req, res) {
       mostRecurringEquipment: recurringEquipments[0] || null,
     },
     units: buildCustomerUnits(customer),
+    contacts: relationshipContacts,
+    quickActions: {
+      ticketId: activeTicket?.id || null,
+      contactId: preferredContact?.id || null,
+      phone: first(preferredContact?.whatsapp, preferredContact?.phone, customer.phone),
+      address: [customer.address, customer.neighborhood, customer.city, customer.state].filter(Boolean).join(', '),
+      canOpenConversation: Boolean(activeTicket?.id),
+      canOpenServiceOrder: Boolean(activeTicket?.id && preferredContact?.id),
+    },
+    financial: canViewFinancial ? {
+      allowed: true,
+      synchronized: receivables.length > 0,
+      totalOpen: openReceivables.reduce((total, item) => total + item.openValue, 0),
+      overdueAmount: overdueReceivables.reduce((total, item) => total + item.openValue, 0),
+      overdueCount: overdueReceivables.length,
+      nextReceivable,
+      lastPayment,
+      items: receivables,
+    } : { allowed: false, reason: 'Informacoes financeiras disponiveis apenas para administradores.' },
+    equipmentEvolution,
     alerts,
     timeline: timeline.filter((item) => item.occurredAt).sort((a, b) => timelineDate(b) - timelineDate(a)).slice(0, 100),
   });

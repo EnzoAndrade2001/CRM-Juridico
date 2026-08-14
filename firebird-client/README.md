@@ -7,6 +7,8 @@ Cliente de integração para rodar no servidor da empresa, ler o Firebird localm
 - Lê clientes de `ICLIENTES`
 - Lê equipamentos de `IXLEQUIPAMENTO`
 - Lê contratos de `IXLCONTRATOS`
+- Sincroniza uma janela recente de contas a receber de `IRECEITAS`
+- Sincroniza contadores atuais e anteriores de `IXLEQUIPAMENTOMED`
 - Sincroniza novas O.S. e atendimentos de forma incremental, em lotes pequenos, sem reler todo o histórico
 - Envia os lotes para o endpoint `/api/integrations/firebird/push`
 - Mantém um cursor local em `state.json`
@@ -15,6 +17,8 @@ Cliente de integração para rodar no servidor da empresa, ler o Firebird localm
 - Guarda resultados em `command-results.json` para impedir duplicação após falha de callback
 - Consulta somente os cinco chamados anteriores e os atendimentos da nova O.S. para montar o PDF completo
 - No pacote atualizado, roda como `FirebirdCRMClient.exe` e não depende de Python instalado
+
+Os dados financeiros e os contadores são atualizados em lotes. A primeira execução carrega a janela inicial; depois, novos registros seguem por cursor. Uma vez por hora o agente confere os títulos em aberto, os 1.000 títulos mais recentes e os 1.000 medidores mais recentes. Isso mantém baixas e novas leituras atualizadas sem varrer todas as tabelas a cada ciclo.
 
 O incremental de O.S. vem ativo por padrão. Para desativá-lo deliberadamente, configure `SYNC_SERVICE_ORDERS_INCREMENTAL=false`.
 
@@ -72,6 +76,8 @@ FirebirdCRMClient.exe --once --full
 - Se quiser, este processo pode ser colocado no Agendador do Windows ou em um Windows Service
 - Os arquivos antigos de log ficam em `logs/client.log.1`, `logs/client.log.2` e assim por diante, até o limite configurado
 
-## Próximos passos
+## Dados usados no CRM 360
 
-- Acrescentar novas telas no CRM com base nos dados que começarem a chegar
+- `IRECEITAS`: títulos, vencimentos, pagamentos e valores em aberto
+- `IXLEQUIPAMENTOMED`: contador atual, anterior e datas de leitura
+- `IXLOS`: última manutenção e menções técnicas de peças/suprimentos

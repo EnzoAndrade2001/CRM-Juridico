@@ -759,6 +759,87 @@ class FirebirdRepository:
         """
         yield from self._rows(sql, (cursor,))
 
+    def get_receivables_watermark(self) -> int:
+        con = self.connect()
+        try:
+            cur = con.cursor()
+            cur.execute("select coalesce(max(SEQRECEITA), 0) from IRECEITAS")
+            return int(cur.fetchone()[0] or 0)
+        finally:
+            con.close()
+
+    def fetch_receivables(self, cursor: int, limit: int | None = None) -> Iterator[dict[str, Any]]:
+        first = f"first {max(1, int(limit))}" if limit is not None else ""
+        sql = f"""
+            select {first}
+                r.SEQRECEITA, r.CDCLIENTE, r.DTEMISSAOREC, r.DTVECTOREC,
+                r.DTPAGTOREC, r.VALRECEITA, r.VALRECEITAPAGA, r.NUMNF,
+                r.CDFORMAPAGTO, fp.NMFORMAPAGTO, r.CD_RECEITA_STATUS,
+                rs.DS_RECEITA_STATUS, r.SEQCONTRATO, r.SEQIXLCONTRATOS,
+                r.SEQIXLCONTRATOSGRP, r.SEQDEMONSTRATIVO
+            from IRECEITAS r
+            left join IFORMAPAGTO fp on fp.CDFORMAPAGTO = r.CDFORMAPAGTO
+            left join IRECEITAS_STATUS rs on rs.ID_RECEITA_STATUS = r.CD_RECEITA_STATUS
+            where r.SEQRECEITA > ?
+            order by r.SEQRECEITA
+        """
+        yield from self._rows(sql, (cursor,))
+
+    def fetch_recent_receivables(self, limit: int = 1000) -> Iterator[dict[str, Any]]:
+        sql = f"""
+            select first {max(1, int(limit))}
+                r.SEQRECEITA, r.CDCLIENTE, r.DTEMISSAOREC, r.DTVECTOREC,
+                r.DTPAGTOREC, r.VALRECEITA, r.VALRECEITAPAGA, r.NUMNF,
+                r.CDFORMAPAGTO, fp.NMFORMAPAGTO, r.CD_RECEITA_STATUS,
+                rs.DS_RECEITA_STATUS, r.SEQCONTRATO, r.SEQIXLCONTRATOS,
+                r.SEQIXLCONTRATOSGRP, r.SEQDEMONSTRATIVO
+            from IRECEITAS r
+            left join IFORMAPAGTO fp on fp.CDFORMAPAGTO = r.CDFORMAPAGTO
+            left join IRECEITAS_STATUS rs on rs.ID_RECEITA_STATUS = r.CD_RECEITA_STATUS
+            order by r.SEQRECEITA desc
+        """
+        yield from self._rows(sql, ())
+
+    def fetch_open_receivables(self, limit: int = 5000) -> Iterator[dict[str, Any]]:
+        sql = f"""
+            select first {max(1, int(limit))}
+                r.SEQRECEITA, r.CDCLIENTE, r.DTEMISSAOREC, r.DTVECTOREC,
+                r.DTPAGTOREC, r.VALRECEITA, r.VALRECEITAPAGA, r.NUMNF,
+                r.CDFORMAPAGTO, fp.NMFORMAPAGTO, r.CD_RECEITA_STATUS,
+                rs.DS_RECEITA_STATUS, r.SEQCONTRATO, r.SEQIXLCONTRATOS,
+                r.SEQIXLCONTRATOSGRP, r.SEQDEMONSTRATIVO
+            from IRECEITAS r
+            left join IFORMAPAGTO fp on fp.CDFORMAPAGTO = r.CDFORMAPAGTO
+            left join IRECEITAS_STATUS rs on rs.ID_RECEITA_STATUS = r.CD_RECEITA_STATUS
+            where r.DTPAGTOREC is null
+              and coalesce(r.VALRECEITAPAGA, 0) < coalesce(r.VALRECEITA, 0)
+            order by r.DTVECTOREC, r.SEQRECEITA
+        """
+        yield from self._rows(sql, ())
+
+    def fetch_equipment_meters(self, equipment_cursor: int) -> Iterator[dict[str, Any]]:
+        sql = """
+            select
+                m.CDEQUIPAMENTO, e.CDCLIENTE, m.CDMEDIDOR, m.MEDIDOR,
+                m.MEDIDORULT, m.DTLEITURA, m.DTLEITURAULT, m.ATUALIZADO
+            from IXLEQUIPAMENTOMED m
+            join IXLEQUIPAMENTO e on e.CDEQUIPAMENTO = m.CDEQUIPAMENTO
+            where m.CDEQUIPAMENTO > ?
+            order by m.CDEQUIPAMENTO, m.CDMEDIDOR
+        """
+        yield from self._rows(sql, (equipment_cursor,))
+
+    def fetch_recent_equipment_meters(self, limit: int = 1000) -> Iterator[dict[str, Any]]:
+        sql = f"""
+            select first {max(1, int(limit))}
+                m.CDEQUIPAMENTO, e.CDCLIENTE, m.CDMEDIDOR, m.MEDIDOR,
+                m.MEDIDORULT, m.DTLEITURA, m.DTLEITURAULT, m.ATUALIZADO
+            from IXLEQUIPAMENTOMED m
+            join IXLEQUIPAMENTO e on e.CDEQUIPAMENTO = m.CDEQUIPAMENTO
+            order by m.DTLEITURA desc, m.CDEQUIPAMENTO desc
+        """
+        yield from self._rows(sql, ())
+
     def _service_orders_select(self, where_clause: str, limit: int | None = None) -> str:
         first = f"first {max(1, int(limit))}" if limit is not None else ""
         return f"""
@@ -1210,6 +1291,48 @@ def normalize_contract(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def normalize_receivable(record: dict[str, Any]) -> dict[str, Any]:
+    external_id = str(record["seqreceita"]).strip()
+    value = float(record.get("valreceita") or 0)
+    paid_value = float(record.get("valreceitapaga") or 0)
+    return {
+        "externalId": external_id,
+        "clientExternalId": str(record["cdcliente"]).strip() if record.get("cdcliente") is not None else None,
+        "issuedAt": parse_firebird_timestamp(record.get("dtemissaorec")),
+        "dueAt": parse_firebird_timestamp(record.get("dtvectorec")),
+        "paidAt": parse_firebird_timestamp(record.get("dtpagtorec")),
+        "value": value,
+        "paidValue": paid_value,
+        "openValue": max(0, value - paid_value),
+        "invoiceNumber": first_non_empty(record.get("numnf")),
+        "paymentMethodCode": first_non_empty(record.get("cdformapagto")),
+        "paymentMethod": first_non_empty(record.get("nmformapagto")),
+        "statusCode": first_non_empty(record.get("cd_receita_status")),
+        "statusLabel": first_non_empty(record.get("ds_receita_status")),
+        "contractExternalId": first_non_empty(record.get("seqixlcontratos"), record.get("seqcontrato")),
+        "contractGroupExternalId": first_non_empty(record.get("seqixlcontratosgrp")),
+        "statementExternalId": first_non_empty(record.get("seqdemonstrativo")),
+        "raw": {k: json_safe(v) for k, v in record.items()},
+    }
+
+
+def normalize_equipment_meter(record: dict[str, Any]) -> dict[str, Any]:
+    equipment_id = str(record["cdequipamento"]).strip()
+    meter_code = str(record["cdmedidor"]).strip()
+    return {
+        "externalId": f"{equipment_id}:{meter_code}",
+        "equipmentExternalId": equipment_id,
+        "clientExternalId": str(record["cdcliente"]).strip() if record.get("cdcliente") is not None else None,
+        "meterCode": meter_code,
+        "currentValue": float(record.get("medidor") or 0),
+        "previousValue": float(record.get("medidorult") or 0),
+        "currentReadingAt": parse_firebird_timestamp(record.get("dtleitura")),
+        "previousReadingAt": parse_firebird_timestamp(record.get("dtleiturault")),
+        "updatedAt": parse_firebird_timestamp(record.get("atualizado")) or parse_firebird_timestamp(record.get("dtleitura")),
+        "raw": {k: json_safe(v) for k, v in record.items()},
+    }
+
+
 def normalize_service_order(record: dict[str, Any]) -> dict[str, Any]:
     external_id = str(record["seqos"]).strip()
     client_external_id = str(record["cdcliente"]).strip() if record.get("cdcliente") is not None else None
@@ -1297,6 +1420,10 @@ def sync_entity(
         iterator = repo.fetch_contracts(cursor)
         normalizer = normalize_contract
         cursor_field = "seqcontrato"
+    elif entity == "receivables":
+        iterator = repo.fetch_receivables(cursor)
+        normalizer = normalize_receivable
+        cursor_field = "seqreceita"
     elif entity == "serviceOrders":
         iterator = repo.fetch_service_orders(cursor)
         normalizer = normalize_service_order
@@ -1334,6 +1461,84 @@ def sync_entity(
 
     logging.info("%s: sincronização concluída, %s registros enviados", entity, total_sent)
     return True
+
+
+def push_normalized_batches(
+    crm: CRMClient,
+    entity: str,
+    records: Iterator[dict[str, Any]] | list[dict[str, Any]],
+    normalizer,
+    batch_size: int,
+) -> tuple[int, int]:
+    batch: list[dict[str, Any]] = []
+    total = 0
+    max_equipment = 0
+    for raw in records:
+        batch.append(normalizer(raw))
+        if raw.get("cdequipamento") is not None:
+            max_equipment = max(max_equipment, int(raw["cdequipamento"]))
+        if len(batch) >= batch_size:
+            crm.push(entity, batch)
+            total += len(batch)
+            batch.clear()
+    if batch:
+        crm.push(entity, batch)
+        total += len(batch)
+    return total, max_equipment
+
+
+def sync_crm360_details(
+    repo: FirebirdRepository,
+    crm: CRMClient,
+    state: StateStore,
+    batch_size: int,
+    force_meter_bootstrap: bool = False,
+) -> None:
+    receivable_cursor = state.get_cursor("receivables")
+    if receivable_cursor <= 0:
+        watermark = repo.get_receivables_watermark()
+        # A primeira carga traz uma janela recente sem percorrer todo o
+        # financeiro historico. Novos titulos seguem pelo cursor normal.
+        state.set_cursor("receivables", max(0, watermark - 2000))
+        state.save()
+    sync_entity(repo, crm, state, "receivables", batch_size)
+
+    meter_cursor = 0 if force_meter_bootstrap else state.get_cursor("equipmentMeters")
+    meter_total, max_equipment = push_normalized_batches(
+        crm,
+        "equipmentMeters",
+        repo.fetch_equipment_meters(meter_cursor),
+        normalize_equipment_meter,
+        batch_size,
+    )
+    if max_equipment:
+        state.set_cursor("equipmentMeters", max_equipment)
+
+    last_refresh_text = state.data.get("crm360_recent_refresh_at")
+    try:
+        last_refresh = datetime.fromisoformat(last_refresh_text) if last_refresh_text else None
+    except ValueError:
+        last_refresh = None
+    refresh_due = force_meter_bootstrap or not last_refresh or (datetime.now() - last_refresh).total_seconds() >= 3600
+    if refresh_due:
+        recent_receivables, _ = push_normalized_batches(
+            crm, "receivables", repo.fetch_recent_receivables(1000), normalize_receivable, batch_size
+        )
+        open_receivables, _ = push_normalized_batches(
+            crm, "receivables", repo.fetch_open_receivables(5000), normalize_receivable, batch_size
+        )
+        recent_meters, _ = push_normalized_batches(
+            crm, "equipmentMeters", repo.fetch_recent_equipment_meters(1000), normalize_equipment_meter, batch_size
+        )
+        state.data["crm360_recent_refresh_at"] = datetime.now().isoformat(timespec="seconds")
+        logging.info(
+            "CRM 360: atualizados %s titulo(s) e %s medidor(es) recentes",
+            recent_receivables + open_receivables,
+            recent_meters,
+        )
+    elif meter_total:
+        logging.info("CRM 360: %s novo(s) medidor(es) sincronizado(s)", meter_total)
+    state.save()
 
 
 def sync_service_orders_incremental(
@@ -1420,7 +1625,7 @@ def run_cycle(
 ) -> None:
     repo = FirebirdRepository(config)
     crm = CRMClient(config)
-    contract_details_version = 1
+    contract_details_version = 2
     refresh_contract_details = int(state.data.get("contract_details_version", 0) or 0) < contract_details_version
 
     if full:
@@ -1430,6 +1635,8 @@ def run_cycle(
             "contracts": 0,
             "serviceOrders": 0,
             "serviceOrderAttendances": 0,
+            "receivables": 0,
+            "equipmentMeters": 0,
         }
         state.save()
     elif refresh_contract_details:
@@ -1438,6 +1645,7 @@ def run_cycle(
         # sincronizacao pesada de contatos e O.S.
         state.set_cursor("equipments", 0)
         state.set_cursor("contracts", 0)
+        state.set_cursor("equipmentMeters", 0)
         state.save()
 
     state.data["batch_size"] = config.batch_size
@@ -1459,7 +1667,15 @@ def run_cycle(
     if refresh_contract_details:
         state.data["contract_details_version"] = contract_details_version
         state.save()
-        logging.info("Detalhes financeiros e vinculos de contratos atualizados")
+        logging.info("Detalhes de contratos e equipamentos atualizados")
+
+    sync_crm360_details(
+        repo,
+        crm,
+        state,
+        config.batch_size,
+        force_meter_bootstrap=refresh_contract_details or full,
+    )
 
     if full:
         # A carga completa ja enviou o estado atual de todas as O.S. Portanto,

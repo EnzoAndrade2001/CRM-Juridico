@@ -104,6 +104,7 @@ export default function Inbox() {
   const [historySearch, setHistorySearch] = useState('');
   const [showReopenInstanceModal, setShowReopenInstanceModal] = useState(false);
   const [reopening, setReopening] = useState(false);
+  const openOsHandledRef = useRef(false);
   const isMobile = useIsMobile();
   const { instances } = useOutletContext() || { instances: [] };
   const navigate = useNavigate();
@@ -500,6 +501,16 @@ export default function Inbox() {
   }, [quickResponses]);
 
   const selectedTicket = tickets.find(t => t.id === selectedId);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('openOs') !== '1' || !selectedTicket || openOsHandledRef.current) return;
+    openOsHandledRef.current = true;
+    setShowOsModal(true);
+    params.delete('openOs');
+    const query = params.toString();
+    window.history.replaceState({}, '', `${window.location.pathname}${query ? `?${query}` : ''}`);
+  }, [selectedTicket]);
 
   const selectTicket = useCallback(async (id) => {
     if (selectedId !== id && historySearch) {

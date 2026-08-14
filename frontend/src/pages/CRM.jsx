@@ -9,17 +9,22 @@ import {
   CircleDollarSign,
   ClipboardList,
   Clock3,
+  CreditCard,
   Database,
   FileText,
+  Gauge,
   Hash,
   Mail,
+  Map,
   MapPin,
   MapPinned,
   MessageCircle,
+  PackageSearch,
   Phone,
   Printer,
   RefreshCw,
   Search,
+  Send,
   ShieldCheck,
   Siren,
   User,
@@ -248,8 +253,10 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
           <Tab active={activeTab === 'overview'} icon={<User size={16} />} label="Visão geral" onClick={() => setActiveTab('overview')} />
           <Tab active={activeTab === 'timeline'} icon={<MessageCircle size={16} />} label="Linha do tempo" onClick={() => setActiveTab('timeline')} />
           <Tab active={activeTab === 'units'} icon={<MapPinned size={16} />} label={`Unidades (${arrayOf(customer360.units).length})`} onClick={() => setActiveTab('units')} />
+          <Tab active={activeTab === 'contacts'} icon={<Phone size={16} />} label={`Contatos (${arrayOf(customer360.contacts).length})`} onClick={() => setActiveTab('contacts')} />
           <Tab active={activeTab === 'equipments'} icon={<Printer size={16} />} label={`Equipamentos (${equipments.length})`} onClick={() => setActiveTab('equipments')} />
           <Tab active={activeTab === 'contracts'} icon={<FileText size={16} />} label={`Contratos (${contracts.length})`} onClick={() => setActiveTab('contracts')} />
+          <Tab active={activeTab === 'financial'} icon={<CreditCard size={16} />} label="Financeiro" onClick={() => setActiveTab('financial')} />
           <Tab active={activeTab === 'os'} icon={<ClipboardList size={16} />} label={`Histórico O.S. (${serviceOrders.length})`} onClick={() => setActiveTab('os')} />
           <Tab active={activeTab === 'raw'} icon={<Database size={16} />} label="Dados técnicos" onClick={() => setActiveTab('raw')} />
         </nav>
@@ -261,8 +268,10 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
           {!loading && activeTab === 'overview' ? <OverviewTab customer={customer} equipments={equipments} contracts={contracts} serviceOrders={serviceOrders} customer360={customer360} /> : null}
           {!loading && activeTab === 'timeline' ? <TimelineTab timeline={arrayOf(customer360.timeline)} /> : null}
           {!loading && activeTab === 'units' ? <UnitsTab units={arrayOf(customer360.units)} /> : null}
-          {!loading && activeTab === 'equipments' ? <EquipmentsTab equipments={equipments} /> : null}
+          {!loading && activeTab === 'contacts' ? <ContactsTab contacts={arrayOf(customer360.contacts)} /> : null}
+          {!loading && activeTab === 'equipments' ? <EquipmentsTab equipments={equipments} evolution={arrayOf(customer360.equipmentEvolution)} /> : null}
           {!loading && activeTab === 'contracts' ? <ContractsTab contracts={contracts} /> : null}
+          {!loading && activeTab === 'financial' ? <FinancialTab financial={customer360.financial} /> : null}
           {!loading && activeTab === 'os' ? <OsTab serviceOrders={serviceOrders} /> : null}
           {!loading && activeTab === 'raw' ? <RawFieldsTab title="Campos originais do cliente no ILUX" raw={customer.raw} /> : null}
         </div>
@@ -293,6 +302,7 @@ function OverviewTab({ customer, equipments, contracts, serviceOrders, customer3
         <MiniStat icon={<AlertCircle size={18} />} value={openOrders} label="O.S. em aberto" warning={openOrders > 0} />
         <MiniStat icon={<CircleDollarSign size={18} />} value={formatCurrency(monthlyValue)} label="Valor mensal" />
       </div>
+      {customer360?.quickActions ? <QuickActions actions={customer360.quickActions} /> : null}
       {alerts.length ? <AlertsPanel alerts={alerts} /> : (
         customer360?.generatedAt ? <div style={s.healthyBox}><ShieldCheck size={18} /> Nenhum alerta operacional identificado para este cliente.</div> : null
       )}
@@ -323,6 +333,22 @@ function OverviewTab({ customer, equipments, contracts, serviceOrders, customer3
         </div>
       </InfoSection>
       {customer.notes ? <InfoSection title="Observações" icon={<ClipboardList size={17} />}><p style={s.notes}>{customer.notes}</p></InfoSection> : null}
+    </div>
+  );
+}
+
+function QuickActions({ actions }) {
+  const openInbox = (openOs = false) => {
+    if (!actions.ticketId) return;
+    window.location.assign(`/inbox?ticketId=${encodeURIComponent(actions.ticketId)}${openOs ? '&openOs=1' : ''}`);
+  };
+  return (
+    <div style={s.quickActions}>
+      <div style={s.quickActionsTitle}><strong>Ações rápidas</strong><span>Atalhos para o atendimento</span></div>
+      <button type="button" style={s.quickActionBtn} disabled={!actions.canOpenConversation} onClick={() => openInbox(false)}><Send size={16} /> Abrir WhatsApp</button>
+      <button type="button" style={s.quickActionPrimary} disabled={!actions.canOpenServiceOrder} onClick={() => openInbox(true)}><ClipboardList size={16} /> Abrir O.S.</button>
+      <button type="button" style={s.quickActionBtn} disabled={!actions.address} onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(actions.address)}`, '_blank', 'noopener,noreferrer')}><Map size={16} /> Ver no mapa</button>
+      <button type="button" style={s.quickActionBtn} onClick={() => window.print()}><Printer size={16} /> Imprimir ficha</button>
     </div>
   );
 }
@@ -375,7 +401,7 @@ function TimelineTab({ timeline }) {
       <div style={s.timelineToolbar}>
         <div><strong>Linha do tempo do relacionamento</strong><span>{timeline.length} eventos recentes</span></div>
         <div style={s.filterGroup}>
-          {[['all', 'Tudo'], ['whatsapp', 'WhatsApp'], ['service_order', 'O.S.'], ['ticket', 'Atendimentos'], ['contract', 'Contratos']].map(([value, label]) => (
+          {[['all', 'Tudo'], ['whatsapp', 'WhatsApp'], ['service_order', 'O.S.'], ['ticket', 'Atendimentos'], ['contract', 'Contratos'], ['financial', 'Financeiro']].map(([value, label]) => (
             <button key={value} type="button" style={{ ...s.filterBtn, ...(filter === value ? s.activeFilterBtn : {}) }} onClick={() => setFilter(value)}>{label}</button>
           ))}
         </div>
@@ -425,7 +451,58 @@ function UnitsTab({ units }) {
   );
 }
 
-function EquipmentsTab({ equipments }) {
+function ContactsTab({ contacts }) {
+  if (!contacts.length) return <Empty icon={<Phone size={28} />} title="Nenhum contato identificado" text="Os responsáveis aparecerão conforme os cadastros do iLux e WhatsApp forem vinculados." />;
+  return (
+    <div style={s.contactsGrid}>
+      {contacts.map((contact) => (
+        <article key={contact.id} style={s.contactCard360}>
+          <div style={s.contactAvatar}><User size={18} /></div>
+          <div style={s.contactBody}>
+            <span style={s.contactRole}>{contact.role}</span>
+            <strong>{contact.name || 'Nome não informado'}</strong>
+            <small>{contact.source}</small>
+            <div style={s.contactChannels}>
+              {contact.phone ? <span><Phone size={13} /> {contact.phone}</span> : null}
+              {contact.email ? <span><Mail size={13} /> {contact.email}</span> : null}
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function FinancialTab({ financial }) {
+  if (!financial?.allowed) return <Empty icon={<CreditCard size={28} />} title="Acesso financeiro restrito" text={financial?.reason || 'Esta área está disponível apenas para administradores.'} />;
+  if (!financial.synchronized) return <Empty icon={<RefreshCw size={28} />} title="Aguardando sincronização financeira" text="Atualize o agente Firebird para carregar os títulos recentes do iLux." />;
+  const items = arrayOf(financial.items);
+  return (
+    <div style={s.sectionStack}>
+      <div style={s.financialStats}>
+        <Metric value={formatCurrency(financial.totalOpen)} label="Saldo em aberto" />
+        <Metric value={formatCurrency(financial.overdueAmount)} label={`${financial.overdueCount || 0} título(s) vencido(s)`} danger={Number(financial.overdueAmount) > 0} />
+        <Metric value={financial.nextReceivable ? formatShortDate(financial.nextReceivable.dueAt) : '—'} label="Próximo vencimento" />
+        <Metric value={financial.lastPayment ? formatShortDate(financial.lastPayment.paidAt) : '—'} label="Último pagamento" />
+      </div>
+      <div style={s.financeList}>
+        {items.map((item) => (
+          <article key={item.externalId} style={s.financeItem}>
+            <div style={s.financeIcon}><CreditCard size={17} /></div>
+            <div style={s.financeMain}>
+              <strong>{item.invoiceNumber ? `NF ${item.invoiceNumber}` : `Título #${item.externalId}`}</strong>
+              <span>Emissão: {formatShortDate(item.issuedAt) || '—'} · Vencimento: {formatShortDate(item.dueAt) || '—'}</span>
+              {item.paymentMethod ? <small>{item.paymentMethod}</small> : null}
+            </div>
+            <div style={s.financeValue}><strong>{formatCurrency(item.value)}</strong><span style={financeStatusStyle(item.status)}>{financeStatus(item.status)}</span></div>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EquipmentsTab({ equipments, evolution }) {
   const [selectedId, setSelectedId] = useState(equipments[0]?.id || null);
   const [filter, setFilter] = useState('');
   const visible = useMemo(() => equipments.filter((equipment) => searchableEquipment(equipment).includes(filter.toLowerCase())), [equipments, filter]);
@@ -451,12 +528,12 @@ function EquipmentsTab({ equipments }) {
           {!visible.length ? <div style={s.noFilterResult}>Nenhum equipamento corresponde à busca.</div> : null}
         </div>
       </aside>
-      {selected ? <EquipmentDetail equipment={selected} /> : null}
+      {selected ? <EquipmentDetail equipment={selected} evolution={evolution.find((item) => String(item.equipmentExternalId) === String(selected.externalId))} /> : null}
     </div>
   );
 }
 
-function EquipmentDetail({ equipment }) {
+function EquipmentDetail({ equipment, evolution }) {
   return (
     <div style={s.detailPanel}>
       <div style={s.detailHeader}>
@@ -487,8 +564,37 @@ function EquipmentDetail({ equipment }) {
           <Info label="Cidade / UF" value={[equipment.city, equipment.state].filter(Boolean).join(' / ')} />
         </div>
       </InfoSection>
+      <EquipmentEvolution evolution={evolution} />
       <RawDetails title="Ver campos técnicos deste equipamento" raw={equipment.raw} />
     </div>
+  );
+}
+
+function EquipmentEvolution({ evolution }) {
+  if (!evolution) return null;
+  return (
+    <InfoSection title="Evolução e manutenção" icon={<Gauge size={17} />} compact>
+      <div style={s.meterGrid}>
+        {arrayOf(evolution.meters).map((meter) => (
+          <div key={meter.externalId || meter.meterCode} style={s.meterCard}>
+            <span>{meter.meterCode || 'Medidor'}</span>
+            <strong>{Number(meter.currentValue || 0).toLocaleString('pt-BR')}</strong>
+            <small>Anterior: {Number(meter.previousValue || 0).toLocaleString('pt-BR')} · {formatShortDate(meter.currentReadingAt) || 'sem data'}</small>
+          </div>
+        ))}
+        {!arrayOf(evolution.meters).length ? <span style={s.mutedText}>Aguardando sincronização dos contadores.</span> : null}
+      </div>
+      <div style={s.maintenanceSummary}>
+        <div><span>O.S. registradas</span><strong>{evolution.serviceOrderCount || 0}</strong></div>
+        <div><span>Última manutenção</span><strong>{evolution.lastMaintenance ? formatShortDate(evolution.lastMaintenance.closedAt || evolution.lastMaintenance.attendedAt) : 'Não registrada'}</strong></div>
+      </div>
+      {arrayOf(evolution.technicalMentions).length ? (
+        <div style={s.technicalMentions}>
+          <strong><PackageSearch size={15} /> Peças e suprimentos mencionados nas O.S.</strong>
+          {evolution.technicalMentions.map((mention, index) => <p key={`${mention.orderNumber}-${index}`}><b>O.S. #{mention.orderNumber}</b> — {mention.description}</p>)}
+        </div>
+      ) : null}
+    </InfoSection>
   );
 }
 
@@ -636,7 +742,19 @@ function timelineIcon(type) {
   if (type === 'whatsapp') return <MessageCircle size={16} />;
   if (type === 'service_order') return <ClipboardList size={16} />;
   if (type === 'contract') return <FileText size={16} />;
+  if (type === 'financial') return <CreditCard size={16} />;
   return <User size={16} />;
+}
+
+function financeStatus(value) {
+  if (value === 'paid') return 'Pago';
+  if (value === 'overdue') return 'Vencido';
+  return 'Em aberto';
+}
+
+function financeStatusStyle(value) {
+  const color = value === 'paid' ? '#22c55e' : value === 'overdue' ? '#ef4444' : '#f59e0b';
+  return { color, fontSize: '0.7rem', fontWeight: 900 };
 }
 
 function humanStatus(value) {
@@ -727,6 +845,10 @@ const s = {
   sectionStack: { display: 'grid', gap: '1rem' },
   profileStats: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '0.7rem' },
   healthyBox: { display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.85rem 1rem', borderRadius: 13, color: '#4ade80', background: 'rgba(34,197,94,.07)', border: '1px solid rgba(34,197,94,.2)', fontSize: '0.8rem', fontWeight: 750 },
+  quickActions: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.55rem', padding: '0.8rem', borderRadius: 13, border: '1px solid var(--border-color)', background: 'rgba(8,12,22,.3)' },
+  quickActionsTitle: { display: 'grid', minWidth: 150, marginRight: 'auto', color: 'var(--text-main)' },
+  quickActionBtn: { display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.62rem 0.75rem', borderRadius: 9, border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)', fontWeight: 800, cursor: 'pointer' },
+  quickActionPrimary: { display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.62rem 0.75rem', borderRadius: 9, border: '1px solid var(--accent-border)', background: 'var(--accent)', color: 'var(--text-inverse)', fontWeight: 900, cursor: 'pointer' },
   alertGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: '0.65rem' },
   smartAlert: { display: 'flex', alignItems: 'flex-start', gap: '0.6rem', padding: '0.75rem', borderRadius: 11, fontSize: '0.77rem' },
   criticalAlert: { color: '#fca5a5', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.25)' },
@@ -766,6 +888,22 @@ const s = {
   unitEquipmentList: { display: 'grid', gap: '0.45rem' },
   unitEquipment: { display: 'flex', alignItems: 'center', gap: '0.55rem', padding: '0.65rem', borderRadius: 10, color: 'var(--text-muted)', background: 'var(--bg-base)', border: '1px solid var(--border-color)' },
   mutedText: { color: 'var(--text-dim)', fontSize: '0.75rem' },
+  contactsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(290px,1fr))', gap: '0.75rem' },
+  contactCard360: { display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.9rem', border: '1px solid var(--border-color)', borderRadius: 14, background: 'rgba(8,12,22,.3)' },
+  contactAvatar: { width: 38, height: 38, flex: '0 0 auto', display: 'grid', placeItems: 'center', borderRadius: 11, color: 'var(--accent)', background: 'var(--accent-light)' },
+  contactBody: { display: 'grid', gap: '0.25rem', minWidth: 0 },
+  contactRole: { color: 'var(--accent)', fontSize: '0.67rem', fontWeight: 900, textTransform: 'uppercase' },
+  contactChannels: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem 0.8rem', color: 'var(--text-muted)', fontSize: '0.74rem' },
+  financialStats: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '0.65rem' },
+  financeList: { display: 'grid', gap: '0.55rem' },
+  financeItem: { display: 'grid', gridTemplateColumns: '38px minmax(0,1fr) auto', alignItems: 'center', gap: '0.7rem', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: 12, background: 'rgba(8,12,22,.3)' },
+  financeIcon: { width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: 10, color: 'var(--accent)', background: 'var(--accent-light)' },
+  financeMain: { display: 'grid', gap: 2, minWidth: 0 },
+  financeValue: { display: 'grid', gap: 3, textAlign: 'right' },
+  meterGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(145px,1fr))', gap: '0.55rem' },
+  meterCard: { display: 'grid', gap: 2, padding: '0.7rem', border: '1px solid var(--border-color)', borderRadius: 10, background: 'var(--bg-base)' },
+  maintenanceSummary: { display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: '0.55rem', marginTop: '0.65rem' },
+  technicalMentions: { display: 'grid', gap: '0.4rem', marginTop: '0.7rem', padding: '0.7rem', borderRadius: 10, color: 'var(--text-muted)', background: 'rgba(245,158,11,.06)', border: '1px solid rgba(245,158,11,.18)' },
   equipmentAside: { display: 'grid', gap: '0.7rem', minWidth: 0 },
   innerSearch: { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem', background: 'var(--bg-base)', border: '1px solid var(--border-color)', borderRadius: 11, color: 'var(--text-muted)' },
   equipmentList: { display: 'grid', gap: '0.55rem', maxHeight: '61vh', overflowY: 'auto', paddingRight: 3 },

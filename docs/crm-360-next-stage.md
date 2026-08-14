@@ -1,6 +1,6 @@
-# CRM 360 — próxima etapa
+# CRM 360 — segunda etapa entregue
 
-Esta etapa fica planejada para depois da visão operacional inicial já entregue.
+Esta etapa foi implementada em 14/08/2026 sobre a visão operacional inicial.
 
 ## 1. Visão financeira
 
@@ -30,6 +30,9 @@ Esta etapa fica planejada para depois da visão operacional inicial já entregue
 - toners e peças utilizados;
 - previsão de manutenção e consumo.
 
-## Dependências
+## Fontes e limites
 
-Antes de implementar a visão financeira, confirmar as tabelas e regras de acesso do iLux. Leituras, peças e suprimentos também dependem da identificação das tabelas Firebird correspondentes.
+- financeiro: `IRECEITAS`, visível somente para administradores;
+- contadores: `IXLEQUIPAMENTOMED`, com valor atual e anterior;
+- peças e suprimentos: menções no defeito/fechamento das O.S., sem afirmar movimentação de estoque;
+- ações rápidas: WhatsApp, abertura direta de O.S., mapa e impressão da ficha.
