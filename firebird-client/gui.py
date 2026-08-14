@@ -233,7 +233,7 @@ class AgentGUI(ctk.CTk):
             while self.is_running:
                 try:
                     self.log_message_raw("Iniciando ciclo de sincronização...")
-                    agent_main.run_cycle(config, state)
+                    agent_main.run_cycle(config, state, stop_event=self.command_stop_event)
                 except Exception as e:
                     logging.exception(f"Erro no ciclo de sincronização: {e}")
                     

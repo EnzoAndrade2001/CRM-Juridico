@@ -7,13 +7,15 @@ Cliente de integração para rodar no servidor da empresa, ler o Firebird localm
 - Lê clientes de `ICLIENTES`
 - Lê equipamentos de `IXLEQUIPAMENTO`
 - Lê contratos de `IXLCONTRATOS`
-- Lê atendimentos/OS de `VIEW_ATENDIMENTO_HISTORICO`
+- A sincronização histórica de O.S. fica desativada por padrão para não reenviar milhares de registros nem competir com a abertura imediata
 - Envia os lotes para o endpoint `/api/integrations/firebird/push`
 - Mantém um cursor local em `state.json`
 - Registra logs em `logs/client.log` com rotação automática
 - Mantém um listener HTTPS para abrir O.S. imediatamente e devolver o `SEQOS`
 - Guarda resultados em `command-results.json` para impedir duplicação após falha de callback
 - No pacote atualizado, roda como `FirebirdCRMClient.exe` e não depende de Python instalado
+
+Para reativar deliberadamente o histórico de O.S., configure `SYNC_SERVICE_ORDERS=true`. Isso não é necessário para abrir chamados pelo WhatsApp.
 
 ## Instalação
 
@@ -71,5 +73,4 @@ FirebirdCRMClient.exe --once --full
 
 ## Próximos passos
 
-- Ajustar os nomes dos campos de `serviceOrders` caso você queira um mapeamento mais fiel
 - Acrescentar novas telas no CRM com base nos dados que começarem a chegar

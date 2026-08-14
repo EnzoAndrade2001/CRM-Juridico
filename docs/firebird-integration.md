@@ -50,7 +50,7 @@ sequenceDiagram
     CRM Frontend->>CRM Backend: POST /api/os com requestKey único
     CRM Backend-->>Client: Libera imediatamente o comando CREATE_OS
         CRM Backend-->>Client: Retorna comando CREATE_OS com payload da O.S.
-        Client->>Firebird: Na mesma transação: incrementa IXLCONTROLESEQ e insere IXLOS
+        Client->>Firebird: Consulta MAX(SEQOS) + 1 e insere IXLOS, com nova tentativa se houver concorrência
         Client->>CRM Backend: POST /commands/:id/callback (Envia seqOs gerado)
         CRM Backend->>CRM Backend: Atualiza O.S. (salva externalId = seqOs, status = PENDENTE)
     CRM Backend-->>CRM Frontend: Retorna a O.S. confirmada com o SEQOS real
@@ -67,7 +67,7 @@ Ao inserir um novo registro de O.S. (`IXLOS`) no Firebird, diversos campos são 
 
 | Campo ERP | Tipo | Origem CRM / Valor Fixo | Descrição |
 | :--- | :--- | :--- | :--- |
-| **SEQOS** | INTEGER | `IXLCONTROLESEQ` | Chave primária. Deve ser obtida e incrementada manualmente da tabela de controle. |
+| **SEQOS** | INTEGER | `MAX(IXLOS.SEQOS) + 1` | Chave primária. É recalculada e tentada novamente se outro processo ocupar o número simultaneamente. |
 | **CDCLIENTE** | INTEGER | `contact.externalId` | ID do Cliente associado. |
 | **CDCLIENTEENT** | INTEGER | `contact.externalId` | ID do Cliente de entrega/local (mesmo valor do cliente). |
 | **CDEQUIPAMENTO** | INTEGER | `equipment.externalId` | ID do Equipamento importado do ERP. |
@@ -114,22 +114,16 @@ Como o nosso script de integração inseria `CDDEFEITO = NULL` (ou omitia a colu
 
 ---
 
-## 5. Sequenciamento de ID (Gerador Manual `IXLCONTROLESEQ`)
+## 5. Sequenciamento de ID da O.S.
 
-O banco Firebird do ILUX não utiliza geradores nativos (`GENERATORS`/`SEQUENCES`) atrelados a triggers automáticas de inserção para o campo `SEQOS`. Em vez disso, ele centraliza o controle na tabela `IXLCONTROLESEQ`.
+O contador `IXLCONTROLESEQ / ORDEMSERVICO` foi encontrado atrasado em relação aos registros reais da `IXLOS`, chegando a devolver a O.S. `91454` quando esse número já existia. Para seguir o comportamento validado do módulo Web do ILUX, o client agora:
 
-Para evitar colisões e erros de violação de chave primária, o client executa o seguinte algoritmo antes de inserir na `IXLOS`:
+1. Consulta `SELECT COALESCE(MAX(SEQOS), 0) + 1 FROM IXLOS` dentro da conexão de escrita.
+2. Tenta inserir a O.S. com o número calculado.
+3. Se outro processo ocupar o número simultaneamente, executa `ROLLBACK`, recalcula e tenta novamente, até três vezes.
+4. Executa `COMMIT` somente após o `INSERT` bem-sucedido.
 
-1. Executa uma atualização atômica na tabela de controle:
-   ```sql
-   UPDATE IXLCONTROLESEQ
-      SET SEQUENCIAL = COALESCE(SEQUENCIAL, 0) + 1
-    WHERE TABELA = 'ORDEMSERVICO'
-    RETURNING SEQUENCIAL
-   ```
-2. Usa o valor retornado no `INSERT INTO IXLOS`, na mesma conexão e transação.
-3. Executa `COMMIT` somente após o insert; qualquer falha executa `ROLLBACK`.
-4. Não existe fallback por `MAX(SEQOS)`: sem o controle oficial, a abertura falha explicitamente.
+A sincronização histórica de `serviceOrders` fica desativada por padrão (`SYNC_SERVICE_ORDERS=false`). O listener de comandos continua independente e abre O.S. imediatamente, sem percorrer o histórico.
 
 ---
 

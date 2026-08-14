@@ -50,6 +50,15 @@ def fit_text(value: Any, max_length: int) -> str:
     return str(value).strip()[:max_length]
 
 
+def is_duplicate_key_error(error: Exception) -> bool:
+    message = str(error or "").upper()
+    return (
+        "PRIMARY OR UNIQUE KEY" in message
+        or "DUPLICATE VALUE" in message
+        or "VIOLATION OF PRIMARY" in message
+    )
+
+
 def parse_firebird_timestamp(value: Any) -> str | None:
     if value is None:
         return None
@@ -124,6 +133,7 @@ class AppConfig:
     crm_sync_token: str = ""
     sync_interval_seconds: int = 300
     batch_size: int = 250
+    sync_service_orders: bool = False
     state_file: Path = field(default_factory=lambda: ROOT / "state.json")
     log_dir: Path = field(default_factory=lambda: ROOT / "logs")
     log_file: Path = field(default_factory=lambda: ROOT / "logs" / "client.log")
@@ -143,6 +153,12 @@ class AppConfig:
                 return int(os.getenv(name, str(default)))
             except ValueError:
                 return default
+
+        def env_bool(name: str, default: bool) -> bool:
+            value = os.getenv(name)
+            if value is None:
+                return default
+            return value.strip().lower() in {"1", "true", "yes", "sim", "s"}
 
         def resolve_path(value: str, default: Path) -> Path:
             path = Path(value) if value else default
@@ -169,6 +185,7 @@ class AppConfig:
             crm_sync_token=os.getenv("CRM_SYNC_TOKEN", ""),
             sync_interval_seconds=env_int("SYNC_INTERVAL_SECONDS", 300),
             batch_size=env_int("BATCH_SIZE", 250),
+            sync_service_orders=env_bool("SYNC_SERVICE_ORDERS", False),
             state_file=state_file,
             log_dir=log_dir,
             log_file=log_file,
@@ -792,27 +809,7 @@ class FirebirdRepository:
             fit_text(f"{now.strftime('%d/%m/%Y %H:%M:%S')} CA I", 25)
         )
 
-        # A reserva do numero e a insercao precisam compartilhar a transacao.
-        # Isso serializa o CRM com o Desktop e evita numeros duplicados.
-        con = self.connect()
-        try:
-            cur = con.cursor()
-            cur.execute(
-                """
-                update IXLCONTROLESEQ
-                   set SEQUENCIAL = COALESCE(SEQUENCIAL, 0) + 1
-                 where TABELA = 'ORDEMSERVICO'
-                 returning SEQUENCIAL
-                """
-            )
-            row = cur.fetchone()
-            if not row or row[0] is None:
-                raise RuntimeError(
-                    "IXLCONTROLESEQ nao possui a linha ORDEMSERVICO; abertura cancelada."
-                )
-            seq_os = int(row[0])
-            logging.info("Inserindo com SEQOS gerado manualmente: %s", seq_os)
-            sql = """
+        sql = """
                 insert into IXLOS (
                     SEQOS, CDCLIENTE, CDCLIENTEENT, CDEQUIPAMENTO, CDOSTP, DTINCLUSAO, HRINCLUSAO, STATUS, CDSTATUS, OBSDEFEITOCLI, NMSUPORTET, NMSUPORTEA,
                     NMCLIENTE, ENDERECO, NUM, COMPLEMENTO, BAIRRO, CIDADE, UF, CEP, DDD, FONE, CELULAR, EMAIL, CONTATO,
@@ -825,18 +822,39 @@ class FirebirdRepository:
                     -1, '1', 'S', 'MAN', '24', ?, '', '', '', '', ''
                 )
             """
-            insert_params = (seq_os,) + params
-            cur.execute(sql, insert_params)
-            con.commit()
-            return seq_os
-        except Exception:
-            con.rollback()
-            raise
-        finally:
+
+        # O Desktop numera IXLOS pelo maior SEQOS real. O contador
+        # ORDEMSERVICO pode ficar atrasado e devolver uma chave ja ocupada.
+        # Em caso de concorrencia, refazemos a leitura e tentamos novamente.
+        for attempt in range(1, 4):
+            con = self.connect()
             try:
-                con.close()
-            except Exception:
-                pass
+                cur = con.cursor()
+                cur.execute("SELECT COALESCE(MAX(SEQOS), 0) + 1 FROM IXLOS")
+                row = cur.fetchone()
+                if not row or row[0] is None:
+                    raise RuntimeError("Nao foi possivel consultar o proximo SEQOS.")
+                seq_os = int(row[0])
+                logging.info("Inserindo com o proximo SEQOS livre: %s", seq_os)
+                cur.execute(sql, (seq_os,) + params)
+                con.commit()
+                return seq_os
+            except Exception as exc:
+                con.rollback()
+                if attempt < 3 and is_duplicate_key_error(exc):
+                    logging.warning(
+                        "SEQOS ocupado durante a gravacao; recalculando (tentativa %s/3).",
+                        attempt + 1,
+                    )
+                    continue
+                raise
+            finally:
+                try:
+                    con.close()
+                except Exception:
+                    pass
+
+        raise RuntimeError("Nao foi possivel reservar um SEQOS livre apos 3 tentativas.")
 
 
 def normalize_contact(record: dict[str, Any]) -> dict[str, Any]:
@@ -1020,7 +1038,14 @@ def sync_static_entities(repo: FirebirdRepository, crm: CRMClient) -> None:
         logging.error("Falha ao sincronizar entidades estáticas (tipos/técnicos): %s", e)
 
 
-def sync_entity(repo: FirebirdRepository, crm: CRMClient, state: StateStore, entity: str, batch_size: int) -> None:
+def sync_entity(
+    repo: FirebirdRepository,
+    crm: CRMClient,
+    state: StateStore,
+    entity: str,
+    batch_size: int,
+    stop_event: threading.Event | None = None,
+) -> bool:
     cursor_key = entity
     cursor = state.get_cursor(cursor_key)
     rows: list[dict[str, Any]] = []
@@ -1030,29 +1055,36 @@ def sync_entity(repo: FirebirdRepository, crm: CRMClient, state: StateStore, ent
     if entity == "contacts":
         iterator = repo.fetch_contacts(cursor)
         normalizer = normalize_contact
+        cursor_field = "cdcliente"
     elif entity == "equipments":
         iterator = repo.fetch_equipments(cursor)
         normalizer = normalize_equipment
+        cursor_field = "cdequipamento"
     elif entity == "contracts":
         iterator = repo.fetch_contracts(cursor)
         normalizer = normalize_contract
+        cursor_field = "seqcontrato"
     elif entity == "serviceOrders":
         iterator = repo.fetch_service_orders(cursor)
         normalizer = normalize_service_order
+        cursor_field = "seqos"
     else:
         raise ValueError(f"Entity desconhecida: {entity}")
 
     for raw in iterator:
+        if stop_event is not None and stop_event.is_set():
+            logging.info("%s: sincronizacao interrompida pelo usuario", entity)
+            return False
         rows.append(normalizer(raw))
 
-        raw_id = raw.get("cdcliente") or raw.get("cdequipamento") or raw.get("seqcontrato") or raw.get("seqos")
+        raw_id = raw.get(cursor_field)
         if raw_id is not None:
             max_cursor = max(max_cursor, int(raw_id))
 
         if len(rows) >= batch_size:
             crm.push(entity, rows)
             total_sent += len(rows)
-            logging.info("%s: enviado lote de %s registros", entity, len(rows))
+            logging.debug("%s: enviado lote de %s registros", entity, len(rows))
             rows.clear()
             state.set_cursor(cursor_key, max_cursor)
             state.set_last_sync_at(datetime.now().isoformat(timespec="seconds"))
@@ -1061,16 +1093,22 @@ def sync_entity(repo: FirebirdRepository, crm: CRMClient, state: StateStore, ent
     if rows:
         crm.push(entity, rows)
         total_sent += len(rows)
-        logging.info("%s: enviado lote final de %s registros", entity, len(rows))
+        logging.debug("%s: enviado lote final de %s registros", entity, len(rows))
         rows.clear()
         state.set_cursor(cursor_key, max_cursor)
         state.set_last_sync_at(datetime.now().isoformat(timespec="seconds"))
         state.save()
 
     logging.info("%s: sincronização concluída, %s registros enviados", entity, total_sent)
+    return True
 
 
-def run_cycle(config: AppConfig, state: StateStore, full: bool = False) -> None:
+def run_cycle(
+    config: AppConfig,
+    state: StateStore,
+    full: bool = False,
+    stop_event: threading.Event | None = None,
+) -> None:
     repo = FirebirdRepository(config)
     crm = CRMClient(config)
 
@@ -1088,9 +1126,16 @@ def run_cycle(config: AppConfig, state: StateStore, full: bool = False) -> None:
     # Sync static support metadata
     sync_static_entities(repo, crm)
 
-    for entity in ["contacts", "equipments", "contracts", "serviceOrders"]:
+    entities = ["contacts", "equipments", "contracts"]
+    if config.sync_service_orders or full:
+        entities.append("serviceOrders")
+
+    for entity in entities:
+        if stop_event is not None and stop_event.is_set():
+            return
         logging.info("Iniciando sincronização de %s", entity)
-        sync_entity(repo, crm, state, entity, config.batch_size)
+        if not sync_entity(repo, crm, state, entity, config.batch_size, stop_event):
+            return
 
     # Process billing files
     logging.info("Verificando pasta de cobranças...")
