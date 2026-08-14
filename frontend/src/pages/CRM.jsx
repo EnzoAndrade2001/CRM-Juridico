@@ -42,7 +42,7 @@ import {
 } from '../services/api';
 import { toast } from '../utils/toast';
 
-const EMPTY_SUMMARY = { customers: 0, equipments: 0, linkedEquipments: 0, activeContracts: 0, openServiceOrders: 0 };
+const EMPTY_SUMMARY = { customers: 0, equipments: 0, linkedEquipments: 0, contractedEquipments: 0, activeContracts: 0, openServiceOrders: 0 };
 
 export default function CRM() {
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
@@ -151,7 +151,8 @@ export default function CRM() {
 
       <div className="crm-stats" style={s.statsGrid}>
         <Stat icon={<Building2 size={19} />} label="Clientes" value={pick(summary, 'customers', 'totalCustomers')} />
-        <Stat icon={<Printer size={19} />} label="Equipamentos" value={pick(summary, 'equipments', 'totalEquipments')} />
+        <Stat icon={<Printer size={19} />} label="Equipamentos cadastrados" value={pick(summary, 'equipments', 'totalEquipments')} />
+        <Stat icon={<ShieldCheck size={19} />} label="Equipamentos em contrato" value={pick(summary, 'contractedEquipments')} />
         <Stat icon={<FileText size={19} />} label="Contratos ativos" value={summary.contracts?.active ?? pick(summary, 'activeContracts')} />
         <Stat icon={<ClipboardList size={19} />} label="O.S. abertas" value={summary.serviceOrders?.open ?? pick(summary, 'openServiceOrders', 'openOrders', 'serviceOrdersOpen')} tone="warning" />
         <Stat

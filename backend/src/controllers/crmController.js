@@ -419,6 +419,7 @@ async function getSummary(req, res) {
     equipments,
     linkedEquipments,
     activeEquipments,
+    activeEquipmentContractLinks,
     contractRecords,
     syncedServiceOrders,
     syncedOpenServiceOrders,
@@ -431,6 +432,10 @@ async function getSummary(req, res) {
     prisma.crmEquipment.count({ where: { tenantId } }),
     prisma.crmEquipment.count({ where: { tenantId, customerId: { not: null } } }),
     prisma.crmEquipment.count({ where: { tenantId, isActive: true } }),
+    prisma.crmEquipment.findMany({
+      where: { tenantId, isActive: true, contractExternalId: { not: null } },
+      select: { contractExternalId: true },
+    }),
     prisma.externalSyncRecord.findMany({
       where: { tenantId, source: 'firebird', entity: 'contracts' },
       select: { externalId: true, payload: true, syncedAt: true, receivedAt: true },
@@ -456,6 +461,15 @@ async function getSummary(req, res) {
   ]);
 
   const contracts = contractRecords.map(normalizeContract);
+  const activeContractIds = new Set(
+    contracts
+      .filter((contract) => contract.isActive)
+      .map((contract) => text(contract.externalId))
+      .filter(Boolean)
+  );
+  const contractedEquipments = activeEquipmentContractLinks.filter((equipment) => (
+    activeContractIds.has(text(equipment.contractExternalId))
+  )).length;
   const customerMonthlyRevenue = customerRevenue.reduce((total, customer) => {
     return total + (asNumber(rawValue(customer.raw || {}, 'total_mensalidade')) || 0);
   }, 0);
@@ -470,6 +484,7 @@ async function getSummary(req, res) {
     equipments,
     linkedEquipments,
     activeEquipments,
+    contractedEquipments,
     unlinkedEquipments: Math.max(0, equipments - linkedEquipments),
     contracts: {
       total: contracts.length,
