@@ -51,7 +51,43 @@ async function getEquipments(req, res) {
       },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(equipments);
+
+    const externalIds = equipments
+      .map((equipment) => equipment.externalId)
+      .filter(Boolean);
+    const crmEquipments = externalIds.length > 0
+      ? await prisma.crmEquipment.findMany({
+          where: {
+            tenantId,
+            externalSource: 'firebird',
+            externalId: { in: externalIds },
+          },
+          select: {
+            externalId: true,
+            address: true,
+            city: true,
+            state: true,
+            sector: true,
+            installLocation: true,
+            raw: true,
+          },
+        })
+      : [];
+    const crmByExternalId = new Map(crmEquipments.map((equipment) => [equipment.externalId, equipment]));
+
+    res.json(equipments.map((equipment) => {
+      const crmEquipment = crmByExternalId.get(equipment.externalId);
+      const raw = crmEquipment?.raw && typeof crmEquipment.raw === 'object' ? crmEquipment.raw : {};
+      return {
+        ...equipment,
+        address: crmEquipment?.address || equipment.address || null,
+        city: crmEquipment?.city || raw.cidade || raw.CIDADE || null,
+        state: crmEquipment?.state || raw.uf || raw.UF || null,
+        complement: raw.complemento || raw.COMPLEMENTO || null,
+        department: raw.departamento || raw.DEPARTAMENTO || crmEquipment?.sector || equipment.sector || null,
+        installLocation: crmEquipment?.installLocation || raw.localinstal || raw.LOCALINSTAL || null,
+      };
+    }));
   } catch (err) {
     console.error('[getEquipments] erro crítico:', err);
     res.status(500).json({ error: 'Erro ao buscar equipamentos' });
