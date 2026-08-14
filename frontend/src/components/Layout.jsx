@@ -402,6 +402,8 @@ export default function Layout() {
 const styles = {
   root: { display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-base)' },
   nav: {
+    position: 'relative',
+    zIndex: 200,
     display: 'flex',
     alignItems: 'center',
     gap: '1.25rem',
@@ -428,7 +430,7 @@ const styles = {
   brand: { fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)' },
   proTag: { color: 'var(--accent)', fontSize: '0.62rem', verticalAlign: 'top', marginLeft: '0.2rem' },
   centerNav: { flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '0.65rem', justifyContent: 'center' },
-  links: { display: 'flex', gap: '0.45rem', minWidth: 0, overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' },
+  links: { display: 'flex', gap: '0.45rem', minWidth: 0, overflow: 'visible' },
   primaryLink: {
     minHeight: '40px',
     padding: '0 0.85rem',

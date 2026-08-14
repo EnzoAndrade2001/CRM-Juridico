@@ -1997,6 +1997,20 @@ export const MessageComposer = React.memo(function MessageComposer({
   onReconnect,
 }) {
   const fileInputRef = useRef(null);
+  const textInputRef = useRef(null);
+
+  useEffect(() => {
+    const input = textInputRef.current;
+    if (!input) return;
+
+    const minHeight = isMobile ? 46 : 52;
+    const maxHeight = isMobile ? 180 : 240;
+
+    input.style.height = 'auto';
+    const contentHeight = input.scrollHeight;
+    input.style.height = `${Math.min(Math.max(contentHeight, minHeight), maxHeight)}px`;
+    input.style.overflowY = contentHeight > maxHeight ? 'auto' : 'hidden';
+  }, [text, isMobile]);
 
   function appendFiles(incomingFiles, sourceLabel = 'anexos') {
     const normalizedFiles = incomingFiles
@@ -2157,19 +2171,20 @@ export const MessageComposer = React.memo(function MessageComposer({
                 ) : null}
 
                 <textarea
-                  style={{ ...styles.textInput, minHeight: isMobile ? '46px' : '52px', fontSize: isMobile ? '0.88rem' : '0.97rem' }}
+                  ref={textInputRef}
+                  style={{
+                    ...styles.textInput,
+                    minHeight: isMobile ? '46px' : '52px',
+                    maxHeight: isMobile ? '180px' : '240px',
+                    fontSize: isMobile ? '0.88rem' : '0.97rem',
+                  }}
                   rows={1}
                   value={text}
-                  onChange={(event) => {
-                    handleInput(event.target.value);
-                    event.target.style.height = 'auto';
-                    event.target.style.height = `${event.target.scrollHeight}px`;
-                  }}
+                  onChange={(event) => handleInput(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' && !event.shiftKey) {
                       event.preventDefault();
                       handleSend();
-                      event.target.style.height = isMobile ? '46px' : '52px';
                     }
                   }}
                   onPaste={isNote ? undefined : handlePaste}
