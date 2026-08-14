@@ -174,7 +174,9 @@ export const deleteContact = (id) => api.delete(`/contacts/${id}`);
 // CRM Firebird
 export const getCrmSummary = () => api.get('/crm/summary');
 export const getCrmCustomers = (params = {}) => api.get('/crm/customers', { params });
-export const getCrmCustomer = (id) => api.get(`/crm/customers/${id}`);
+export const getCrmCustomer = (id) => api.get(`/crm/customers/${id}`, { timeout: 10000 });
+export const getCrmCustomerContracts = (id) => api.get(`/crm/customers/${id}/contracts`, { timeout: 15000 });
+export const getCrmCustomerServiceOrders = (id, limit = 25) => api.get(`/crm/customers/${id}/service-orders`, { params: { limit }, timeout: 15000 });
 export const getCrmEquipments = (params = {}) => api.get('/crm/equipments', { params });
 
 // Billing Integration (Automação de Cobranças)

@@ -48,7 +48,8 @@ function asDate(value, timeValue) {
     const [hh, mi, ss] = time
       ? time.split(':')
       : [matchedHour || '00', matchedMinute || '00', matchedSecond || '00'];
-    return new Date(`${yyyy}-${mm}-${dd}T${hh.padStart(2, '0')}:${mi}:${ss}`).toISOString();
+    const parsed = new Date(`${yyyy}-${mm}-${dd}T${hh.padStart(2, '0')}:${mi}:${ss}`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
   }
   const isoDay = input.match(/^(\d{4}-\d{2}-\d{2})(?:T00:00:00(?:\.\d+)?(?:Z)?)?$/);
   const isoDate = isoDay && time ? `${isoDay[1]}T${time}` : input;
@@ -417,26 +418,11 @@ async function getCustomer(req, res) {
   const customer = await findTenantCustomer(tenantId, req.params.id);
   if (!customer) return res.status(404).json({ error: 'Cliente CRM nao encontrado' });
 
-  const historyLimit = Math.min(Number(req.query.historyLimit || 10) || 10, 25);
-  const [contracts, serviceOrders] = await Promise.all([
-    loadContracts(tenantId, customer.externalId),
-    loadCustomerOrders(tenantId, customer, historyLimit),
-  ]);
-  const activeContracts = contracts.filter((contract) => contract.isActive);
-  const openOrders = serviceOrders.filter((order) => order.status !== 'FINALIZADA');
-
   res.json({
     ...customer,
-    contracts,
-    serviceOrders,
     operationalSummary: {
       equipments: customer.equipments.length,
       activeEquipments: customer.equipments.filter((equipment) => equipment.isActive).length,
-      contracts: contracts.length,
-      activeContracts: activeContracts.length,
-      contractValue: activeContracts.reduce((total, contract) => total + (contract.value || 0), 0),
-      openServiceOrders: openOrders.length,
-      lastServiceOrderAt: serviceOrders[0]?.openedAt || null,
       monthlyRevenue: asNumber(rawValue(customer.raw || {}, 'total_mensalidade')) || 0,
     },
   });

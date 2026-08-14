@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const authenticate = require('../middlewares/authenticate');
+const asyncRoute = (handler) => (req, res, next) => Promise.resolve(handler(req, res, next)).catch(next);
 const {
   getSummary,
   listCustomers,
@@ -11,11 +12,11 @@ const {
 
 router.use(authenticate);
 
-router.get('/summary', getSummary);
-router.get('/customers', listCustomers);
-router.get('/customers/:id', getCustomer);
-router.get('/customers/:id/contracts', getCustomerContracts);
-router.get('/customers/:id/service-orders', getCustomerServiceOrders);
-router.get('/equipments', listEquipments);
+router.get('/summary', asyncRoute(getSummary));
+router.get('/customers', asyncRoute(listCustomers));
+router.get('/customers/:id', asyncRoute(getCustomer));
+router.get('/customers/:id/contracts', asyncRoute(getCustomerContracts));
+router.get('/customers/:id/service-orders', asyncRoute(getCustomerServiceOrders));
+router.get('/equipments', asyncRoute(listEquipments));
 
 module.exports = router;

@@ -22,7 +22,13 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import { getCrmCustomer, getCrmCustomers, getCrmSummary } from '../services/api';
+import {
+  getCrmCustomer,
+  getCrmCustomerContracts,
+  getCrmCustomerServiceOrders,
+  getCrmCustomers,
+  getCrmSummary,
+} from '../services/api';
 
 const EMPTY_SUMMARY = { customers: 0, equipments: 0, linkedEquipments: 0, activeContracts: 0, openServiceOrders: 0 };
 
@@ -32,6 +38,8 @@ export default function CRM() {
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
+  const [relatedLoading, setRelatedLoading] = useState(false);
+  const [modalError, setModalError] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -55,11 +63,46 @@ export default function CRM() {
     setSelectedCustomer(customer);
     setActiveTab(tab);
     setModalLoading(true);
+    setRelatedLoading(false);
+    setModalError('');
     try {
       const response = await getCrmCustomer(customer.id);
-      setSelectedCustomer(response.data || customer);
+      const fullCustomer = response.data || customer;
+      setSelectedCustomer(fullCustomer);
+      setModalLoading(false);
+      setRelatedLoading(true);
+
+      const [contractsResult, ordersResult] = await Promise.allSettled([
+        getCrmCustomerContracts(customer.id),
+        getCrmCustomerServiceOrders(customer.id, 25),
+      ]);
+      const contracts = contractsResult.status === 'fulfilled' ? contractsResult.value.data?.items || [] : [];
+      const serviceOrders = ordersResult.status === 'fulfilled' ? ordersResult.value.data?.items || [] : [];
+
+      setSelectedCustomer((current) => ({
+        ...(current || fullCustomer),
+        contracts,
+        serviceOrders,
+        operationalSummary: {
+          ...(current?.operationalSummary || fullCustomer.operationalSummary || {}),
+          contracts: contracts.length,
+          activeContracts: contracts.filter(isContractActive).length,
+          contractValue: contracts.filter(isContractActive).reduce((total, contract) => total + Number(contract.value || 0), 0),
+          openServiceOrders: serviceOrders.filter((order) => !isOrderClosed(order)).length,
+          lastServiceOrderAt: serviceOrders[0]?.openedAt || null,
+        },
+      }));
+
+      if (contractsResult.status === 'rejected' || ordersResult.status === 'rejected') {
+        setModalError('Algumas informações complementares não puderam ser carregadas. Você pode tentar novamente.');
+      }
+    } catch (error) {
+      setModalError(error.code === 'ECONNABORTED'
+        ? 'A consulta ao servidor demorou mais que o esperado. Tente novamente.'
+        : 'Não foi possível atualizar os dados deste cliente.');
     } finally {
       setModalLoading(false);
+      setRelatedLoading(false);
     }
   }
 
@@ -152,6 +195,9 @@ export default function CRM() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           loading={modalLoading}
+          relatedLoading={relatedLoading}
+          error={modalError}
+          onRetry={() => openCustomer(selectedCustomer, activeTab)}
           onClose={() => { setSelectedCustomer(null); setActiveTab('overview'); }}
         />
       ) : null}
@@ -159,7 +205,7 @@ export default function CRM() {
   );
 }
 
-function CustomerModal({ customer, activeTab, setActiveTab, loading, onClose }) {
+function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoading, error, onRetry, onClose }) {
   const equipments = arrayOf(customer.equipments);
   const contracts = arrayOf(customer.contracts);
   const serviceOrders = arrayOf(customer.serviceOrders, customer.orders, customer.osHistory);
@@ -199,6 +245,8 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, onClose }) 
 
         <div style={s.modalBody}>
           {loading ? <div style={s.loadingBox}><RefreshCw size={18} /> Carregando informações atualizadas do ILUX...</div> : null}
+          {!loading && relatedLoading ? <div style={s.loadingInline}><RefreshCw size={16} /> Carregando contratos e histórico de O.S. em segundo plano...</div> : null}
+          {!loading && error ? <div style={s.errorBox}><AlertCircle size={17} /><span style={{ flex: 1 }}>{error}</span><button type="button" style={s.retryBtn} onClick={onRetry}>Tentar novamente</button></div> : null}
           {!loading && activeTab === 'overview' ? <OverviewTab customer={customer} equipments={equipments} contracts={contracts} serviceOrders={serviceOrders} /> : null}
           {!loading && activeTab === 'equipments' ? <EquipmentsTab equipments={equipments} /> : null}
           {!loading && activeTab === 'contracts' ? <ContractsTab contracts={contracts} /> : null}
@@ -534,6 +582,9 @@ const s = {
   modalFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1.4rem', borderTop: '1px solid var(--border-color)', background: 'rgba(8,12,22,.35)', color: 'var(--text-dim)', fontSize: '0.74rem' },
   secondaryBtn: { minWidth: 130, background: 'var(--bg-surface)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: 11, padding: '0.7rem 1rem', fontWeight: 900, cursor: 'pointer' },
   loadingBox: { display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '1rem', borderRadius: 12, color: 'var(--text-muted)', border: '1px solid var(--border-color)' },
+  loadingInline: { display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.85rem', padding: '0.7rem 0.85rem', borderRadius: 10, color: 'var(--text-muted)', background: 'var(--bg-base)', border: '1px solid var(--border-color)', fontSize: '0.78rem' },
+  errorBox: { display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.85rem', padding: '0.75rem 0.85rem', borderRadius: 10, color: '#fca5a5', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.28)', fontSize: '0.78rem' },
+  retryBtn: { flex: '0 0 auto', border: '1px solid rgba(239,68,68,.35)', borderRadius: 8, padding: '0.4rem 0.65rem', background: 'transparent', color: '#fecaca', fontWeight: 850, cursor: 'pointer' },
   sectionStack: { display: 'grid', gap: '1rem' },
   profileStats: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '0.7rem' },
   miniStat: { display: 'flex', alignItems: 'center', gap: '0.7rem', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: 13, background: 'var(--bg-base)' },
