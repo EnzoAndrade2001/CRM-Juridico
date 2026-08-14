@@ -25,6 +25,12 @@ import Users from './Users';
 import Teams from './Teams';
 
 const TABS = ['Robo IA', 'Atendimento', 'Atendentes', 'Equipes', 'Empresa', 'Respostas rapidas', 'Etiquetas', 'RevGuard AI', 'Minha conta', 'Agente Local'];
+const TAB_GROUPS = [
+  { label: 'Automação', indexes: [0, 1, 5, 6] },
+  { label: 'Equipe', indexes: [2, 3] },
+  { label: 'Negócio', indexes: [4, 7] },
+  { label: 'Sistema', indexes: [8, 9] },
+];
 const DAYS = ['Domingo', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado'];
 
 export default function Settings() {
@@ -337,26 +343,41 @@ export default function Settings() {
 
   return (
     <div className="settings-container" style={s.container}>
+      <style>{settingsResponsiveCss}</style>
       <div className="settings-header" style={s.header}>
         <p style={s.kicker}>Preferencias</p>
         <h2 className="settings-title" style={s.title}>Configuracoes</h2>
         <div className="settings-subtitle" style={s.subtitle}>Gerencie o robo, as operacoes do atendimento e os dados da empresa.</div>
       </div>
 
-      <div
-        style={{
-          ...s.tabs,
-          overflowX: isMobile ? 'auto' : 'visible',
-          whiteSpace: isMobile ? 'nowrap' : 'normal',
-          paddingBottom: isMobile ? '10px' : '0',
-        }}
-      >
-        {TABS.map((item, index) => (
-          <button key={item} style={{ ...s.tab, ...(tab === index ? s.tabActive : {}) }} onClick={() => setTab(index)}>
-            {item}
-          </button>
-        ))}
-      </div>
+      <nav className="settings-nav" style={s.tabs} aria-label="Seções das configurações">
+        <label className="settings-mobile-select" style={s.mobileSelectWrap}>
+          <span style={s.mobileSelectLabel}>Seção atual</span>
+          <select style={s.mobileSelect} value={tab} onChange={(event) => setTab(Number(event.target.value))}>
+            {TABS.map((item, index) => <option key={item} value={index}>{item}</option>)}
+          </select>
+        </label>
+        <div className="settings-desktop-groups" style={s.tabGroups}>
+          {TAB_GROUPS.map((group) => (
+            <div key={group.label} style={s.tabGroup}>
+              <span style={s.tabGroupLabel}>{group.label}</span>
+              <div style={s.tabGroupButtons}>
+                {group.indexes.map((index) => (
+                  <button
+                    key={TABS[index]}
+                    type="button"
+                    style={{ ...s.tab, ...(tab === index ? s.tabActive : {}) }}
+                    onClick={() => setTab(index)}
+                    aria-current={tab === index ? 'page' : undefined}
+                  >
+                    {TABS[index]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </nav>
 
       {tab === 0 && (
         <div style={s.sections}>
@@ -1162,9 +1183,30 @@ export default function Settings() {
   );
 }
 
+const settingsResponsiveCss = `
+  .settings-container button:focus-visible,
+  .settings-container input:focus-visible,
+  .settings-container textarea:focus-visible,
+  .settings-container select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .settings-mobile-select { display: none !important; }
+  @media (max-width: 1050px) {
+    .settings-container { padding: 1.5rem !important; }
+    .settings-desktop-groups { gap: .8rem !important; }
+  }
+  @media (max-width: 760px) {
+    .settings-container { padding: 1rem !important; }
+    .settings-header { margin-bottom: 1.25rem !important; }
+    .settings-desktop-groups { display: none !important; }
+    .settings-mobile-select { display: grid !important; }
+    .settings-nav { padding: .65rem !important; margin: 0 -1rem 1rem !important; border-radius: 0 !important; top: 0 !important; }
+    .settings-container section, .settings-container form { min-width: 0; }
+    .settings-container table { min-width: 620px; }
+  }
+`;
+
 const s = {
-  container: { padding: '2.5rem', flex: 1, overflowY: 'auto', background: 'var(--bg-base)', color: 'var(--text-main)' },
-  header: { marginBottom: '3rem' },
+  container: { padding: '2rem', flex: 1, overflowY: 'auto', background: 'var(--bg-base)', color: 'var(--text-main)' },
+  header: { marginBottom: '1.5rem' },
   kicker: {
     margin: '0 0 0.45rem',
     color: 'var(--accent)',
@@ -1175,26 +1217,34 @@ const s = {
   },
   title: { fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.4rem', fontFamily: 'var(--font-display)' },
   subtitle: { fontSize: '0.95rem', color: 'var(--text-muted)', lineHeight: 1.6 },
-  tabs: { display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2.5rem' },
+  tabs: { position: 'sticky', top: '-2rem', zIndex: 20, display: 'block', margin: '0 -0.35rem 1.5rem', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '16px', background: 'var(--bg-base)', boxShadow: '0 10px 30px rgba(0,0,0,.12)' },
+  tabGroups: { display: 'flex', alignItems: 'stretch', justifyContent: 'space-between', gap: '1.15rem', overflowX: 'auto' },
+  tabGroup: { display: 'grid', alignContent: 'start', gap: '0.45rem', minWidth: 'max-content' },
+  tabGroupLabel: { paddingLeft: '0.4rem', color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase' },
+  tabGroupButtons: { display: 'flex', gap: '0.25rem', paddingRight: '0.9rem', borderRight: '1px solid var(--border-color)' },
   tab: {
-    padding: '0.8rem 1rem',
-    border: 'none',
-    background: 'none',
+    padding: '0.58rem 0.72rem',
+    border: '1px solid transparent',
+    borderRadius: '9px',
+    background: 'transparent',
     cursor: 'pointer',
-    fontSize: '0.95rem',
+    fontSize: '0.78rem',
     color: 'var(--text-muted)',
-    borderBottom: '2px solid transparent',
     transition: 'all 0.2s',
-    fontWeight: 700,
+    fontWeight: 800,
+    whiteSpace: 'nowrap',
   },
-  tabActive: { color: 'var(--accent)', borderBottomColor: 'var(--accent)' },
-  sections: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' },
-  card: { background: 'var(--bg-surface)', padding: '2rem', borderRadius: '24px', border: '1px solid var(--border-color)' },
+  tabActive: { color: 'var(--text-main)', borderColor: 'var(--accent-border)', background: 'var(--accent-light)' },
+  mobileSelectWrap: { gap: '0.35rem' },
+  mobileSelectLabel: { color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' },
+  mobileSelect: { width: '100%', padding: '0.72rem', border: '1px solid var(--border-color)', borderRadius: '10px', color: 'var(--text-main)', background: 'var(--bg-surface)', fontWeight: 600 },
+  sections: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))', gap: '1rem', alignItems: 'start' },
+  card: { background: 'var(--bg-surface)', padding: '1.35rem', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 10px 28px rgba(0,0,0,.08)' },
   cardTitle: {
     fontSize: '1.1rem',
     fontWeight: 800,
-    marginBottom: '2rem',
-    color: 'var(--accent)',
+    marginBottom: '1.25rem',
+    color: 'var(--text-main)',
     borderBottom: '1px solid var(--border-color)',
     paddingBottom: '1rem',
   },
@@ -1204,7 +1254,7 @@ const s = {
     fontWeight: 800,
     color: 'var(--text-main)',
   },
-  form: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
+  form: { display: 'flex', flexDirection: 'column', gap: '1rem' },
   field: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
   toggleCard: {
     display: 'flex',
@@ -1220,7 +1270,7 @@ const s = {
   toggleStatus: { fontWeight: 800, fontSize: '0.88rem' },
   toggleHint: { fontSize: '0.8rem', color: 'var(--text-dim)', margin: 0, lineHeight: 1.5 },
   switch: { width: '40px', height: '20px', cursor: 'pointer', accentColor: 'var(--accent)' },
-  label: { fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  label: { fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' },
   input: {
     background: 'var(--bg-base)',
     border: '1px solid var(--border-color)',

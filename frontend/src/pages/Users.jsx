@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { BadgeCheck, Pencil, Plus, Search, Shield, Trash2, UserRound, UserX } from 'lucide-react';
 import { toast } from '../utils/toast';
 import api, { getUsers, createUser, updateUser, deleteUser, getTeams } from '../services/api';
+import PageHeader from '../components/ui/PageHeader';
+import ActionButton from '../components/ui/ActionButton';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -99,17 +101,13 @@ export default function Users() {
 
   return (
     <div style={s.container}>
-      <header style={s.header}>
-        <div>
-          <p style={s.kicker}>Administracao</p>
-          <h1 style={s.title}>Gestao de usuarios</h1>
-          <p style={s.subtitle}>Controle acessos, cargos e status da equipe em um fluxo mais claro.</p>
-        </div>
-        <button style={s.addBtn} onClick={() => openModal()}>
-          <Plus size={16} />
-          Adicionar agente
-        </button>
-      </header>
+      <PageHeader
+        kicker="Administração"
+        title="Gestão de usuários"
+        subtitle="Controle acessos, funções e disponibilidade da equipe."
+        actions={<ActionButton onClick={() => openModal()}><Plus size={16} /> Adicionar agente</ActionButton>}
+        compact
+      />
 
       <section style={s.filterBar}>
         <div style={s.searchWrap}>

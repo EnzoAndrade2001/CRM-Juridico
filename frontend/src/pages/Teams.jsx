@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Pencil, Plus, Trash2, UserPlus, Users, X } from 'lucide-react';
 import { toast } from '../utils/toast';
 import { getTeams, createTeam, updateTeam, deleteTeam, getUsers, addTeamMember, removeTeamMember } from '../services/api';
+import PageHeader from '../components/ui/PageHeader';
+import ActionButton from '../components/ui/ActionButton';
 
 export default function Teams() {
   const [teams, setTeams] = useState([]);
@@ -88,14 +90,11 @@ export default function Teams() {
 
   return (
     <div style={s.container}>
-      <header style={s.header}>
-        <div>
-          <p style={s.kicker}>Estrutura operacional</p>
-          <h1 style={s.title}>Equipes e departamentos</h1>
-          <p style={s.subtitle}>Organize os agentes por setor e distribua a operacao com mais clareza.</p>
-        </div>
-        <button
-          style={s.addBtn}
+      <PageHeader
+        kicker="Estrutura operacional"
+        title="Equipes e departamentos"
+        subtitle="Organize agentes por setor e distribua o atendimento com clareza."
+        actions={<ActionButton
           onClick={() => {
             setSelectedTeam(null);
             setName('');
@@ -104,8 +103,9 @@ export default function Teams() {
         >
           <Plus size={18} />
           Criar equipe
-        </button>
-      </header>
+        </ActionButton>}
+        compact
+      />
 
       {loading ? (
         <div style={s.empty}>Carregando estrutura organizacional...</div>

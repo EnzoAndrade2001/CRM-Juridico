@@ -197,22 +197,35 @@ export default function ContactProfileModal({ contact, onClose, onUpdated, initi
 
   return (
     <ModalShell kicker="Perfil do cliente" title={contact.name || 'Cliente'} onClose={onClose} maxWidth="52rem">
-      <div style={s.panelBody}>
-        <div style={s.tabs}>
-          <button style={{ ...s.tab, ...(activeTab === 'dados' ? s.tabActive : {}) }} onClick={() => setActiveTab('dados')}>
+      <div className="contact-profile" style={s.panelBody}>
+        <style>{contactProfileCss}</style>
+        <div style={s.profileSummary}>
+          <div style={s.profileIdentity}>
+            <div style={s.profileAvatar}><User size={18} /></div>
+            <div style={{ minWidth: 0 }}>
+              <strong style={s.profileName}>{contact.fantasyName || contact.name || 'Cliente'}</strong>
+              <span style={s.profileMeta}>{contact.cpfCnpj || 'Documento não informado'} · {contact.phone || contact.whatsapp || 'Telefone não informado'}</span>
+            </div>
+          </div>
+          <span style={s.profileCode}>ID {String(contact.externalId || contact.id || '—').slice(-8)}</span>
+        </div>
+        <div className="contact-profile-tabs" style={s.tabs} role="tablist" aria-label="Seções do perfil">
+          <button type="button" role="tab" aria-selected={activeTab === 'dados'} style={{ ...s.tab, ...(activeTab === 'dados' ? s.tabActive : {}) }} onClick={() => setActiveTab('dados')}>
             <User size={16} /> Dados
           </button>
-          <button style={{ ...s.tab, ...(activeTab === 'equipamentos' ? s.tabActive : {}) }} onClick={() => setActiveTab('equipamentos')}>
-            <Printer size={16} /> Equipamentos
+          <button type="button" role="tab" aria-selected={activeTab === 'equipamentos'} style={{ ...s.tab, ...(activeTab === 'equipamentos' ? s.tabActive : {}) }} onClick={() => setActiveTab('equipamentos')}>
+            <Printer size={16} /> Equipamentos {equipments.length ? `(${equipments.length})` : ''}
           </button>
-          <button style={{ ...s.tab, ...(activeTab === 'os' ? s.tabActive : {}) }} onClick={() => setActiveTab('os')}>
-            <FileText size={16} /> Historico O.S.
+          <button type="button" role="tab" aria-selected={activeTab === 'os'} style={{ ...s.tab, ...(activeTab === 'os' ? s.tabActive : {}) }} onClick={() => setActiveTab('os')}>
+            <FileText size={16} /> Histórico O.S. {osHistory.length ? `(${osHistory.length})` : ''}
           </button>
         </div>
 
-        <div style={s.content}>
+        <div className="contact-profile-content" style={s.content}>
           {activeTab === 'dados' ? (
-            <div>
+            <div style={s.sectionStack}>
+            <section style={s.fieldCard}>
+            <h3 style={s.fieldCardTitle}>Identificação</h3>
             <div style={s.inputGroup}>
               <div>
                 <label style={s.label}>Nome</label>
@@ -225,31 +238,27 @@ export default function ContactProfileModal({ contact, onClose, onUpdated, initi
             </div>
             <div style={s.inputGroup}>
               <div>
+                <label style={s.label}>CNPJ / CPF</label>
+                <input style={s.input} value={formData.cpfCnpj} onChange={(e) => setFormData({ ...formData, cpfCnpj: e.target.value })} />
+              </div>
+            </div>
+            </section>
+            <section style={s.fieldCard}>
+            <h3 style={s.fieldCardTitle}>Canais de contato</h3>
+            <div style={s.inputGroup}>
+              <div>
                 <label style={s.label}>Telefone do cadastro</label>
                 <input style={s.input} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
               </div>
               <div>
                 <label style={s.label}>WhatsApp para envios</label>
-                <input
-                  style={s.input}
-                  value={formData.whatsapp}
-                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                  placeholder="Ex.: 5551999999999"
-                />
+                <input style={s.input} value={formData.whatsapp} onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })} placeholder="Ex.: 5551999999999" />
               </div>
             </div>
-            <div style={s.inputGroup}>
-              <div>
-                <label style={s.label}>E-mail</label>
-                <input style={s.input} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-              </div>
-            </div>
-            <div style={s.inputGroup}>
-              <div>
-                <label style={s.label}>CNPJ / CPF</label>
-                <input style={s.input} value={formData.cpfCnpj} onChange={(e) => setFormData({ ...formData, cpfCnpj: e.target.value })} />
-              </div>
-            </div>
+            <div><label style={s.label}>E-mail</label><input style={s.input} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} /></div>
+            </section>
+            <section style={s.fieldCard}>
+            <h3 style={s.fieldCardTitle}>Endereço principal</h3>
             <div>
               <label style={s.label}>Endereco (rua, numero, bairro)</label>
               <input style={s.input} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
@@ -264,6 +273,7 @@ export default function ContactProfileModal({ contact, onClose, onUpdated, initi
                 <input style={s.input} value={formData.state} onChange={(e) => setFormData({ ...formData, state: e.target.value })} />
               </div>
             </div>
+            </section>
             </div>
           ) : null}
 
@@ -358,6 +368,16 @@ export default function ContactProfileModal({ contact, onClose, onUpdated, initi
   );
 }
 
+const contactProfileCss = `
+  .contact-profile button:focus-visible,
+  .contact-profile input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 640px) {
+    .contact-profile-content { padding: 1rem !important; }
+    .contact-profile-tabs { padding: 0 .75rem !important; }
+    .contact-profile-tabs button { padding: .8rem .65rem !important; font-size: .76rem; }
+  }
+`;
+
 const s = {
   panelBody: {
     display: 'flex',
@@ -365,6 +385,12 @@ const s = {
     flex: 1,
     minHeight: 0,
   },
+  profileSummary: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', padding: '0.85rem 1.8rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-base)' },
+  profileIdentity: { display: 'flex', alignItems: 'center', gap: '0.7rem', minWidth: 0 },
+  profileAvatar: { width: 36, height: 36, flex: '0 0 auto', display: 'grid', placeItems: 'center', borderRadius: 10, color: 'var(--accent)', background: 'var(--accent-light)' },
+  profileName: { display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-main)', fontSize: '0.9rem' },
+  profileMeta: { display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-muted)', fontSize: '0.72rem', marginTop: 2 },
+  profileCode: { flex: '0 0 auto', padding: '0.3rem 0.55rem', border: '1px solid var(--border-color)', borderRadius: 999, color: 'var(--text-dim)', fontSize: '0.68rem', fontWeight: 800 },
   tabs: {
     display: 'flex',
     borderBottom: '1px solid var(--border-color)',
@@ -374,7 +400,7 @@ const s = {
     overflowX: 'auto',
   },
   tab: {
-    padding: '0.95rem 1rem',
+    padding: '0.8rem 0.85rem',
     cursor: 'pointer',
     fontWeight: 700,
     color: 'var(--text-muted)',
@@ -389,7 +415,10 @@ const s = {
     color: 'var(--accent)',
     borderBottomColor: 'var(--accent)',
   },
-  content: { padding: '1.8rem', overflowY: 'auto', flex: 1, minHeight: 0 },
+  content: { padding: '1.25rem 1.8rem', overflowY: 'auto', flex: 1, minHeight: 0 },
+  sectionStack: { display: 'grid', gap: '0.85rem' },
+  fieldCard: { padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 14, background: 'var(--bg-base)' },
+  fieldCardTitle: { margin: '0 0 0.9rem', paddingBottom: '0.65rem', borderBottom: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.86rem' },
   inputGroup: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' },
   label: {
     fontSize: '0.78rem',
@@ -405,7 +434,7 @@ const s = {
     padding: '12px',
     background: 'var(--bg-base)',
     border: '1px solid var(--border-color)',
-    borderRadius: '12px',
+    borderRadius: '10px',
     color: 'var(--text-main)',
     outline: 'none',
     boxSizing: 'border-box',

@@ -1,11 +1,12 @@
 import React from 'react';
 
-export default function EmptyState({ icon, title, description, style }) {
+export default function EmptyState({ icon, title, description, action, style, ...props }) {
   return (
-    <div style={{ ...s.wrap, ...style }}>
-      {icon ? <div style={s.icon}>{icon}</div> : null}
+    <div style={{ ...s.wrap, ...style }} {...props}>
+      {icon ? <div style={s.icon} aria-hidden="true">{icon}</div> : null}
       {title ? <div style={s.title}>{title}</div> : null}
       {description ? <div style={s.description}>{description}</div> : null}
+      {action ? <div style={s.action}>{action}</div> : null}
     </div>
   );
 }
@@ -14,8 +15,8 @@ const s = {
   wrap: {
     background: 'var(--bg-panel)',
     border: '1px dashed var(--border-color)',
-    borderRadius: '22px',
-    padding: '3rem',
+    borderRadius: 'var(--radius-md)',
+    padding: 'var(--space-10) var(--space-6)',
     textAlign: 'center',
     color: 'var(--text-muted)',
   },
@@ -26,14 +27,17 @@ const s = {
     color: 'var(--accent)',
   },
   title: {
-    marginTop: '0.9rem',
-    marginBottom: '0.45rem',
+    marginTop: 'var(--space-3)',
+    marginBottom: 'var(--space-2)',
     color: 'var(--text-main)',
-    fontWeight: 800,
-    fontSize: '1.05rem',
+    fontWeight: 700,
+    fontSize: 'var(--text-md)',
   },
   description: {
-    fontSize: '0.9rem',
-    lineHeight: 1.6,
+    fontSize: 'var(--text-sm)',
+    lineHeight: 'var(--leading-relaxed)',
+    maxWidth: '34rem',
+    margin: '0 auto',
   },
+  action: { marginTop: 'var(--space-5)', display: 'flex', justifyContent: 'center' },
 };

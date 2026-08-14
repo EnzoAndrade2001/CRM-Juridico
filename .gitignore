@@ -70,6 +70,7 @@ scratch/
 backend/scratch/
 .codex-artifacts/
 .playwright-cli/
+output/playwright/
 
 # ===========================
 # Firebird Client Builds

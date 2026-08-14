@@ -3,50 +3,106 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* Fonts */
-  --font-main: 'Inter', sans-serif;
-  --font-display: 'Syne', sans-serif;
+  /* Type */
+  --font-main: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: var(--font-main);
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
 
-  /* Brand Colors */
-  --accent: #D4AF37;
-  --accent-hover: #F2D06B;
-  --accent-light: rgba(212, 175, 55, 0.1);
-  --accent-border: rgba(212, 175, 55, 0.3);
-  --danger: #e53e3e;
-  --danger-light: rgba(229, 62, 62, 0.08);
-  --success: #2ecc71;
-  --success-light: rgba(46, 204, 113, 0.08);
-  --success-border: rgba(46, 204, 113, 0.16);
-  --warning: #f59e0b;
-  --warning-light: rgba(245, 158, 11, 0.08);
-  --info: #3b82f6;
-  --info-light: rgba(59, 130, 246, 0.12);
-  --info-border: rgba(59, 130, 246, 0.18);
+  /* Graphite + Champagne */
+  --brand-solid: #C9A84E;
+  --brand-solid-hover: #D9BB65;
+  --brand-on-solid: #17130A;
+  --accent: #E8C96A;
+  --accent-hover: #F0D987;
+  --accent-light: rgba(201, 168, 78, 0.12);
+  --accent-border: rgba(201, 168, 78, 0.28);
+  --focus-ring: rgba(201, 168, 78, 0.34);
+
+  /* Semantic colors */
+  --danger: #EF4444;
+  --danger-text: #FCA5A5;
+  --danger-light: rgba(239, 68, 68, 0.1);
+  --danger-border: rgba(239, 68, 68, 0.26);
+  --success: #22C55E;
+  --success-text: #86EFAC;
+  --success-light: rgba(34, 197, 94, 0.1);
+  --success-border: rgba(34, 197, 94, 0.24);
+  --warning: #F59E0B;
+  --warning-text: #FCD34D;
+  --warning-light: rgba(245, 158, 11, 0.1);
+  --warning-border: rgba(245, 158, 11, 0.24);
+  --info: #3B82F6;
+  --info-text: #93C5FD;
+  --info-light: rgba(59, 130, 246, 0.1);
+  --info-border: rgba(59, 130, 246, 0.24);
   --overlay-bg: rgba(0, 0, 0, 0.65);
 
-  /* Radii */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-
   /* Spacing */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-xs: var(--space-1);
+  --space-sm: var(--space-2);
+  --space-md: var(--space-4);
+  --space-lg: var(--space-6);
+
+  /* Shape */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.16);
+  --shadow-md: 0 16px 40px rgba(0, 0, 0, 0.22);
+  --shadow-lg: 0 24px 72px rgba(0, 0, 0, 0.34);
+
+  /* Safe defaults before a theme class is mounted */
+  --bg-base: #0B0D12;
+  --bg-surface: #11151D;
+  --bg-panel: #171C26;
+  --bg-panel-hover: #1D2430;
+  --border-color: #293241;
+  --border-light: rgba(255, 255, 255, 0.045);
+  --text-main: #F4F6FA;
+  --text-muted: #AAB4C5;
+  --text-dim: #7C899E;
+  --text-inverse: #17130A;
+  color-scheme: dark;
 }
 
 body.dark-theme {
-  --bg-base: #0f1115;
-  --bg-surface: #141821;
-  --bg-panel: #1a1f2b;
-  --bg-panel-hover: #202633;
-  --border-color: #262d3b;
-  --border-light: rgba(255, 255, 255, 0.03);
-  --text-main: #FFFFFF;
-  --text-muted: #a3adc2;
-  --text-dim: #65738d;
-  --text-inverse: #000000;
+  --bg-base: #0B0D12;
+  --bg-surface: #11151D;
+  --bg-panel: #171C26;
+  --bg-panel-hover: #1D2430;
+  --border-color: #293241;
+  --border-light: rgba(255, 255, 255, 0.045);
+  --text-main: #F4F6FA;
+  --text-muted: #AAB4C5;
+  --text-dim: #7C899E;
+  --text-inverse: #17130A;
+  --accent: #E8C96A;
+  --accent-hover: #F0D987;
+  color-scheme: dark;
   
   /* Message Bubbles - Dark */
   --bg-msg-me: #1d5f52;
@@ -56,26 +112,34 @@ body.dark-theme {
   --border-msg-ai: rgba(59, 130, 246, 0.22);
   --bg-msg-contact: #181d27;
   --text-msg-contact: var(--text-main);
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
-  --glass-bg: rgba(20, 24, 33, 0.82);
+  --glass-bg: rgba(17, 21, 29, 0.86);
   --glass-border: rgba(255, 255, 255, 0.05);
-  --chat-header-bg: rgba(20, 24, 33, 0.88);
+  --chat-header-bg: rgba(17, 21, 29, 0.9);
   --chat-meta-bg: rgba(255, 255, 255, 0.04);
   --chat-meta-border: rgba(255, 255, 255, 0.05);
 }
 
 body.light-theme {
-  --bg-base: #f8fafc;
+  --bg-base: #F5F7FA;
   --bg-surface: #FFFFFF;
-  --bg-panel: #f1f5f9;
-  --bg-panel-hover: #e2e8f0;
-  --border-color: #cbd5e1;
+  --bg-panel: #F8FAFC;
+  --bg-panel-hover: #EEF2F6;
+  --border-color: #DCE2EA;
   --border-light: rgba(0, 0, 0, 0.06);
-  --text-main: #0f172a;
-  --text-muted: #334155;
-  --text-dim: #475569;
+  --text-main: #111827;
+  --text-muted: #475569;
+  --text-dim: #64748B;
   --text-inverse: #FFFFFF;
+  --accent: #806515;
+  --accent-hover: #674F0C;
+  --accent-light: rgba(128, 101, 21, 0.09);
+  --accent-border: rgba(128, 101, 21, 0.24);
+  --focus-ring: rgba(128, 101, 21, 0.25);
+  --danger-text: #B91C1C;
+  --success-text: #15803D;
+  --warning-text: #A16207;
+  --info-text: #1D4ED8;
+  color-scheme: light;
 
   /* Message Bubbles - Light */
   --bg-msg-me: #dff4ea;
@@ -85,8 +149,10 @@ body.light-theme {
   --border-msg-ai: rgba(59, 130, 246, 0.18);
   --bg-msg-contact: #FFFFFF;
   --text-msg-contact: var(--text-main);
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-sm: 0 6px 18px rgba(15, 23, 42, 0.07);
+  --shadow-md: 0 16px 40px rgba(15, 23, 42, 0.1);
+  --shadow-lg: 0 24px 72px rgba(15, 23, 42, 0.14);
   --glass-bg: rgba(255, 255, 255, 0.88);
   --glass-border: rgba(0, 0, 0, 0.06);
   --chat-header-bg: rgba(255, 255, 255, 0.92);
@@ -108,7 +174,27 @@ body {
   padding: 0;
   background-color: var(--bg-base);
   color: var(--text-main);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  min-width: 320px;
+  line-height: var(--leading-normal);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+::selection {
+  background: var(--accent-border);
+  color: var(--text-main);
+}
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+:where(button, input, select, textarea):disabled {
+  cursor: not-allowed !important;
+  opacity: 0.56;
 }
 
 /* Glassmorphism helpers */
@@ -122,15 +208,14 @@ body {
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.3s ease, background-color 0.3s ease;
 }
 
-.glass-panel:hover {
-  transform: translateY(-2px);
+.glass-panel[data-interactive="true"]:hover {
   box-shadow: var(--shadow-lg);
 }
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -214,18 +299,49 @@ body {
 body {
   overscroll-behavior-y: contain; /* Prevents pull-to-refresh in some browsers */
   -webkit-tap-highlight-color: transparent;
-  user-select: none; /* Prevents text selection globally for app feel */
-}
-
-/* Allow selection only in inputs and messages */
-input, textarea, .messages, [contenteditable="true"] {
-  user-select: text;
 }
 
 /* Hide scrollbars for cleaner mobile look */
 @media (max-width: 768px) {
   ::-webkit-scrollbar {
     display: none;
+  }
+}
+
+.ui-action-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.035);
+}
+
+.ui-action-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ui-surface-card[data-interactive="true"]:hover {
+  background: var(--bg-panel-hover) !important;
+  border-color: var(--accent-border) !important;
+  box-shadow: var(--shadow-sm);
+}
+
+.ui-spinner {
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ui-spin 0.7s linear infinite;
+}
+
+@keyframes ui-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

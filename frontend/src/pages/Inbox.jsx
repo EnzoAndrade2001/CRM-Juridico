@@ -106,10 +106,17 @@ export default function Inbox() {
   const [showReopenInstanceModal, setShowReopenInstanceModal] = useState(false);
   const [reopening, setReopening] = useState(false);
   const [crmProfile, setCrmProfile] = useState(null);
+  const [isCompactDesktop, setIsCompactDesktop] = useState(() => window.innerWidth > 768 && window.innerWidth <= 1440);
   const openOsHandledRef = useRef(false);
   const isMobile = useIsMobile();
   const { instances } = useOutletContext() || { instances: [] };
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const updateViewportMode = () => setIsCompactDesktop(window.innerWidth > 768 && window.innerWidth <= 1440);
+    window.addEventListener('resize', updateViewportMode);
+    return () => window.removeEventListener('resize', updateViewportMode);
+  }, []);
 
   // Volta para a lista quando a janela retorna ao desktop
   useEffect(() => {
@@ -565,6 +572,10 @@ export default function Inbox() {
           50% { opacity: 0.5; transform: scale(1.2); }
           100% { opacity: 1; transform: scale(1); }
         }
+        .inbox-control { transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease; }
+        .inbox-control:hover:not(:disabled) { border-color: var(--accent-border) !important; color: var(--text-main) !important; }
+        .inbox-control:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .inbox-control:active:not(:disabled) { transform: translateY(1px); }
       `}</style>
       <TicketSidebar
         counts={counts}
@@ -607,6 +618,7 @@ export default function Inbox() {
                 handleResolve={handleResolve}
                 handleSummarize={handleSummarize}
                 isMobile={isMobile}
+                isCompactDesktop={isCompactDesktop}
                 onImageClick={openPreviewImage}
                 selectedTicket={selectedTicket}
                 setShowInfo={setShowInfo}
@@ -686,20 +698,31 @@ export default function Inbox() {
       </main>
 
       {showInfo && selectedTicket && (
-        <InboxSectionErrorBoundary key={`info-${selectedTicket.id}`} label="painel do cliente">
-          <ContactPanel 
-            key={(selectedTicket.contact?.id || 'new')}
-            ticket={selectedTicket} 
-            onClose={() => setShowInfo(false)} 
-            onUpdate={() => { loadTickets(); setUpdateTrigger(prev => prev + 1); }}
-            onImageClick={openPreviewImage}
-            isMobile={isMobile}
-            onLinkCRM={() => setLinkModal(true)}
-            onUnlinkCRM={handleUnlinkCRM}
-            onOpenCRM={(crmCustomer) => setCrmProfile(crmCustomer)}
-            styles={s}
-          />
-        </InboxSectionErrorBoundary>
+        <>
+          {isCompactDesktop ? (
+            <button
+              type="button"
+              aria-label="Fechar ficha do cliente"
+              style={s.infoPanelBackdrop}
+              onClick={() => setShowInfo(false)}
+            />
+          ) : null}
+          <InboxSectionErrorBoundary key={`info-${selectedTicket.id}`} label="painel do cliente">
+            <ContactPanel
+              key={(selectedTicket.contact?.id || 'new')}
+              ticket={selectedTicket}
+              onClose={() => setShowInfo(false)}
+              onUpdate={() => { loadTickets(); setUpdateTrigger(prev => prev + 1); }}
+              onImageClick={openPreviewImage}
+              isMobile={isMobile}
+              isCompactDesktop={isCompactDesktop}
+              onLinkCRM={() => setLinkModal(true)}
+              onUnlinkCRM={handleUnlinkCRM}
+              onOpenCRM={(crmCustomer) => setCrmProfile(crmCustomer)}
+              styles={s}
+            />
+          </InboxSectionErrorBoundary>
+        </>
       )}
 
       {/* Modais */}
@@ -857,10 +880,10 @@ export default function Inbox() {
 }
 
 export const inboxStyles = {
-  layout: { display: 'flex', height: '100%', width: '100%', background: 'var(--bg-base)', color: 'var(--text-main)', overflow: 'hidden', fontFamily: 'var(--font-main)' },
+  layout: { display: 'flex', height: '100%', width: '100%', background: 'var(--bg-base)', color: 'var(--text-main)', overflow: 'hidden', fontFamily: 'var(--font-main)', position: 'relative' },
   sidebar: { width: '348px', minWidth: '348px', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)' },
   sidebarHeader: { padding: '1.25rem 1rem 0.9rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' },
-  sidebarEyebrow: { fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--text-dim)', fontWeight: 600, marginBottom: '0.45rem' },
+  sidebarEyebrow: { fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-dim)', fontWeight: 600, marginBottom: '0.45rem' },
   sidebarTitle: { fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--text-main)' },
   sidebarSubtitle: { fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.25rem' },
   sidebarCounter: { minWidth: '42px', height: '42px', borderRadius: 'var(--radius-md)', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-main)', fontWeight: 600, fontSize: '0.9rem' },
@@ -873,7 +896,7 @@ export const inboxStyles = {
     background: 'none', 
     cursor: 'pointer', 
     color: 'var(--text-muted)', 
-    fontSize: '0.68rem', 
+    fontSize: '0.75rem',
     fontWeight: 600, 
     borderRadius: 'var(--radius-sm)', 
     transition: 'all 0.2s', 
@@ -891,7 +914,7 @@ export const inboxStyles = {
     color: 'var(--text-inverse)', 
     borderRadius: 'var(--radius-sm)', 
     padding: '1px 6px', 
-    fontSize: '0.6rem', 
+    fontSize: '0.72rem',
     fontWeight: 700,
     minWidth: '18px',
     height: '18px',
@@ -905,24 +928,28 @@ export const inboxStyles = {
   searchShell: { flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '0.7rem', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0 0.95rem' },
   searchIcon: { color: 'var(--text-dim)', flexShrink: 0 },
   search: { flex: 1, minWidth: 0, width: '100%', background: 'transparent', border: 'none', padding: '0.85rem 0', color: 'var(--text-main)', outline: 'none', fontSize: '0.9rem', transition: 'border-color 0.2s' },
+  searchClearIcon: { width: '28px', height: '28px', flexShrink: 0, borderRadius: '50%', border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
   clearBtn: { background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-muted)', padding: '0 1rem', cursor: 'pointer', fontWeight: 600, flexShrink: 0 },
-  filterBar: { display: 'flex', gap: '6px' },
-  filterSelect: { flex: 1, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '8px 10px', color: 'var(--text-muted)', fontSize: '0.72rem', outline: 'none', fontWeight: 600 },
+  filterToggleBtn: { minWidth: '42px', minHeight: '42px', padding: '0 0.7rem', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 650, fontSize: '0.78rem' },
+  filterToggleActive: { color: 'var(--accent)', borderColor: 'var(--accent-border)', background: 'var(--accent-light)' },
+  filterBar: { display: 'flex', gap: '6px', flexWrap: 'wrap' },
+  filterSelect: { flex: '1 1 84px', minWidth: 0, background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '8px 9px', color: 'var(--text-muted)', fontSize: '0.75rem', outline: 'none', fontWeight: 600 },
+  filtersClearBtn: { flex: '1 0 100%', minHeight: '34px', background: 'transparent', color: 'var(--text-muted)', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600, fontSize: '0.75rem' },
   list: { flex: 1, overflowY: 'auto', padding: '0.5rem 0.75rem 0.75rem' },
-  row: { display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '1rem 0.9rem', cursor: 'pointer', borderRadius: 'var(--radius-md)', marginBottom: '0.45rem', transition: 'all 0.18s ease', border: '1px solid transparent' },
+  row: { display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.78rem 0.8rem', cursor: 'pointer', borderRadius: 'var(--radius-md)', marginBottom: '0.3rem', transition: 'all 0.18s ease', border: '1px solid transparent' },
   rowActive: { background: 'var(--accent-light)', border: '1px solid var(--accent-border)', borderLeft: '1px solid var(--accent)' },
   rowInfo: { flex: 1, minWidth: 0 },
   rowTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '0.75rem', marginBottom: 2 },
-  rowName: { fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-main)', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  rowTime: { fontSize: '0.68rem', color: 'var(--text-dim)', fontWeight: 500, flexShrink: 0, fontVariantNumeric: 'tabular-nums' },
-  rowPreview: { fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.45rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  rowName: { fontWeight: 650, fontSize: '0.9rem', color: 'var(--text-main)', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  rowTime: { fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500, flexShrink: 0, fontVariantNumeric: 'tabular-nums' },
+  rowPreview: { fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.4rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   rowSub: { display: 'flex', alignItems: 'center', gap: '0.45rem', position: 'relative', flexWrap: 'wrap' },
-  rowStatusPill: { display: 'inline-flex', alignItems: 'center', gap: '0.45rem', padding: '0.22rem 0.55rem', borderRadius: 'var(--radius-lg)', fontSize: '0.67rem', fontWeight: 600, lineHeight: 1.2 },
-  priorityPill: { display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.22rem 0.55rem', borderRadius: 'var(--radius-lg)', fontSize: '0.67rem', fontWeight: 600, lineHeight: 1.2 },
-  rowMetaLine: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginTop: '0.55rem' },
-  rowOwner: { fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+  rowStatusPill: { display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-lg)', fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.2 },
+  priorityPill: { display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-lg)', fontSize: '0.75rem', fontWeight: 600, lineHeight: 1.2 },
+  rowMetaLine: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.65rem', marginTop: '0.4rem' },
+  rowOwner: { fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   rowTags: { display: 'flex', gap: '0.35rem', flexWrap: 'wrap', justifyContent: 'flex-end' },
-  rowTag: { fontSize: '0.62rem', background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', padding: '0.15rem 0.4rem', borderRadius: 'var(--radius-sm)', fontWeight: 600, border: '1px solid rgba(255,255,255,0.08)' },
+  rowTag: { fontSize: '0.75rem', background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', padding: '0.15rem 0.4rem', borderRadius: 'var(--radius-sm)', fontWeight: 600, border: '1px solid rgba(255,255,255,0.08)' },
   rowMetaSpacer: { display: 'inline-block', minWidth: '1px', minHeight: '1px' },
   unreadBadge: { 
     background: 'var(--danger)', 
@@ -933,13 +960,13 @@ export const inboxStyles = {
     display: 'flex', 
     alignItems: 'center', 
     justifyContent: 'center', 
-    fontSize: '0.65rem', 
+    fontSize: '0.72rem',
     fontWeight: 700, 
     boxShadow: 'none',
     border: '1.5px solid var(--bg-surface)'
   },
   dot: { width: 6, height: 6, borderRadius: '50%', boxShadow: '0 0 6px currentColor' },
-  miniBadge: { fontSize: '0.6rem', padding: '3px 8px', borderRadius: 'var(--radius-sm)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' },
+  miniBadge: { fontSize: '0.72rem', padding: '3px 8px', borderRadius: 'var(--radius-sm)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' },
 
   main: { flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-base)', position: 'relative', minWidth: 0, overflow: 'hidden' },
   chatHeader: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 1.5rem', background: 'var(--chat-header-bg)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border-color)', zIndex: 10, width: '100%', boxSizing: 'border-box', minHeight: '76px' },
@@ -952,15 +979,18 @@ export const inboxStyles = {
   chatMetaText: { fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, padding: '0.2rem 0.55rem', background: 'var(--chat-meta-bg)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--chat-meta-border)' },
   headerActions: { marginLeft: 'auto', display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 },
   headerGhostBtn: { background: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-muted)', minHeight: '40px', padding: '0 0.9rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', fontWeight: 600, fontSize: '0.76rem' },
+  headerPrimaryOutlineBtn: { background: 'var(--accent-light)', border: '1px solid var(--accent-border)', color: 'var(--accent)', minHeight: '40px', padding: '0 0.9rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', fontWeight: 650, fontSize: '0.8rem' },
   headerGhostIconBtn: { background: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-muted)', width: '40px', height: '40px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
-  headerMenuPanel: { position: 'absolute', top: 'calc(100% + 0.45rem)', right: 0, minWidth: '220px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)', padding: '0.4,rem', zIndex: 20 },
+  headerMenuPanel: { position: 'absolute', top: 'calc(100% + 0.45rem)', right: 0, minWidth: '220px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)', padding: '0.4rem', zIndex: 20 },
   headerMenuItem: { width: '100%', border: 'none', background: 'transparent', color: 'var(--text-main)', textAlign: 'left', padding: '0.8rem 0.9rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.84rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.55rem' },
   resolveBtn: { background: 'var(--accent)', color: 'var(--text-inverse)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 600, fontSize: '0.78rem', padding: '0.72rem 1rem', boxShadow: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' },
   
   messages: { flex: 1, overflowY: 'auto', padding: '1.25rem 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', boxSizing: 'border-box' },
   loadMoreWrap: { display: 'flex', justifyContent: 'center', marginBottom: '0.15rem' },
   loadMoreBtn: { background: 'var(--bg-surface)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '0.6rem 1rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.76rem' },
-  historySearchSticky: { position: 'sticky', top: '-1.25rem', zIndex: 2, marginBottom: '0.25rem', paddingTop: '1.25rem', background: 'linear-gradient(180deg, var(--bg-base) 0%, var(--bg-base) 78%, rgba(255,255,255,0) 100%)' },
+  historySearchSticky: { position: 'sticky', top: '-1.25rem', zIndex: 2, marginBottom: '0.15rem', paddingTop: '1.25rem', background: 'linear-gradient(180deg, var(--bg-base) 0%, var(--bg-base) 82%, rgba(255,255,255,0) 100%)' },
+  historySearchToggleRow: { display: 'flex', justifyContent: 'flex-end' },
+  historySearchToggle: { display: 'inline-flex', alignItems: 'center', gap: '0.45rem', minHeight: '36px', padding: '0 0.8rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, boxShadow: 'var(--shadow-sm)' },
   historySearchWrap: { display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0.65rem' },
   historySearchField: { flex: '1 1 260px', minWidth: '220px', display: 'flex', alignItems: 'center', gap: '0.65rem', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '0 0.9rem' },
   historySearchInput: { flex: 1, minWidth: 0, background: 'transparent', border: 'none', padding: '0.78rem 0', color: 'var(--text-main)', outline: 'none', fontSize: '0.88rem' },
@@ -1023,7 +1053,7 @@ export const inboxStyles = {
   composerCenter: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 },
   composerToolbar: { display: 'flex', flexDirection: 'column', gap: '0.6rem', alignSelf: 'flex-end', flexShrink: 0 },
   composerActionBtn: { background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent-border)', minHeight: '44px', padding: '0 1rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem', whiteSpace: 'nowrap', boxShadow: 'inset 0 0 0 1px rgba(212,175,55,0.04)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem' },
-  composerActionBtnMuted: { background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-color)', minHeight: '36px', padding: '0 0.85rem', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: 800, fontSize: '0.74rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.4' },
+  composerActionBtnMuted: { background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-color)', minHeight: '36px', padding: '0 0.85rem', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: 700, fontSize: '0.75rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' },
   composerHint: { minHeight: '36px', padding: '0 0.8rem', borderRadius: 'var(--radius-lg)', border: '1px dashed var(--accent-border)', background: 'var(--accent-light)', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' },
   composerInputRow: { display: 'flex', alignItems: 'flex-end', gap: '0.75rem', minWidth: 0 },
   filePreview: { fontSize: '0.8rem', color: 'var(--accent)', padding: '8px 16px', background: 'var(--accent-light)', borderRadius: 'var(--radius-lg)', alignSelf: 'flex-start', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 },
@@ -1036,7 +1066,7 @@ export const inboxStyles = {
   draftAttachmentMeta: { fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   draftAttachmentRemove: { width: '30px', height: '30px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   replyBanner: { background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)', borderLeft: '2px solid var(--accent)', padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' },
-  replyLabel: { fontSize: '0.68rem', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase', marginBottom: 2, letterSpacing: '0.08em' },
+  replyLabel: { fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2, letterSpacing: '0.08em' },
   replyPreview: { fontSize: '0.84rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
   replyDismiss: { background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-dim)', cursor: 'pointer', width: '30px', height: '30px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   recordingWrap: { flex: 1, display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'var(--danger-light)', padding: '0.85rem 1.1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' },
@@ -1072,32 +1102,35 @@ export const inboxStyles = {
   noteCard: { background: 'var(--accent-light)', border: '1px dashed var(--accent-border)', color: 'var(--text-main)', padding: '0.85rem 1.25rem', borderRadius: 'var(--radius-md)', width: 'fit-content', maxWidth: 'min(90%, 620px)', display: 'flex', flexDirection: 'column', gap: '0.35rem', boxShadow: 'var(--shadow-sm)' },
   noteHeader: { display: 'flex', alignItems: 'center', fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em' },
   noteBody: { fontSize: '0.92rem', color: 'var(--text-main)', lineHeight: 1.45, whiteSpace: 'pre-wrap', wordBreak: 'break-word', userSelect: 'text', WebkitUserSelect: 'text' },
-  noteTime: { fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'right', fontWeight: 500 },
+  noteTime: { fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right', fontWeight: 500 },
   
-  infoPanel: { width: '400px', borderLeft: '1px solid var(--border-color)', background: 'var(--chat-header-bg)', backdropFilter: 'blur(20px)', display: 'flex', flexDirection: 'column', boxShadow: 'none' },
+  infoPanelBackdrop: { position: 'absolute', inset: 0, zIndex: 190, border: 'none', padding: 0, background: 'rgba(5,8,14,0.48)', cursor: 'default' },
+  infoPanel: { width: '400px', borderLeft: '1px solid var(--border-color)', background: 'var(--bg-surface)', display: 'flex', flexDirection: 'column', boxShadow: 'none' },
   infoPanelHeader: { padding: '1.2rem 1.25rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' },
   infoPanelHeaderMain: { minWidth: 0 },
-  infoPanelEyebrow: { fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--text-dim)', fontWeight: 600, marginBottom: '0.35rem' },
+  infoPanelEyebrow: { fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-dim)', fontWeight: 600, marginBottom: '0.35rem' },
   infoPanelTitle: { margin: 0, fontSize: '1.05rem', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-main)' },
   infoPanelTabs: { padding: '0.8rem 1rem', display: 'flex', gap: '0.45rem', borderBottom: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.02)' },
   infoPanelTab: { flex: 1, minHeight: '36px', borderRadius: 'var(--radius-sm)', border: '1px solid transparent', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 600, fontSize: '0.75rem' },
   infoPanelTabActive: { background: 'var(--bg-panel)', color: 'var(--text-main)', border: '1px solid var(--border-color)' },
   infoClose: { background: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-muted)', width: '36px', height: '36px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  infoScroll: { flex: 1, overflowY: 'auto', padding: '1.5rem 1.25rem 2rem', userSelect: 'text', WebkitUserSelect: 'text' },
-  infoProfile: { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '1.75rem' },
-  infoName: { margin: '1.5rem 0 0.5rem', fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.02em' },
-  infoPhone: { color: 'var(--accent)', fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem' },
+  infoScroll: { flex: 1, overflowY: 'auto', padding: '1rem 1.1rem 1.5rem', userSelect: 'text', WebkitUserSelect: 'text' },
+  infoProfile: { display: 'flex', flexDirection: 'column', marginBottom: '1.1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' },
+  infoIdentityRow: { display: 'flex', alignItems: 'center', gap: '0.85rem', minWidth: 0 },
+  infoIdentityMain: { flex: 1, minWidth: 0 },
+  infoName: { margin: '0 0 0.3rem', fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.02em', textAlign: 'left' },
+  infoPhone: { color: 'var(--accent)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.55rem' },
   infoPhoneButton: { background: 'none', border: 'none', cursor: 'pointer', padding: 0, userSelect: 'text', WebkitUserSelect: 'text' },
-  infoBadgeRow: { display: 'flex', gap: '0.45rem', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '1rem' },
-  infoBadge: { background: 'rgba(255,255,255,0.04)', color: 'var(--text-main)', padding: '4px 10px', borderRadius: 'var(--radius-sm)', fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', border: '1px solid rgba(255,255,255,0.1)' },
-  infoActionRow: { display: 'flex', gap: '0.75rem', marginTop: '0.25rem', flexWrap: 'wrap', justifyContent: 'center' },
-  infoActionBtn: { background: 'var(--bg-panel)', color: 'var(--text-main)', border: '1px solid var(--border-color)', minHeight: '40px', padding: '0 0.95rem', borderRadius: 'var(--radius-md)', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  infoBadgeRow: { display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'flex-start' },
+  infoBadge: { background: 'rgba(255,255,255,0.04)', color: 'var(--text-main)', padding: '4px 9px', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.1)' },
+  infoActionRow: { display: 'flex', gap: '0.5rem', marginTop: '0.8rem', flexWrap: 'wrap', justifyContent: 'flex-start' },
+  infoActionBtn: { background: 'var(--bg-panel)', color: 'var(--text-main)', border: '1px solid var(--border-color)', minHeight: '36px', padding: '0 0.75rem', borderRadius: 'var(--radius-sm)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' },
   infoActionBtnPrimary: { background: 'var(--accent)', color: 'var(--text-inverse)', border: 'none', boxShadow: 'none' },
   infoSection: { marginBottom: '2rem' },
   infoLabel: { fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', marginBottom: '1.25rem', letterSpacing: '0.15em', textTransform: 'uppercase' },
   infoSnapshotGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '2rem' },
   infoSnapshotCard: { background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0.95rem' },
-  infoSnapshotLabel: { display: 'block', fontSize: '0.68rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-dim)', fontWeight: 600, marginBottom: '0.45rem' },
+  infoSnapshotLabel: { display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-dim)', fontWeight: 600, marginBottom: '0.45rem' },
   infoSnapshotValue: { display: 'block', fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600, lineHeight: 1.35 },
   infoCardList: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
   infoListCard: { background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '0.95rem' },

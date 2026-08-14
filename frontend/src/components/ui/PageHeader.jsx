@@ -1,15 +1,17 @@
 import React from 'react';
 
-export default function PageHeader({ kicker, title, subtitle, actions, compact = false }) {
+export default function PageHeader({ kicker, title, subtitle, actions, compact = false, style, className = '' }) {
   return (
     <header
+      className={className}
       style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: compact ? 'center' : 'flex-start',
-        gap: '1.5rem',
-        marginBottom: compact ? '2rem' : '2.5rem',
+        gap: 'var(--space-6)',
+        marginBottom: compact ? 'var(--space-8)' : 'var(--space-10)',
         flexWrap: 'wrap',
+        ...style,
       }}
     >
       <div style={{ minWidth: 0, flex: '1 1 24rem' }}>
@@ -24,32 +26,32 @@ export default function PageHeader({ kicker, title, subtitle, actions, compact =
 
 const s = {
   kicker: {
-    margin: '0 0 0.4rem',
+    margin: '0 0 var(--space-2)',
     color: 'var(--accent)',
-    fontSize: '0.78rem',
-    fontWeight: 800,
-    letterSpacing: '0.08em',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 700,
+    letterSpacing: '0.1em',
     textTransform: 'uppercase',
   },
   title: {
     margin: 0,
     color: 'var(--text-main)',
-    fontSize: '1.85rem',
-    fontWeight: 800,
+    fontSize: 'clamp(1.5rem, 2vw, var(--text-2xl))',
+    fontWeight: 700,
     letterSpacing: '-0.03em',
     fontFamily: 'var(--font-display)',
   },
   subtitle: {
-    margin: '0.5rem 0 0',
+    margin: 'var(--space-2) 0 0',
     color: 'var(--text-muted)',
-    fontSize: '0.95rem',
-    lineHeight: 1.6,
+    fontSize: 'var(--text-sm)',
+    lineHeight: 'var(--leading-relaxed)',
     maxWidth: '44rem',
   },
   actions: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.75rem',
+    gap: 'var(--space-3)',
     flexWrap: 'wrap',
   },
 };

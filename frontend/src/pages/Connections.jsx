@@ -4,6 +4,8 @@ import { Plus, QrCode, RotateCcw, Smartphone, Trash2, Wifi, WifiOff } from 'luci
 import { toast } from '../utils/toast';
 import { getInstances, createInstance, deleteInstance, getInstanceQrCode, repairInstance } from '../services/api';
 import { SOCKET_URL } from '../services/socket';
+import PageHeader from '../components/ui/PageHeader';
+import ActionButton from '../components/ui/ActionButton';
 
 export default function Connections() {
   const [instances, setInstances] = useState([]);
@@ -100,15 +102,13 @@ export default function Connections() {
 
   return (
     <div style={s.container}>
-      <header style={s.header}>
-        <div>
-          <h1 style={s.title}>Conexoes WhatsApp</h1>
-          <p style={s.subtitle}>Gerencie numeros, setores e status de conexao em um unico lugar.</p>
-        </div>
-        <button style={s.addBtn} onClick={() => { setName(''); setModal('new'); }}>
-          <Plus size={18} /> Nova Conexao
-        </button>
-      </header>
+      <PageHeader
+        kicker="Canais"
+        title="Conexões WhatsApp"
+        subtitle="Gerencie números, setores e o estado de cada canal em um único lugar."
+        actions={<ActionButton onClick={() => { setName(''); setModal('new'); }}><Plus size={18} /> Nova conexão</ActionButton>}
+        compact
+      />
 
       {loading ? (
         <div style={s.empty}>Sincronizando instancias...</div>

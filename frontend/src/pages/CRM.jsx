@@ -127,27 +127,29 @@ export default function CRM() {
   }
 
   return (
-    <div style={s.container}>
-      <div style={s.header}>
+    <div className="crm-page" style={s.container}>
+      <style>{crmResponsiveCss}</style>
+      <div className="crm-page-header" style={s.header}>
         <div>
           <p style={s.kicker}>Central de relacionamento ILUX</p>
           <h1 style={s.title}>CRM operacional</h1>
           <p style={s.subtitle}>Informações comerciais e técnicas reunidas para agilizar o atendimento.</p>
         </div>
-        <button type="button" style={s.refreshBtn} onClick={() => load()} disabled={loading}>
-          <RefreshCw size={16} className={loading ? 'spin' : ''} /> Atualizar dados
-        </button>
-      </div>
-
-      <div style={s.syncNotice}>
-        <Database size={18} />
-        <div>
-          <strong style={{ color: 'var(--text-main)' }}>Dados sincronizados com o ILUX</strong>
-          <span>Esta visão é somente para consulta. As alterações operacionais continuam sendo realizadas no ILUX Desktop.</span>
+        <div className="crm-header-actions" style={s.headerActions}>
+          <div style={s.syncNotice}>
+            <Database size={16} />
+            <div>
+              <strong style={{ color: 'var(--text-main)' }}>Sincronizado com o ILUX</strong>
+              <span>Consulta operacional</span>
+            </div>
+          </div>
+          <button type="button" style={s.refreshBtn} onClick={() => load()} disabled={loading}>
+            <RefreshCw size={16} className={loading ? 'spin' : ''} /> Atualizar
+          </button>
         </div>
       </div>
 
-      <div style={s.statsGrid}>
+      <div className="crm-stats" style={s.statsGrid}>
         <Stat icon={<Building2 size={19} />} label="Clientes" value={pick(summary, 'customers', 'totalCustomers')} />
         <Stat icon={<Printer size={19} />} label="Equipamentos" value={pick(summary, 'equipments', 'totalEquipments')} />
         <Stat icon={<FileText size={19} />} label="Contratos ativos" value={summary.contracts?.active ?? pick(summary, 'activeContracts')} />
@@ -160,7 +162,7 @@ export default function CRM() {
         />
       </div>
 
-      <form style={s.searchBar} onSubmit={submitSearch}>
+      <form className="crm-search" style={s.searchBar} onSubmit={submitSearch}>
         <Search size={19} color="var(--text-dim)" />
         <input
           style={s.searchInput}
@@ -177,9 +179,17 @@ export default function CRM() {
         {q ? <span>Resultado para “{q}”</span> : <span>Ordenados por nome</span>}
       </div>
 
-      <div style={s.customerGrid}>
+      <div className="crm-customer-grid" style={s.customerGrid}>
         {customers.map((customer) => (
-          <article key={customer.id} style={s.customerCard} onClick={() => openCustomer(customer)}>
+          <article
+            key={customer.id}
+            className="crm-customer-card"
+            style={s.customerCard}
+            role="button"
+            tabIndex={0}
+            onClick={() => openCustomer(customer)}
+            onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openCustomer(customer); } }}
+          >
             <div style={s.customerTop}>
               <div style={s.avatar}><Building2 size={20} /></div>
               <div style={{ minWidth: 0 }}>
@@ -307,13 +317,13 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
 
   return (
     <div style={s.modalBackdrop} onMouseDown={onClose}>
-      <section style={s.modal} onMouseDown={(event) => event.stopPropagation()}>
-        <header style={s.modalHeader}>
+      <section className="crm-profile-modal" style={s.modal} onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="crm-profile-title">
+        <header className="crm-profile-header" style={s.modalHeader}>
           <div style={s.modalIdentity}>
             <div style={s.modalAvatar}><Building2 size={22} /></div>
             <div>
               <p style={s.modalKicker}>Cliente ILUX #{customer.externalId || '—'}</p>
-              <h2 style={s.modalTitle}>{customer.fantasyName || customer.name}</h2>
+              <h2 id="crm-profile-title" style={s.modalTitle}>{customer.fantasyName || customer.name}</h2>
               <div style={s.headerMeta}>
                 {customer.cpfCnpj ? <span>{customer.cpfCnpj}</span> : null}
                 {customer.phone ? <span>{customer.phone}</span> : null}
@@ -324,18 +334,22 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
           <button type="button" style={s.closeBtn} onClick={onClose} aria-label="Fechar"><X size={19} /></button>
         </header>
 
-        <nav style={s.tabs}>
-          <Tab active={activeTab === 'overview'} icon={<User size={16} />} label="Visão geral" onClick={() => setActiveTab('overview')} />
-          <Tab active={activeTab === 'units'} icon={<MapPinned size={16} />} label={`Unidades (${arrayOf(customer360.units).length})`} onClick={() => setActiveTab('units')} />
-          <Tab active={activeTab === 'contacts'} icon={<Phone size={16} />} label={`Contatos (${arrayOf(customer360.contacts).length})`} onClick={() => setActiveTab('contacts')} />
-          <Tab active={activeTab === 'equipments'} icon={<Printer size={16} />} label={`Equipamentos (${equipments.length})`} onClick={() => setActiveTab('equipments')} />
-          <Tab active={activeTab === 'contracts'} icon={<FileText size={16} />} label={`Contratos (${contracts.length})`} onClick={() => setActiveTab('contracts')} />
-          <Tab active={activeTab === 'financial'} icon={<CreditCard size={16} />} label="Financeiro" onClick={() => setActiveTab('financial')} />
-          <Tab active={activeTab === 'os'} icon={<ClipboardList size={16} />} label={`Histórico O.S. (${serviceOrders.length})`} onClick={() => setActiveTab('os')} />
-          <Tab active={activeTab === 'raw'} icon={<Database size={16} />} label="Dados técnicos" onClick={() => setActiveTab('raw')} />
+        <nav className="crm-profile-tabs" style={s.tabs} role="tablist" aria-label="Seções do perfil do cliente">
+          <div style={s.tabGroup}>
+            <Tab active={activeTab === 'overview'} icon={<User size={16} />} label="Resumo" onClick={() => setActiveTab('overview')} />
+            <Tab active={activeTab === 'equipments'} icon={<Printer size={16} />} label={`Equipamentos (${equipments.length})`} onClick={() => setActiveTab('equipments')} />
+            <Tab active={activeTab === 'os'} icon={<ClipboardList size={16} />} label={`O.S. (${serviceOrders.length})`} onClick={() => setActiveTab('os')} />
+            <Tab active={activeTab === 'contracts'} icon={<FileText size={16} />} label={`Contratos (${contracts.length})`} onClick={() => setActiveTab('contracts')} />
+          </div>
+          <div style={s.tabGroupSecondary}>
+            <Tab active={activeTab === 'units'} icon={<MapPinned size={16} />} label={`Unidades (${arrayOf(customer360.units).length})`} onClick={() => setActiveTab('units')} />
+            <Tab active={activeTab === 'contacts'} icon={<Phone size={16} />} label={`Contatos (${arrayOf(customer360.contacts).length})`} onClick={() => setActiveTab('contacts')} />
+            <Tab active={activeTab === 'financial'} icon={<CreditCard size={16} />} label="Financeiro" onClick={() => setActiveTab('financial')} />
+            <Tab active={activeTab === 'raw'} icon={<Database size={16} />} label="Técnico" onClick={() => setActiveTab('raw')} />
+          </div>
         </nav>
 
-        <div style={s.modalBody}>
+        <div className="crm-profile-body" style={s.modalBody}>
           {loading ? <div style={s.loadingBox}><RefreshCw size={18} /> Carregando informações atualizadas do ILUX...</div> : null}
           {!loading && relatedLoading ? <div style={s.loadingInline}><RefreshCw size={16} /> Montando a visão 360 do cliente em segundo plano...</div> : null}
           {!loading && error ? <div style={s.errorBox}><AlertCircle size={17} /><span style={{ flex: 1 }}>{error}</span><button type="button" style={s.retryBtn} onClick={onRetry}>Tentar novamente</button></div> : null}
@@ -555,7 +569,7 @@ function EquipmentsTab({ equipments, evolution }) {
   if (!equipments.length) return <Empty icon={<Printer size={28} />} title="Nenhum equipamento" text="Este cliente não possui equipamentos vinculados no CRM." />;
 
   return (
-    <div style={s.equipmentLayout}>
+    <div className="crm-equipment-layout" style={s.equipmentLayout}>
       <aside style={s.equipmentAside}>
         <div style={s.innerSearch}><Search size={16} /><input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="Modelo, série ou local" /></div>
         <div style={s.equipmentList}>
@@ -780,7 +794,7 @@ function Empty({ icon, title, text }) {
 }
 
 function Tab({ active, icon, label, onClick }) {
-  return <button type="button" style={{ ...s.tab, ...(active ? s.activeTab : {}) }} onClick={onClick}>{icon}{label}</button>;
+  return <button type="button" role="tab" aria-selected={active} style={{ ...s.tab, ...(active ? s.activeTab : {}) }} onClick={onClick}>{icon}{label}</button>;
 }
 
 function Stat({ icon, label, value, formatted = false, tone }) {
@@ -824,7 +838,7 @@ function financeStatus(value) {
 
 function financeStatusStyle(value) {
   const color = value === 'paid' ? '#22c55e' : value === 'overdue' ? '#ef4444' : '#f59e0b';
-  return { color, fontSize: '0.7rem', fontWeight: 900 };
+  return { color, fontSize: '0.75rem', fontWeight: 700 };
 }
 
 function isContractActive(contract) {
@@ -855,20 +869,52 @@ function formatDate(value) { if (!value) return ''; const date = new Date(value)
 function formatShortDate(value) { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('pt-BR'); }
 function formatRawValue(value) { if (!hasValue(value)) return 'Não informado'; return typeof value === 'object' ? JSON.stringify(value) : String(value); }
 
+const crmResponsiveCss = `
+  .crm-customer-card { transition: border-color .16s ease, transform .16s ease, background .16s ease; }
+  .crm-customer-card:hover { border-color: var(--accent-border) !important; transform: translateY(-1px); }
+  .crm-profile-tabs { scrollbar-width: thin; }
+  .crm-profile-tabs button:focus-visible,
+  .crm-page button:focus-visible,
+  .crm-page input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 900px) {
+    .crm-page { padding: 1.25rem !important; }
+    .crm-page-header { align-items: stretch !important; }
+    .crm-header-actions { align-items: stretch !important; }
+    .crm-profile-modal { width: 100% !important; height: 100% !important; max-height: none !important; border-radius: 0 !important; }
+    .crm-profile-header { padding: 1rem !important; }
+    .crm-profile-tabs { padding: 0 .6rem !important; }
+    .crm-profile-body { padding: 1rem !important; }
+    .crm-equipment-layout { grid-template-columns: 1fr !important; }
+  }
+  @media (max-width: 640px) {
+    .crm-page { padding: .9rem !important; }
+    .crm-page-header, .crm-header-actions { flex-direction: column !important; }
+    .crm-header-actions > * { width: 100%; box-sizing: border-box; justify-content: center; }
+    .crm-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    .crm-search { flex-wrap: wrap; }
+    .crm-search input { flex-basis: calc(100% - 3rem) !important; }
+    .crm-search button[type='submit'] { width: 100%; }
+    .crm-customer-grid { grid-template-columns: 1fr !important; }
+    .crm-profile-header > div { min-width: 0; }
+    .crm-profile-header h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  }
+`;
+
 const s = {
   container: { flex: 1, overflowY: 'auto', padding: '2rem', background: 'var(--bg-base)', color: 'var(--text-main)' },
-  header: { display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start', marginBottom: '1rem' },
-  kicker: { margin: 0, color: 'var(--accent)', fontWeight: 900, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.1em' },
-  title: { margin: '0.3rem 0', fontSize: '1.85rem', fontWeight: 900, fontFamily: 'var(--font-display)' },
+  header: { display: 'flex', justifyContent: 'space-between', gap: '1.25rem', alignItems: 'center', marginBottom: '1.25rem' },
+  headerActions: { display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.65rem', flexWrap: 'wrap' },
+  kicker: { margin: 0, color: 'var(--accent)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em' },
+  title: { margin: '0.3rem 0', fontSize: '1.85rem', fontWeight: 700, fontFamily: 'var(--font-display)' },
   subtitle: { margin: 0, color: 'var(--text-muted)', fontSize: '0.92rem' },
-  refreshBtn: { display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-surface)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '0.75rem 1rem', cursor: 'pointer', fontWeight: 800 },
-  syncNotice: { display: 'flex', gap: '0.75rem', alignItems: 'flex-start', marginBottom: '1.25rem', padding: '0.85rem 1rem', borderRadius: '14px', border: '1px solid rgba(220,180,48,.3)', background: 'linear-gradient(135deg, rgba(220,180,48,.12), rgba(17,24,39,.35))', color: 'var(--accent)' },
+  refreshBtn: { display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-surface)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '0.75rem 1rem', cursor: 'pointer', fontWeight: 600 },
+  syncNotice: { display: 'flex', gap: '0.6rem', alignItems: 'center', padding: '0.62rem 0.8rem', borderRadius: '12px', border: '1px solid rgba(220,180,48,.24)', background: 'rgba(220,180,48,.07)', color: 'var(--accent)', fontSize: '0.72rem' },
   statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.85rem', marginBottom: '1.2rem' },
   statCard: { display: 'flex', alignItems: 'center', gap: '0.8rem', minHeight: '74px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '15px', padding: '0.9rem' },
   statIcon: { width: 40, height: 40, flex: '0 0 auto', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--accent-light)', color: 'var(--accent)' },
   warningIcon: { color: '#f59e0b', background: 'rgba(245,158,11,.12)' },
-  statLabel: { color: 'var(--text-dim)', fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.035em' },
-  statValue: { color: 'var(--text-main)', fontSize: '1.2rem', fontWeight: 900, marginTop: 2 },
+  statLabel: { color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.035em' },
+  statValue: { color: 'var(--text-main)', fontSize: '1.2rem', fontWeight: 700, marginTop: 2 },
   searchBar: { display: 'flex', alignItems: 'center', gap: '0.7rem', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '0.7rem', marginBottom: '0.6rem' },
   searchInput: { flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-main)', fontSize: '0.93rem' },
   clearSearch: { display: 'grid', placeItems: 'center', color: 'var(--text-muted)', background: 'transparent', border: 0, cursor: 'pointer' },
@@ -878,15 +924,15 @@ const s = {
   customerCard: { minHeight: 180, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.9rem', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 16, padding: '1rem', cursor: 'pointer' },
   customerTop: { display: 'flex', gap: '0.75rem', alignItems: 'flex-start' },
   avatar: { width: 40, height: 40, flex: '0 0 auto', borderRadius: 12, display: 'grid', placeItems: 'center', color: 'var(--accent)', background: 'var(--accent-light)' },
-  customerName: { margin: 0, fontSize: '1rem', color: 'var(--text-main)', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis' },
+  customerName: { margin: 0, fontSize: '1rem', color: 'var(--text-main)', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis' },
   legalName: { margin: '0.3rem 0 0', color: 'var(--text-muted)', fontSize: '0.8rem' },
   metaGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: '0.5rem' },
   meta: { display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--text-muted)', fontSize: '0.79rem', minWidth: 0 },
   metaWide: { gridColumn: '1 / -1' },
   cardFooter: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' },
   counts: { display: 'flex', gap: '0.35rem', flexWrap: 'wrap' },
-  badge: { display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent-border)', borderRadius: 999, padding: '0.25rem 0.5rem', fontSize: '0.7rem', fontWeight: 900 },
-  badgeMuted: { display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: 999, padding: '0.25rem 0.5rem', fontSize: '0.7rem', fontWeight: 800 },
+  badge: { display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent-border)', borderRadius: 999, padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 700 },
+  badgeMuted: { display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: 999, padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 600 },
   openHint: { display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--text-muted)', fontSize: '0.76rem', fontWeight: 900, whiteSpace: 'nowrap' },
   emptyState: { gridColumn: '1 / -1', textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14 },
   modalBackdrop: { position: 'fixed', inset: 0, zIndex: 3500, background: 'rgba(0,0,0,.76)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' },
@@ -894,12 +940,14 @@ const s = {
   modalHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', padding: '1.15rem 1.4rem', borderBottom: '1px solid var(--border-color)' },
   modalIdentity: { display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 },
   modalAvatar: { width: 46, height: 46, flex: '0 0 auto', borderRadius: 14, display: 'grid', placeItems: 'center', background: 'var(--accent-light)', color: 'var(--accent)' },
-  modalKicker: { margin: 0, color: 'var(--accent)', fontSize: '0.69rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '.08em' },
-  modalTitle: { margin: '0.2rem 0', fontSize: '1.25rem', fontWeight: 900 },
+  modalKicker: { margin: 0, color: 'var(--accent)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em' },
+  modalTitle: { margin: '0.2rem 0', fontSize: '1.25rem', fontWeight: 700 },
   headerMeta: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem', color: 'var(--text-muted)', fontSize: '0.76rem' },
   closeBtn: { width: 38, height: 38, display: 'grid', placeItems: 'center', borderRadius: 11, border: '1px solid var(--border-color)', background: 'var(--bg-base)', color: 'var(--text-main)', cursor: 'pointer' },
-  tabs: { display: 'flex', gap: '0.15rem', padding: '0 1.35rem', borderBottom: '1px solid var(--border-color)', overflowX: 'auto' },
-  tab: { display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.9rem 0.75rem', border: 0, borderBottom: '2px solid transparent', background: 'transparent', color: 'var(--text-muted)', fontWeight: 850, cursor: 'pointer', whiteSpace: 'nowrap' },
+  tabs: { display: 'flex', alignItems: 'stretch', justifyContent: 'space-between', gap: '1rem', padding: '0 1.35rem', borderBottom: '1px solid var(--border-color)', overflowX: 'auto', background: 'var(--bg-surface)', zIndex: 2 },
+  tabGroup: { display: 'flex', gap: '0.1rem' },
+  tabGroupSecondary: { display: 'flex', gap: '0.1rem', paddingLeft: '0.75rem', borderLeft: '1px solid var(--border-color)' },
+  tab: { display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.9rem 0.75rem', border: 0, borderBottom: '2px solid transparent', background: 'transparent', color: 'var(--text-muted)', fontWeight: 650, cursor: 'pointer', whiteSpace: 'nowrap' },
   activeTab: { color: 'var(--accent)', borderBottom: '2px solid var(--accent)' },
   modalBody: { flex: 1, minHeight: 0, padding: '1.25rem 1.4rem', overflowY: 'auto' },
   modalFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1.4rem', borderTop: '1px solid var(--border-color)', background: 'rgba(8,12,22,.35)', color: 'var(--text-dim)', fontSize: '0.74rem' },
@@ -932,7 +980,7 @@ const s = {
   sectionTitle: { display: 'flex', alignItems: 'center', gap: '0.45rem', margin: '0 0 0.85rem', color: 'var(--text-main)', fontSize: '0.87rem' },
   infoGrid: { display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: '0.75rem 1.1rem' },
   infoItem: { display: 'grid', gap: '0.22rem', minWidth: 0 },
-  infoLabel: { color: 'var(--text-dim)', fontSize: '0.68rem', fontWeight: 850, textTransform: 'uppercase', letterSpacing: '.025em' },
+  infoLabel: { color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.025em' },
   infoValue: { color: 'var(--text-main)', fontSize: '0.84rem', overflowWrap: 'anywhere' },
   wideInfo: { gridColumn: '1 / -1' },
   notes: { margin: 0, color: 'var(--text-muted)', whiteSpace: 'pre-wrap', lineHeight: 1.55 },
@@ -941,7 +989,7 @@ const s = {
   unitCard: { display: 'grid', gap: '0.8rem', alignContent: 'start', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 15, background: 'rgba(8,12,22,.3)' },
   unitHeader: { display: 'flex', alignItems: 'center', gap: '0.7rem' },
   unitIcon: { width: 38, height: 38, flex: '0 0 auto', display: 'grid', placeItems: 'center', color: 'var(--accent)', background: 'var(--accent-light)', borderRadius: 11 },
-  unitCount: { padding: '0.3rem 0.55rem', borderRadius: 999, color: 'var(--accent)', background: 'var(--accent-light)', fontSize: '0.68rem', fontWeight: 900 },
+  unitCount: { padding: '0.3rem 0.55rem', borderRadius: 999, color: 'var(--accent)', background: 'var(--accent-light)', fontSize: '0.75rem', fontWeight: 700 },
   unitAddress: { display: 'flex', alignItems: 'flex-start', gap: '0.45rem', color: 'var(--text-muted)', fontSize: '0.78rem' },
   departmentList: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem' },
   unitEquipmentList: { display: 'grid', gap: '0.45rem' },
@@ -951,7 +999,7 @@ const s = {
   contactCard360: { display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.9rem', border: '1px solid var(--border-color)', borderRadius: 14, background: 'rgba(8,12,22,.3)' },
   contactAvatar: { width: 38, height: 38, flex: '0 0 auto', display: 'grid', placeItems: 'center', borderRadius: 11, color: 'var(--accent)', background: 'var(--accent-light)' },
   contactBody: { display: 'grid', gap: '0.25rem', minWidth: 0 },
-  contactRole: { color: 'var(--accent)', fontSize: '0.67rem', fontWeight: 900, textTransform: 'uppercase' },
+  contactRole: { color: 'var(--accent)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' },
   contactChannels: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem 0.8rem', color: 'var(--text-muted)', fontSize: '0.74rem' },
   financialStats: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '0.65rem' },
   financeList: { display: 'grid', gap: '0.55rem' },
@@ -969,14 +1017,14 @@ const s = {
   equipmentCard: { display: 'grid', gap: '0.32rem', textAlign: 'left', background: 'var(--bg-base)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: 13, padding: '0.8rem', cursor: 'pointer' },
   activeEquipmentCard: { borderColor: 'var(--accent)', boxShadow: '0 0 0 1px rgba(220,180,48,.18) inset', background: 'rgba(220,180,48,.06)' },
   equipmentCardTop: { display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'flex-start' },
-  activeDot: { color: '#22c55e', fontSize: '0.65rem', fontWeight: 900 },
-  inactiveDot: { color: 'var(--text-dim)', fontSize: '0.65rem', fontWeight: 900 },
+  activeDot: { color: 'var(--success)', fontSize: '0.75rem', fontWeight: 700 },
+  inactiveDot: { color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: 700 },
   noFilterResult: { color: 'var(--text-muted)', textAlign: 'center', padding: '1.25rem', border: '1px dashed var(--border-color)', borderRadius: 12 },
   detailPanel: { display: 'grid', gap: '0.85rem', minWidth: 0 },
   detailHeader: { display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' },
-  detailKicker: { margin: 0, color: 'var(--text-dim)', fontSize: '0.68rem', fontWeight: 900, textTransform: 'uppercase' },
-  statusActive: { display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0.3rem 0.6rem', borderRadius: 999, color: '#22c55e', background: 'rgba(34,197,94,.12)', fontSize: '0.69rem', fontWeight: 900 },
-  statusInactive: { display: 'inline-flex', alignItems: 'center', padding: '0.3rem 0.6rem', borderRadius: 999, color: 'var(--text-muted)', background: 'rgba(148,163,184,.1)', fontSize: '0.69rem', fontWeight: 900 },
+  detailKicker: { margin: 0, color: 'var(--text-dim)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' },
+  statusActive: { display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0.3rem 0.6rem', borderRadius: 999, color: 'var(--success-text)', background: 'var(--success-light)', fontSize: '0.75rem', fontWeight: 700 },
+  statusInactive: { display: 'inline-flex', alignItems: 'center', padding: '0.3rem 0.6rem', borderRadius: 999, color: 'var(--text-muted)', background: 'var(--bg-panel)', fontSize: '0.75rem', fontWeight: 700 },
   locationPanel: { display: 'flex', gap: '0.75rem', alignItems: 'center', padding: '0.9rem', border: '1px solid var(--accent-border)', borderRadius: 13, background: 'var(--accent-light)' },
   locationIcon: { width: 38, height: 38, flex: '0 0 auto', borderRadius: 11, display: 'grid', placeItems: 'center', color: 'var(--accent)', background: 'rgba(220,180,48,.14)' },
   listStack: { display: 'grid', gap: '0.75rem' },
@@ -996,14 +1044,14 @@ const s = {
   osNumber: { display: 'grid', alignContent: 'center', gap: 2, padding: '0.9rem', borderRight: '1px solid var(--border-color)', textAlign: 'center' },
   osContent: { display: 'grid', gap: '0.55rem', padding: '0.9rem' },
   osTitleRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' },
-  statusClosed: { display: 'inline-flex', alignItems: 'center', gap: 4, color: '#22c55e', fontSize: '0.68rem', fontWeight: 900 },
-  statusOpen: { display: 'inline-flex', alignItems: 'center', gap: 4, color: '#f59e0b', fontSize: '0.68rem', fontWeight: 900 },
+  statusClosed: { display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--success-text)', fontSize: '0.75rem', fontWeight: 700 },
+  statusOpen: { display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--warning-text)', fontSize: '0.75rem', fontWeight: 700 },
   osMeta: { display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem', color: 'var(--text-dim)', fontSize: '0.72rem' },
   osActions: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.55rem', paddingTop: '0.2rem' },
   osActionBtn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.5rem 0.7rem', borderRadius: 9, border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--text-main)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 800 },
   osActionPrimary: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.5rem 0.7rem', borderRadius: 9, border: '1px solid var(--accent-border)', background: 'var(--accent)', color: '#111827', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 900 },
-  copySent: { color: '#22c55e', fontSize: '0.68rem', fontWeight: 800 },
-  copyError: { color: '#ef4444', fontSize: '0.68rem', fontWeight: 800 },
+  copySent: { color: 'var(--success-text)', fontSize: '0.75rem', fontWeight: 700 },
+  copyError: { color: 'var(--danger-text)', fontSize: '0.75rem', fontWeight: 700 },
   resolution: { padding: '0.55rem 0.7rem', borderRadius: 9, background: 'rgba(34,197,94,.07)', color: 'var(--text-muted)', fontSize: '0.76rem' },
   rawPanel: { display: 'grid', gap: '0.9rem' },
   technicalNotice: { display: 'flex', gap: '0.65rem', padding: '0.85rem', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: 12, background: 'var(--bg-base)' },

@@ -1,6 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { login, getTenantBySlug, getMediaUrl } from '../services/api';
+import { getMediaUrl, getTenantBySlug, login } from '../services/api';
+
+function getMonogram(name) {
+  const words = String(name || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!words.length) return 'M';
+  if (words.length === 1) return words[0].slice(0, 1).toUpperCase();
+  return `${words[0][0]}${words[1][0]}`.toUpperCase();
+}
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -14,29 +24,31 @@ export default function Login() {
   const routeSlug = slug || (firstPath !== 'login' ? firstPath : '') || '';
 
   useEffect(() => {
-    if (routeSlug) {
-      loadTenant();
+    if (!routeSlug) return;
+
+    let active = true;
+    async function loadTenant() {
+      try {
+        const { data } = await getTenantBySlug(routeSlug);
+        const resolvedTenant = data?.tenant || data || null;
+        if (active && resolvedTenant) {
+          setTenantInfo({
+            ...resolvedTenant,
+            name: resolvedTenant.name || routeSlug || 'LCD Digital',
+            slug: resolvedTenant.slug || routeSlug,
+          });
+        }
+      } catch {
+        console.error('Tenant not found');
+      }
     }
+
+    loadTenant();
+    return () => { active = false; };
   }, [routeSlug]);
 
-  async function loadTenant() {
-    try {
-      const { data } = await getTenantBySlug(routeSlug);
-      const resolvedTenant = data?.tenant || data || null;
-      if (resolvedTenant) {
-        setTenantInfo({
-          ...resolvedTenant,
-          name: resolvedTenant.name || routeSlug || 'LCD Digital',
-          slug: resolvedTenant.slug || routeSlug,
-        });
-      }
-    } catch (e) {
-      console.error('Tenant not found');
-    }
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
     setLoading(true);
     setError('');
     try {
@@ -45,154 +57,215 @@ export default function Login() {
       localStorage.setItem('tenantId', data.tenant?.id || '');
       localStorage.setItem('userId', data.user.id);
       localStorage.setItem('role', data.user.role);
-      if (data.user.role === 'superadmin') {
-        navigate('/superadmin');
-      } else {
-        navigate('/dashboard');
-      }
-    } catch (err) {
+      navigate(data.user.role === 'superadmin' ? '/superadmin' : '/dashboard');
+    } catch {
       setError('E-mail ou senha inválidos. Tente novamente.');
     } finally {
       setLoading(false);
     }
   }
 
-  const primaryColor = tenantInfo?.primaryColor || '#D4AF37';
+  const primaryColor = tenantInfo?.primaryColor || '#C9A84E';
   const displayName = tenantInfo?.name || (routeSlug ? routeSlug.toUpperCase() : 'Multiatendimento');
 
   return (
-    <div style={s.container}>
+    <main style={{ ...s.container, '--login-accent': primaryColor }}>
       <style>{`
-        @keyframes card-in {
-          from { opacity: 0; transform: translateY(20px) scale(0.98); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
+        @keyframes login-card-in {
+          from { opacity: 0; transform: translateY(14px) scale(0.99); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .login-input:focus-visible {
+          border-color: var(--login-accent) !important;
+          outline: 2px solid var(--login-accent) !important;
+          outline-offset: 2px;
+          box-shadow: 0 0 0 4px color-mix(in srgb, var(--login-accent) 24%, transparent) !important;
+        }
+        .login-button:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); }
+        .login-button:active:not(:disabled) { transform: translateY(0); }
+        @media (max-width: 540px) {
+          .login-card { padding: 1.6rem !important; border-radius: 16px !important; }
         }
       `}</style>
-      <div style={{ ...s.glow, background: `radial-gradient(circle, ${primaryColor}22 0%, rgba(0,0,0,0) 70%)` }} />
-      <div style={{ ...s.card, animation: 'card-in 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+
+      <div style={s.grid} aria-hidden="true" />
+      <div style={{ ...s.glow, background: `radial-gradient(circle, ${primaryColor}24 0%, transparent 68%)` }} aria-hidden="true" />
+
+      <section className="login-card" style={s.card} aria-labelledby="login-title">
         <div style={s.header}>
           {tenantInfo?.logoUrl ? (
-            <img src={getMediaUrl(tenantInfo.logoUrl)} alt={tenantInfo.name} style={{ height: '60px', marginBottom: '1.5rem', objectFit: 'contain' }} />
+            <div style={s.logoFrame}>
+              <img src={getMediaUrl(tenantInfo.logoUrl)} alt={`Logo ${tenantInfo.name}`} style={s.logoImage} />
+            </div>
           ) : (
-            <div style={{ ...s.logoIcon, filter: `drop-shadow(0 0 10px ${primaryColor}44)` }}>
-              {displayName.slice(0, 2).toUpperCase()}
+            <div style={{ ...s.monogram, borderColor: `${primaryColor}66` }} aria-hidden="true">
+              <span style={{ ...s.monogramAccent, background: primaryColor }} />
+              <span>{getMonogram(displayName)}</span>
             </div>
           )}
-          <h1 style={s.title}>
-            {displayName} <span style={{ ...s.pro, color: primaryColor }}>PRO</span>
-          </h1>
+
+          <p style={{ ...s.eyebrow, color: primaryColor }}>Multiatendimento PRO</p>
+          <h1 id="login-title" style={s.title}>{displayName}</h1>
           <p style={s.subtitle}>
-            {tenantInfo?.name ? `Portal de acesso para ${tenantInfo.name}` : 'Acesse seu ecossistema de atendimento premium'}
+            {tenantInfo?.name ? `Acesse o ambiente de ${tenantInfo.name}.` : 'Sua operação de atendimento em um só lugar.'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} style={s.form}>
           <div style={s.inputGroup}>
-            <label style={s.label}>E-mail corporativo</label>
-            <input 
-              style={s.input} 
-              type="email" 
-              placeholder="seu@email.com" 
-              value={email} 
-              onChange={e => setEmail(e.target.value)} 
-              onFocus={e => e.target.style.borderColor = primaryColor}
-              onBlur={e => e.target.style.borderColor = '#2A2A2A'}
+            <label htmlFor="login-email" style={s.label}>E-mail corporativo</label>
+            <input
+              id="login-email"
+              className="login-input"
+              style={s.input}
+              type="email"
+              placeholder="nome@empresa.com.br"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="username"
               autoFocus
-              required 
+              required
             />
           </div>
 
           <div style={s.inputGroup}>
-            <label style={s.label}>Chave de acesso</label>
-            <input 
-              style={s.input} 
-              type="password" 
-              placeholder="••••••••" 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
-              onFocus={e => e.target.style.borderColor = primaryColor}
-              onBlur={e => e.target.style.borderColor = '#2A2A2A'}
-              required 
+            <label htmlFor="login-password" style={s.label}>Senha</label>
+            <input
+              id="login-password"
+              className="login-input"
+              style={s.input}
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              required
             />
           </div>
 
-          {error && <div style={s.error}>{error}</div>}
+          {error ? <div role="alert" style={s.error}>{error}</div> : null}
 
-          <button style={{ ...s.button, background: primaryColor }} type="submit" disabled={loading}>
-            {loading ? 'Validando Acesso...' : 'Entrar no Sistema'}
+          <button
+            className="login-button"
+            style={{ ...s.button, background: primaryColor }}
+            type="submit"
+            disabled={loading}
+            aria-busy={loading || undefined}
+          >
+            {loading ? <span className="ui-spinner" aria-hidden="true" /> : null}
+            {loading ? 'Validando acesso...' : 'Entrar'}
           </button>
         </form>
 
         <footer style={s.footer}>
-          &copy; {new Date().getFullYear()} Multiatendimento PRO. Tecnologia de elite.
+          <span>© {new Date().getFullYear()} Multiatendimento PRO</span>
+          <span style={s.footerDot} aria-hidden="true">•</span>
+          <span>Ambiente seguro</span>
         </footer>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
 
 const s = {
-  container: { 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    height: '100vh', 
-    background: '#050505', 
-    fontFamily: "'Inter', sans-serif",
+  container: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '100dvh',
+    background: '#0B0D12',
+    fontFamily: 'var(--font-main)',
     position: 'relative',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    padding: 'clamp(1rem, 4vw, 3rem)',
+  },
+  grid: {
+    position: 'absolute',
+    inset: 0,
+    backgroundImage: 'linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px)',
+    backgroundSize: '48px 48px',
+    maskImage: 'linear-gradient(to bottom, rgba(0,0,0,.55), transparent 78%)',
+    pointerEvents: 'none',
   },
   glow: {
     position: 'absolute',
-    width: '600px',
-    height: '600px',
-    background: 'radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, rgba(0,0,0,0) 70%)',
+    width: 'min(760px, 120vw)',
+    aspectRatio: '1',
     top: '50%',
     left: '50%',
-    transform: 'translate(-50%, -50%)',
-    pointerEvents: 'none'
+    transform: 'translate(-50%, -54%)',
+    pointerEvents: 'none',
   },
-  card: { 
-    background: '#0F0F0F', 
-    padding: '3rem', 
-    borderRadius: '24px', 
-    border: '1px solid #1A1A1B',
-    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8)',
+  card: {
+    width: 'min(100%, 430px)',
+    background: 'rgba(17, 21, 29, 0.94)',
+    padding: 'clamp(2rem, 5vw, 3rem)',
+    borderRadius: 'var(--radius-lg)',
+    border: '1px solid #293241',
+    boxShadow: 'var(--shadow-lg)',
     zIndex: 1,
-    position: 'relative'
+    position: 'relative',
+    backdropFilter: 'blur(18px)',
+    animation: 'login-card-in 0.38s cubic-bezier(0.16, 1, 0.3, 1)',
   },
-  header: { textAlign: 'center', marginBottom: '2.5rem' },
-  logoIcon: { fontSize: '2.5rem', marginBottom: '1rem', filter: 'drop-shadow(0 0 10px rgba(212, 175, 55, 0.3))' },
-  title: { fontSize: '1.6rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', margin: 0 },
-  pro: { color: '#D4AF37', fontSize: '0.8rem', verticalAlign: 'top', fontWeight: 800 },
-  subtitle: { color: '#717171', fontSize: '0.9rem', marginTop: '0.5rem' },
-  form: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
-  inputGroup: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
-  label: { fontSize: '0.75rem', fontWeight: 800, color: '#717171', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  input: { 
-    padding: '1rem', 
-    background: '#131314', 
-    border: '1px solid #2A2A2A', 
-    borderRadius: '12px', 
-    fontSize: '1rem', 
-    color: '#fff',
+  header: { textAlign: 'center', marginBottom: 'var(--space-8)' },
+  logoFrame: { height: '64px', marginBottom: 'var(--space-5)', display: 'flex', justifyContent: 'center' },
+  logoImage: { maxWidth: '180px', height: '64px', objectFit: 'contain' },
+  monogram: {
+    width: '64px',
+    height: '64px',
+    margin: '0 auto var(--space-5)',
+    borderRadius: 'var(--radius-md)',
+    background: '#171C26',
+    border: '1px solid',
+    color: '#F4F6FA',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+    fontSize: '1.25rem',
+    fontWeight: 700,
+    letterSpacing: '-0.04em',
+    boxShadow: 'var(--shadow-sm)',
+  },
+  monogramAccent: { position: 'absolute', inset: '0 auto 0 0', width: '3px' },
+  eyebrow: { margin: '0 0 var(--space-2)', fontSize: 'var(--text-xs)', fontWeight: 700, letterSpacing: '0.11em', textTransform: 'uppercase' },
+  title: { fontSize: '1.65rem', lineHeight: 1.2, fontWeight: 700, color: '#F4F6FA', letterSpacing: '-0.035em', margin: 0 },
+  subtitle: { color: '#AAB4C5', fontSize: 'var(--text-sm)', lineHeight: 1.6, margin: 'var(--space-2) auto 0', maxWidth: '22rem' },
+  form: { display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' },
+  inputGroup: { display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' },
+  label: { fontSize: 'var(--text-xs)', fontWeight: 600, color: '#AAB4C5' },
+  input: {
+    minHeight: '48px',
+    padding: '0.8rem 0.95rem',
+    background: '#171C26',
+    border: '1px solid #293241',
+    borderRadius: 'var(--radius-sm)',
+    fontSize: 'var(--text-md)',
+    color: '#F4F6FA',
     outline: 'none',
-    transition: 'border-color 0.2s',
+    transition: 'border-color 0.16s ease, box-shadow 0.16s ease',
     width: '100%',
-    boxSizing: 'border-box',
   },
-  button: { 
-    padding: '1rem', 
-    background: '#D4AF37', 
-    color: '#000', 
-    border: 'none', 
-    borderRadius: '12px', 
-    fontSize: '1rem', 
-    fontWeight: 800, 
+  button: {
+    minHeight: '50px',
+    padding: '0.85rem 1rem',
+    color: '#17130A',
+    border: 'none',
+    borderRadius: 'var(--radius-sm)',
+    fontSize: 'var(--text-sm)',
+    fontWeight: 700,
     cursor: 'pointer',
-    transition: 'all 0.2s',
-    marginTop: '1rem'
+    transition: 'transform 0.16s ease, filter 0.16s ease',
+    marginTop: 'var(--space-1)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 'var(--space-2)',
+    boxShadow: '0 10px 26px rgba(201, 168, 78, 0.15)',
   },
-  error: { color: '#ff4444', fontSize: '0.85rem', textAlign: 'center', background: 'rgba(255, 68, 68, 0.1)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 68, 68, 0.2)' },
-  footer: { textAlign: 'center', marginTop: '3rem', fontSize: '0.75rem', color: '#444' }
+  error: { color: '#FCA5A5', fontSize: 'var(--text-sm)', background: 'rgba(239, 68, 68, 0.1)', padding: 'var(--space-3)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(239, 68, 68, 0.26)' },
+  footer: { marginTop: 'var(--space-8)', paddingTop: 'var(--space-5)', borderTop: '1px solid #293241', display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 'var(--space-2)', textAlign: 'center', fontSize: 'var(--text-xs)', color: '#7C899E' },
+  footerDot: { color: '#C9A84E' },
 };

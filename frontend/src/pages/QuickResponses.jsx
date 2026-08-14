@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { toast } from '../utils/toast';
 import { getQuickResponses, createQuickResponse, deleteQuickResponse } from '../services/api';
 import { MessageSquare, Plus, Trash2, Search, Zap } from 'lucide-react';
+import PageHeader from '../components/ui/PageHeader';
+import ActionButton from '../components/ui/ActionButton';
 
 export default function QuickResponses() {
   const [responses, setResponses] = useState([]);
@@ -61,16 +63,13 @@ export default function QuickResponses() {
 
   return (
     <div style={s.container}>
-      <header style={s.header}>
-        <div>
-          <p style={s.kicker}>Agilidade operacional</p>
-          <h1 style={s.title}>Modelos de mensagem</h1>
-          <p style={s.subtitle}>Crie atalhos para responder clientes com consistencia e velocidade.</p>
-        </div>
-        <button style={s.addBtn} onClick={() => setModal(true)}>
-          <Plus size={18} /> Novo modelo
-        </button>
-      </header>
+      <PageHeader
+        kicker="Agilidade operacional"
+        title="Modelos de mensagem"
+        subtitle="Crie atalhos para responder clientes com consistência e velocidade."
+        actions={<ActionButton onClick={() => setModal(true)}><Plus size={18} /> Novo modelo</ActionButton>}
+        compact
+      />
 
       <div style={s.searchRow}>
         <div style={s.searchBox}>

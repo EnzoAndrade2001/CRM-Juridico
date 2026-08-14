@@ -21,6 +21,9 @@ import {
   ChevronDown,
   Radar,
   Coins,
+  Search,
+  Command,
+  X,
 } from 'lucide-react';
 import { getMe, getMediaUrl, getInstances } from '../services/api';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -32,6 +35,8 @@ export default function Layout() {
   const [notification, setNotification] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const audioRef = React.useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3'));
   const desktopMenuRef = React.useRef(null);
@@ -159,6 +164,21 @@ export default function Layout() {
     setDesktopMenuOpen(false);
   }, [location.pathname]);
 
+  React.useEffect(() => {
+    function handleShortcut(event) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+      if (event.key === 'Escape') {
+        setCommandOpen(false);
+        setDesktopMenuOpen(false);
+      }
+    }
+    window.addEventListener('keydown', handleShortcut);
+    return () => window.removeEventListener('keydown', handleShortcut);
+  }, []);
+
   const desktopLinks = [
     { to: '/dashboard', icon: <LayoutDashboard size={18} />, label: 'Dashboard', roles: ['admin', 'agent', 'superadmin'] },
     { to: '/inbox', icon: <MessageSquare size={18} />, label: 'Chat', roles: ['admin', 'agent', 'superadmin'] },
@@ -176,6 +196,20 @@ export default function Layout() {
   ];
 
   const visibleDesktopLinks = desktopLinks.filter((link) => link.roles.includes(role));
+  const primaryPaths = ['/dashboard', '/inbox', '/crm'];
+  const primaryDesktopLinks = visibleDesktopLinks.filter((link) => primaryPaths.includes(link.to));
+  const secondaryDesktopLinks = visibleDesktopLinks.filter((link) => !primaryPaths.includes(link.to));
+  const commandResults = visibleDesktopLinks.filter((link) => (
+    !commandQuery.trim() || link.label.toLowerCase().includes(commandQuery.trim().toLowerCase())
+  ));
+
+  function activateNavigationItem(link) {
+    setCommandOpen(false);
+    setCommandQuery('');
+    setDesktopMenuOpen(false);
+    if (link.to) navigate(link.to);
+    else link.action?.();
+  }
 
   const mobileLinks = [
     { to: '/dashboard', icon: <LayoutDashboard size={22} />, label: 'Dash' },
@@ -216,28 +250,58 @@ export default function Layout() {
 
         {!isMobile ? (
           <div style={styles.centerNav}>
-            <div style={{ ...styles.links }} className="desktop-nav-scroll">
-              {visibleDesktopLinks.map((link) => (
-                link.to ? (
-                  <NavLink key={link.to} to={link.to} end={link.to === '/dashboard'} title={link.label} style={({ isActive }) => ({ ...styles.link, ...(isActive ? styles.linkActive : {}) })}>
-                    {link.icon}
-                  </NavLink>
-                ) : (
-                  <button key={link.label} onClick={link.action} title={link.label} style={{ ...styles.link, border: 'none', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit' }}>
-                    {link.icon}
-                  </button>
-                )
+            <div style={{ ...styles.links }} className="desktop-nav-scroll" aria-label="Navegação principal">
+              {primaryDesktopLinks.map((link) => (
+                <NavLink key={link.to} to={link.to} end={link.to === '/dashboard'} style={({ isActive }) => ({ ...styles.primaryLink, ...(isActive ? styles.linkActive : {}) })}>
+                  {link.icon}
+                  <span>{link.label === 'Chat' ? 'Atendimento' : link.label}</span>
+                </NavLink>
               ))}
+              <div style={styles.moreMenuWrap} ref={desktopMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setDesktopMenuOpen((open) => !open)}
+                  style={{ ...styles.primaryLink, ...styles.moreMenuBtn, ...(secondaryDesktopLinks.some((link) => link.to === location.pathname) ? styles.linkActive : {}) }}
+                  aria-expanded={desktopMenuOpen}
+                  aria-haspopup="menu"
+                >
+                  <LayoutDashboard size={18} />
+                  <span>Operação</span>
+                  <ChevronDown size={15} />
+                </button>
+                {desktopMenuOpen ? (
+                  <div style={styles.moreMenuDropdown} role="menu">
+                    {secondaryDesktopLinks.map((link) => (
+                      <button
+                        key={link.to || link.label}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => activateNavigationItem(link)}
+                        style={{ ...styles.moreMenuItem, ...(link.to === location.pathname ? styles.moreMenuItemActive : {}) }}
+                      >
+                        {link.icon}<span>{link.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         ) : null}
 
         <div style={styles.rightActions}>
-          <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={styles.themeBtn} title="Alternar tema">
+          {!isMobile ? (
+            <button type="button" onClick={() => setCommandOpen(true)} style={styles.commandButton} aria-label="Abrir busca de ações">
+              <Search size={17} />
+              <span>Buscar</span>
+              <kbd style={styles.commandKey}>Ctrl K</kbd>
+            </button>
+          ) : null}
+          <button type="button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={styles.themeBtn} title="Alternar tema" aria-label="Alternar tema">
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
-          <button style={{ ...styles.logout, padding: isMobile ? '0.45rem 0.85rem' : '0.55rem 1rem' }} onClick={logout}>
+          <button type="button" style={{ ...styles.logout, padding: isMobile ? '0.45rem 0.85rem' : '0.55rem 1rem' }} onClick={logout} aria-label="Sair do sistema">
             {isMobile ? <LogOut size={18} /> : 'Sair'}
           </button>
         </div>
@@ -301,6 +365,34 @@ export default function Layout() {
         </div>
       ) : null}
 
+      {commandOpen ? (
+        <div style={styles.commandOverlay} role="presentation" onMouseDown={() => setCommandOpen(false)}>
+          <div style={styles.commandPalette} role="dialog" aria-modal="true" aria-label="Busca rápida" onMouseDown={(event) => event.stopPropagation()}>
+            <div style={styles.commandSearchRow}>
+              <Search size={19} color="var(--text-tertiary, var(--text-dim))" />
+              <input
+                autoFocus
+                value={commandQuery}
+                onChange={(event) => setCommandQuery(event.target.value)}
+                placeholder="Ir para uma área ou ação..."
+                style={styles.commandInput}
+              />
+              <button type="button" onClick={() => setCommandOpen(false)} style={styles.commandClose} aria-label="Fechar busca"><X size={18} /></button>
+            </div>
+            <div style={styles.commandResults}>
+              <div style={styles.commandSectionLabel}><Command size={14} /> Navegação</div>
+              {commandResults.map((link) => (
+                <button key={link.to || link.label} type="button" onClick={() => activateNavigationItem(link)} style={styles.commandResult}>
+                  <span style={styles.commandResultIcon}>{link.icon}</span>
+                  <span>{link.label}</span>
+                </button>
+              ))}
+              {!commandResults.length ? <div style={styles.commandEmpty}>Nenhuma ação encontrada.</div> : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <InternalChatDrawer isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
       <ToastContainer />
     </div>
@@ -337,6 +429,24 @@ const styles = {
   proTag: { color: 'var(--accent)', fontSize: '0.62rem', verticalAlign: 'top', marginLeft: '0.2rem' },
   centerNav: { flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '0.65rem', justifyContent: 'center' },
   links: { display: 'flex', gap: '0.45rem', minWidth: 0, overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' },
+  primaryLink: {
+    minHeight: '40px',
+    padding: '0 0.85rem',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5rem',
+    color: 'var(--text-muted)',
+    textDecoration: 'none',
+    borderRadius: 'var(--radius-control, 10px)',
+    border: '1px solid transparent',
+    background: 'transparent',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    fontSize: '0.86rem',
+    fontWeight: 650,
+    whiteSpace: 'nowrap',
+  },
   link: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -356,7 +466,7 @@ const styles = {
     boxShadow: 'inset 0 0 0 1px var(--accent-border)',
   },
   moreMenuWrap: { position: 'relative', flexShrink: 0 },
-  moreMenuBtn: { background: 'var(--bg-panel)', border: '1px solid var(--border-color)' },
+  moreMenuBtn: { background: 'transparent', border: '1px solid transparent' },
   moreMenuDropdown: {
     position: 'absolute',
     top: 'calc(100% + 0.6rem)',
@@ -382,6 +492,11 @@ const styles = {
     color: 'var(--text-muted)',
     fontWeight: 700,
     fontSize: '0.88rem',
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    width: '100%',
+    fontFamily: 'inherit',
   },
   moreMenuItemActive: {
     background: 'var(--accent-light)',
@@ -389,6 +504,31 @@ const styles = {
     boxShadow: 'inset 0 0 0 1px var(--accent-border)',
   },
   rightActions: { display: 'flex', alignItems: 'center', gap: '0.8rem', flexShrink: 0 },
+  commandButton: {
+    height: '38px',
+    minWidth: '150px',
+    padding: '0 0.55rem 0 0.75rem',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border-color)',
+    color: 'var(--text-muted)',
+    borderRadius: 'var(--radius-control, 10px)',
+    fontFamily: 'inherit',
+    fontSize: '0.82rem',
+    cursor: 'pointer',
+  },
+  commandKey: {
+    marginLeft: 'auto',
+    padding: '0.18rem 0.38rem',
+    borderRadius: '6px',
+    border: '1px solid var(--border-color)',
+    color: 'var(--text-tertiary, var(--text-dim))',
+    background: 'var(--bg-panel)',
+    fontFamily: 'inherit',
+    fontSize: '0.68rem',
+  },
   themeBtn: {
     background: 'transparent',
     border: '1px solid var(--border-color)',
@@ -470,4 +610,93 @@ const styles = {
   toastBody: { minWidth: 0 },
   toastName: { fontWeight: 800, color: 'var(--text-main)', fontSize: '0.9rem' },
   toastMsg: { color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '2px', lineHeight: 1.45 },
+  commandOverlay: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 5000,
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    padding: '12vh 1rem 1rem',
+    background: 'var(--overlay-bg)',
+    backdropFilter: 'blur(6px)',
+  },
+  commandPalette: {
+    width: 'min(620px, 100%)',
+    overflow: 'hidden',
+    borderRadius: 'var(--radius-dialog, 18px)',
+    border: '1px solid var(--border-color)',
+    background: 'var(--bg-elevated, var(--bg-surface))',
+    boxShadow: 'var(--shadow-overlay, 0 24px 72px rgba(0,0,0,.34))',
+  },
+  commandSearchRow: {
+    minHeight: '64px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    padding: '0 1rem',
+    borderBottom: '1px solid var(--border-color)',
+  },
+  commandInput: {
+    flex: 1,
+    minWidth: 0,
+    border: 'none',
+    outline: 'none',
+    background: 'transparent',
+    color: 'var(--text-main)',
+    fontSize: '1rem',
+    fontFamily: 'inherit',
+  },
+  commandClose: {
+    width: '36px',
+    height: '36px',
+    borderRadius: 'var(--radius-control, 10px)',
+    border: '1px solid var(--border-color)',
+    background: 'transparent',
+    color: 'var(--text-muted)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+  },
+  commandResults: { maxHeight: '390px', overflowY: 'auto', padding: '0.65rem' },
+  commandSectionLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    padding: '0.45rem 0.55rem 0.65rem',
+    color: 'var(--text-tertiary, var(--text-dim))',
+    fontSize: '0.75rem',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+  },
+  commandResult: {
+    width: '100%',
+    minHeight: '46px',
+    padding: '0 0.75rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    border: 'none',
+    borderRadius: 'var(--radius-control, 10px)',
+    background: 'transparent',
+    color: 'var(--text-main)',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    fontSize: '0.9rem',
+    fontWeight: 600,
+    textAlign: 'left',
+  },
+  commandResultIcon: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '9px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'var(--accent)',
+    background: 'var(--accent-light)',
+  },
+  commandEmpty: { padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' },
 };

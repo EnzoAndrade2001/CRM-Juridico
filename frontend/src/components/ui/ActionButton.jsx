@@ -4,12 +4,26 @@ export default function ActionButton({
   children,
   type = 'button',
   variant = 'primary',
+  size = 'md',
+  loading = false,
+  fullWidth = false,
+  className = '',
   style,
+  disabled,
   ...props
 }) {
   const variantStyle = variants[variant] || variants.primary;
+  const sizeStyle = sizes[size] || sizes.md;
   return (
-    <button type={type} style={{ ...base, ...variantStyle, ...style }} {...props}>
+    <button
+      type={type}
+      className={`ui-action-button ${className}`.trim()}
+      style={{ ...base, ...sizeStyle, ...variantStyle, width: fullWidth ? '100%' : undefined, ...style }}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...props}
+    >
+      {loading ? <span className="ui-spinner" aria-hidden="true" /> : null}
       {children}
     </button>
   );
@@ -19,20 +33,27 @@ const base = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '0.55rem',
-  padding: '0.85rem 1.2rem',
-  borderRadius: '14px',
+  gap: 'var(--space-2)',
+  borderRadius: 'var(--radius-sm)',
   cursor: 'pointer',
-  fontWeight: 800,
-  fontSize: '0.92rem',
-  transition: 'all 0.2s ease',
+  fontWeight: 700,
+  lineHeight: 1.2,
+  whiteSpace: 'nowrap',
+  transition: 'transform 0.16s ease, filter 0.16s ease, background-color 0.16s ease, border-color 0.16s ease',
+};
+
+const sizes = {
+  sm: { minHeight: '36px', padding: '0.55rem 0.8rem', fontSize: 'var(--text-xs)' },
+  md: { minHeight: '44px', padding: '0.75rem 1rem', fontSize: 'var(--text-sm)' },
+  lg: { minHeight: '50px', padding: '0.9rem 1.25rem', fontSize: 'var(--text-md)' },
 };
 
 const variants = {
   primary: {
-    background: 'var(--accent)',
-    color: 'var(--text-inverse)',
-    border: '1px solid var(--accent)',
+    background: 'var(--brand-solid)',
+    color: 'var(--brand-on-solid)',
+    border: '1px solid var(--brand-solid)',
+    boxShadow: 'var(--shadow-xs)',
   },
   secondary: {
     background: 'transparent',
@@ -45,8 +66,8 @@ const variants = {
     border: '1px solid var(--border-color)',
   },
   danger: {
-    background: 'color-mix(in srgb, #d85f5f 10%, var(--bg-panel))',
-    color: '#d85f5f',
-    border: '1px solid color-mix(in srgb, #d85f5f 28%, transparent)',
+    background: 'var(--danger-light)',
+    color: 'var(--danger-text)',
+    border: '1px solid var(--danger-border)',
   },
 };

@@ -13,6 +13,7 @@ import {
   YAxis,
 } from 'recharts';
 import { ArrowRight, Bot, Clock, Star, TrendingUp } from 'lucide-react';
+import PageHeader from '../components/ui/PageHeader';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -62,15 +63,13 @@ export default function Dashboard() {
 
   return (
     <div style={s.container}>
-      <header style={s.header}>
-        <div style={s.headerInfo}>
-          <h1 style={s.title}>Dashboard de Performance</h1>
-          <p style={s.subtitle}>Insights em tempo real sobre a eficiencia da sua operacao</p>
-        </div>
-        <div style={s.statusBadge}>
-          <span style={s.dot} /> Sistema Operacional
-        </div>
-      </header>
+      <PageHeader
+        kicker="Visão operacional"
+        title="Dashboard de performance"
+        subtitle="Indicadores em tempo real para acompanhar eficiência, qualidade e capacidade da equipe."
+        actions={<div style={s.statusBadge}><span style={s.dot} /> Sistema operacional</div>}
+        compact
+      />
 
       <div style={s.kpiGrid}>
         <KpiCard

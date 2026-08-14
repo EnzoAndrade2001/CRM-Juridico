@@ -24,6 +24,7 @@ import {
   Paperclip,
   Search,
   SendHorizontal,
+  SlidersHorizontal,
   Sparkles,
   X,
   Lock,
@@ -460,7 +461,7 @@ export function MediaContent({ message, onImageClick, styles }) {
   return null;
 }
 
-export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile, onLinkCRM, onUnlinkCRM, onOpenCRM, styles }) {
+export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile, isCompactDesktop, onLinkCRM, onUnlinkCRM, onOpenCRM, styles }) {
   const contact = ticket.contact;
   const contactName = getContactDisplayName(contact);
   const contactPhone = getContactPhone(contact);
@@ -515,6 +516,15 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
     setNewName(contact.name || '');
     setEnableWhatsAppBilling(contact.enableWhatsAppBilling || false);
   }, [contact.id, contact.name, contact.enableWhatsAppBilling]);
+
+  useEffect(() => {
+    if (!isMobile && !isCompactDesktop) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape' && !profileModal) onClose();
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isMobile, isCompactDesktop, onClose, profileModal]);
 
   async function saveContact() {
     await updateContact(contact.id, { notes, tags: JSON.stringify(tags), city, state });
@@ -700,7 +710,7 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
                     ...styles.infoActionBtn,
                     minHeight: '32px',
                     padding: '0 0.7rem',
-                    fontSize: '0.68rem',
+                    fontSize: '0.75rem',
                     flexShrink: 0,
                   }}
                 >
@@ -771,7 +781,7 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
                 </div>
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                   <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{docName}</div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>{new Date(item.createdAt).toLocaleDateString('pt-BR')}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{new Date(item.createdAt).toLocaleDateString('pt-BR')}</div>
                 </div>
                 <button type="button" onClick={() => triggerMediaDownload(getMediaUrl(item.mediaUrl))} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                   <Download size={16} />
@@ -804,11 +814,12 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
       className="animate-slide-in-right"
       style={{
         ...styles.infoPanel,
-        position: isMobile ? 'fixed' : 'relative',
-        inset: isMobile ? 0 : 'auto',
-        width: isMobile ? '100%' : styles.infoPanel.width,
-        zIndex: isMobile ? 2000 : profileModal ? 2500 : 1,
+        position: isMobile ? 'fixed' : isCompactDesktop ? 'absolute' : 'relative',
+        inset: isMobile ? 0 : isCompactDesktop ? '0 0 0 auto' : 'auto',
+        width: isMobile ? '100%' : isCompactDesktop ? 'min(420px, calc(100% - 24px))' : styles.infoPanel.width,
+        zIndex: isMobile ? 2000 : isCompactDesktop ? 200 : profileModal ? 2500 : 1,
         height: '100%',
+        boxShadow: isCompactDesktop ? '-18px 0 42px rgba(0,0,0,0.28)' : styles.infoPanel.boxShadow,
       }}
     >
       <div style={styles.infoPanelHeader}>
@@ -816,7 +827,7 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
           <div style={styles.infoPanelEyebrow}>Cliente</div>
           <h3 style={styles.infoPanelTitle}>Ficha do contato</h3>
         </div>
-        <button style={styles.infoClose} onClick={onClose}>
+        <button type="button" className="inbox-control" style={styles.infoClose} onClick={onClose} aria-label="Fechar ficha do cliente" title="Fechar ficha">
           <X size={16} strokeWidth={2.4} />
         </button>
       </div>
@@ -843,20 +854,24 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
 
       <div style={styles.infoScroll}>
         <div style={styles.infoProfile}>
+          <div style={styles.infoIdentityRow}>
           <button
             type="button"
+            className="inbox-control"
             onClick={() => contact.avatarUrl && onImageClick(getMediaUrl(contact.avatarUrl))}
             style={{
               background: 'none',
               border: 'none',
               padding: 0,
               cursor: contact.avatarUrl ? 'zoom-in' : 'default',
-              borderRadius: '20px',
+              borderRadius: '14px',
+              flexShrink: 0,
             }}
             title={contact.avatarUrl ? 'Ampliar foto do cliente' : contactName}
           >
-            <Avatar name={contactName} src={contact.avatarUrl} size={80} />
+            <Avatar name={contactName} src={contact.avatarUrl} size={52} />
           </button>
+          <div style={styles.infoIdentityMain}>
           {isEditingName ? (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, width: '100%', padding: '0 10px' }}>
               <input 
@@ -875,16 +890,19 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
               </button>
             </div>
           ) : (
-            <h4 style={{ ...styles.infoName, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }} onClick={() => { setIsEditingName(true); setNewName(contact.name || ''); }} title="Clique para editar o nome">
+            <h4 style={{ ...styles.infoName, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => { setIsEditingName(true); setNewName(contact.name || ''); }} title="Clique para editar o nome">
               {contactName}
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
             </h4>
           )}
+          </div>
+          </div>
           {linkedCrm ? (
             <button
               type="button"
+              className="inbox-control"
               onClick={() => onOpenCRM?.(linkedCrm)}
-              style={{ color: '#D4AF37', fontSize: '0.9rem', fontWeight: 800, marginBottom: 12, padding: '6px 16px', background: 'rgba(212,175,55,0.1)', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.2)', display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+              style={{ ...styles.infoActionBtn, ...styles.infoActionBtnPrimary, width: '100%', marginTop: '0.75rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px' }}
               title="Abrir visão 360 sem sair da conversa"
             >
               <ClipboardList size={15} /> Visão 360 — {linkedCrm.fantasyName || linkedCrm.name}
@@ -896,9 +914,11 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
           ) : null}
           <button
             type="button"
+            className="inbox-control"
             onClick={() => copyText(contactPhone, 'Telefone copiado')}
             style={{ ...styles.infoPhone, ...styles.infoPhoneButton }}
             title="Copiar telefone"
+            aria-label={`Copiar telefone ${contactPhone}`}
           >
             {contactPhone}
           </button>
@@ -927,18 +947,18 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
             ) : null}
           </div>
           <div style={styles.infoActionRow}>
-            <button type="button" onClick={() => copyText(contactName, 'Nome copiado')} style={styles.infoActionBtn}>
+            <button type="button" className="inbox-control" onClick={() => copyText(contactName, 'Nome copiado')} style={styles.infoActionBtn}>
               Copiar nome
             </button>
-            <button type="button" onClick={() => copyText(buildContactSnapshot(), 'Ficha copiada')} style={styles.infoActionBtn}>
+            <button type="button" className="inbox-control" onClick={() => copyText(buildContactSnapshot(), 'Ficha copiada')} style={styles.infoActionBtn}>
               Copiar ficha
             </button>
             {linkedCrm ? (
-              <button type="button" onClick={onUnlinkCRM} style={{ ...styles.infoActionBtn, backgroundColor: 'var(--danger)', color: '#ffffff', border: '1px solid var(--danger)' }}>
-                Desvincular CRM
+              <button type="button" className="inbox-control" onClick={onUnlinkCRM} style={{ ...styles.infoActionBtn, color: 'var(--text-muted)' }} title="Desvincular este contato do CRM">
+                Desvincular
               </button>
             ) : (
-              <button type="button" onClick={onLinkCRM} style={{ ...styles.infoActionBtn, ...styles.infoActionBtnPrimary }}>
+              <button type="button" className="inbox-control" onClick={onLinkCRM} style={{ ...styles.infoActionBtn, ...styles.infoActionBtnPrimary }}>
                 Vincular CRM
               </button>
             )}
@@ -1146,6 +1166,7 @@ export const TicketSidebar = React.memo(function TicketSidebar({
   teams,
   view,
 }) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const filteredTickets = tickets.filter((ticket) => {
     const query = getSafeLowerText(search);
     const name = getSafeLowerText(ticket.contact?.name);
@@ -1159,6 +1180,7 @@ export const TicketSidebar = React.memo(function TicketSidebar({
     pending: 'Fila de espera',
     all: 'Todos os contatos',
   }[tab] || 'Inbox';
+  const activeFilterCount = [filters.priority, filters.agentId, filters.teamId].filter(Boolean).length;
 
   return (
     <aside
@@ -1195,7 +1217,7 @@ export const TicketSidebar = React.memo(function TicketSidebar({
       </div>
 
       <div style={styles.searchWrap}>
-        <div style={{ ...styles.searchRow, flexDirection: isMobile ? 'column' : 'row' }}>
+        <div style={styles.searchRow}>
           <div style={styles.searchShell}>
             <Search size={15} strokeWidth={2.2} style={styles.searchIcon} />
             <input
@@ -1203,20 +1225,29 @@ export const TicketSidebar = React.memo(function TicketSidebar({
               placeholder="Buscar cliente ou telefone"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              aria-label="Buscar cliente ou telefone"
             />
+            {search ? (
+              <button type="button" className="inbox-control" style={styles.searchClearIcon} onClick={() => setSearch('')} aria-label="Limpar busca" title="Limpar busca">
+                <X size={14} />
+              </button>
+            ) : null}
           </div>
           <button
-            onClick={() => {
-              setSearch('');
-              setFilters({ priority: '', agentId: '', teamId: '' });
-            }}
-            style={styles.clearBtn}
+            type="button"
+            className="inbox-control"
+            onClick={() => setFiltersOpen((current) => !current)}
+            style={{ ...styles.filterToggleBtn, ...(activeFilterCount ? styles.filterToggleActive : {}) }}
+            aria-expanded={filtersOpen}
+            aria-label="Exibir filtros da lista"
+            title="Filtrar conversas"
           >
-            Limpar
+            <SlidersHorizontal size={15} />
+            {activeFilterCount ? <span>{activeFilterCount}</span> : null}
           </button>
         </div>
 
-        <div style={{ ...styles.filterBar, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+        {filtersOpen ? <div style={{ ...styles.filterBar, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
           <select
             style={{ ...styles.filterSelect, minWidth: isMobile ? 'calc(50% - 3px)' : undefined }}
             value={filters.priority}
@@ -1246,7 +1277,17 @@ export const TicketSidebar = React.memo(function TicketSidebar({
             <option value="">Equipe</option>
             {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
           </select>
-        </div>
+          {activeFilterCount ? (
+            <button
+              type="button"
+              className="inbox-control"
+              style={styles.filtersClearBtn}
+              onClick={() => setFilters({ priority: '', agentId: '', teamId: '' })}
+            >
+              Limpar
+            </button>
+          ) : null}
+        </div> : null}
       </div>
 
       <div style={styles.list}>
@@ -1261,6 +1302,15 @@ export const TicketSidebar = React.memo(function TicketSidebar({
           <div
             key={ticket.id}
             onClick={() => selectTicket(ticket.id)}
+            role="button"
+            tabIndex={0}
+            aria-label={`Abrir conversa com ${getContactDisplayName(ticket.contact)}`}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                selectTicket(ticket.id);
+              }
+            }}
             style={{ ...styles.row, ...(selectedId === ticket.id ? styles.rowActive : {}) }}
           >
             <Avatar
@@ -1336,6 +1386,7 @@ export const ChatHeader = React.memo(function ChatHeader({
   handleResolve,
   handleSummarize,
   isMobile,
+  isCompactDesktop,
   onImageClick,
   selectedTicket,
   setShowInfo,
@@ -1432,36 +1483,69 @@ export const ChatHeader = React.memo(function ChatHeader({
       <div style={styles.headerActions}>
         <button
           type="button"
-          style={isMobile ? styles.headerGhostIconBtn : styles.headerGhostBtn}
+          className="inbox-control"
+          style={isMobile || isCompactDesktop ? styles.headerGhostIconBtn : styles.headerPrimaryOutlineBtn}
           onClick={() => setShowOsModal(true)}
           title="Gerar ordem de servico"
+          aria-label="Gerar ordem de servico"
         >
           <ClipboardList size={16} strokeWidth={2.2} />
-          {isMobile ? null : 'Gerar O.S.'}
+          {isMobile || isCompactDesktop ? null : 'Gerar O.S.'}
+        </button>
+
+        {selectedTicket.status !== 'resolved' ? (
+          <button className="inbox-control" style={styles.resolveBtn} onClick={handleResolve} aria-label="Encerrar atendimento" title="Encerrar atendimento">
+            <CheckCheck size={16} strokeWidth={2.2} />
+            {isMobile || isCompactDesktop ? null : 'Encerrar'}
+          </button>
+        ) : (
+          <button
+            className="inbox-control"
+            style={{ ...styles.resolveBtn, background: 'var(--bg-panel)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
+            onClick={handleReopen}
+            aria-label="Reabrir atendimento"
+            title="Reabrir atendimento"
+          >
+            {isMobile || isCompactDesktop ? 'Abrir' : 'Reabrir'}
+          </button>
+        )}
+
+        <button
+          type="button"
+          className="inbox-control"
+          style={styles.headerGhostIconBtn}
+          onClick={() => setShowInfo(!showInfo)}
+          title={showInfo ? 'Fechar ficha do cliente' : 'Abrir ficha do cliente'}
+          aria-label={showInfo ? 'Fechar ficha do cliente' : 'Abrir ficha do cliente'}
+          aria-pressed={showInfo}
+        >
+          {showInfo ? <PanelRightClose size={16} strokeWidth={2.2} /> : <PanelRightOpen size={16} strokeWidth={2.2} />}
         </button>
 
         <div style={styles.messageMenuRoot} data-header-menu-root="true">
           <button
             type="button"
-            style={isMobile ? styles.headerGhostIconBtn : styles.headerGhostBtn}
+            className="inbox-control"
+            style={styles.headerGhostIconBtn}
             onClick={(event) => {
               event.stopPropagation();
               setActionsOpen((current) => !current);
             }}
             title="Mais acoes"
+            aria-label="Mais acoes da conversa"
+            aria-expanded={actionsOpen}
           >
             <MoreVertical size={16} strokeWidth={2.3} />
-            {isMobile ? null : 'Acoes'}
           </button>
 
           {actionsOpen ? (
             <div style={styles.headerMenuPanel}>
-              <button type="button" style={styles.headerMenuItem} onClick={() => { handleSummarize(); setActionsOpen(false); }} disabled={summarizing}>
+              <button type="button" className="inbox-control" style={styles.headerMenuItem} onClick={() => { handleSummarize(); setActionsOpen(false); }} disabled={summarizing}>
                 <Sparkles size={15} strokeWidth={2.2} />
                 {summarizing ? 'Gerando resumo...' : 'Resumo IA'}
               </button>
               {selectedTicket.status !== 'resolved' ? (
-                <button type="button" style={styles.headerMenuItem} onClick={() => { setTransferModal(true); setActionsOpen(false); }}>
+                <button type="button" className="inbox-control" style={styles.headerMenuItem} onClick={() => { setTransferModal(true); setActionsOpen(false); }}>
                   <ArrowRightLeft size={15} strokeWidth={2.2} />
                   Transferir conversa
                 </button>
@@ -1469,41 +1553,6 @@ export const ChatHeader = React.memo(function ChatHeader({
             </div>
           ) : null}
         </div>
-
-        {selectedTicket.status !== 'resolved' ? (
-          <button style={styles.resolveBtn} onClick={handleResolve}>
-            <CheckCheck size={16} strokeWidth={2.2} />
-            {isMobile ? 'Fim' : 'Encerrar'}
-          </button>
-        ) : (
-          <button
-            style={{ ...styles.resolveBtn, background: 'var(--bg-panel)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
-            onClick={handleReopen}
-          >
-            {isMobile ? 'Abrir' : 'Reabrir'}
-          </button>
-        )}
-
-        {!isMobile ? (
-          <button
-            type="button"
-            style={styles.headerGhostBtn}
-            onClick={() => setShowInfo(!showInfo)}
-            title={showInfo ? 'Fechar ficha do cliente' : 'Abrir ficha do cliente'}
-          >
-            {showInfo ? <PanelRightClose size={16} strokeWidth={2.2} /> : <PanelRightOpen size={16} strokeWidth={2.2} />}
-            Cliente
-          </button>
-        ) : (
-          <button
-            type="button"
-            style={styles.headerGhostIconBtn}
-            onClick={() => setShowInfo(!showInfo)}
-            title={showInfo ? 'Fechar ficha do cliente' : 'Abrir ficha do cliente'}
-          >
-            {showInfo ? <PanelRightClose size={16} strokeWidth={2.2} /> : <PanelRightOpen size={16} strokeWidth={2.2} />}
-          </button>
-        )}
       </div>
     </header>
   );
@@ -1531,11 +1580,13 @@ export const MessageList = React.memo(function MessageList({
   const selectedContactName = getContactDisplayName(selectedTicket.contact, 'Cliente');
   const messageItems = Array.isArray(messages) ? messages : [];
   const [draftSearch, setDraftSearch] = useState(historySearch || '');
+  const [historySearchOpen, setHistorySearchOpen] = useState(Boolean(historySearch));
   const [openMenu, setOpenMenu] = useState(null);
   const trimmedHistorySearch = getSafeText(historySearch).trim();
 
   useEffect(() => {
     setDraftSearch(historySearch || '');
+    if (historySearch) setHistorySearchOpen(true);
   }, [historySearch, selectedTicket.id]);
 
   useEffect(() => {
@@ -1600,38 +1651,59 @@ export const MessageList = React.memo(function MessageList({
   return (
     <div style={{ ...styles.messages, padding: isMobile ? '0.85rem 0.85rem 1rem' : styles.messages.padding }} ref={scrollRef}>
       <div style={{ ...styles.historySearchSticky, top: isMobile ? '-0.85rem' : styles.historySearchSticky.top, paddingTop: isMobile ? '0.85rem' : styles.historySearchSticky.paddingTop }}>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            onHistorySearch(draftSearch.trim());
-          }}
-          style={{ ...styles.historySearchWrap, padding: isMobile ? '0.55rem' : styles.historySearchWrap.padding }}
-        >
-          <div style={styles.historySearchField}>
-            <Search size={15} strokeWidth={2.2} style={styles.searchIcon} />
-            <input
-              style={styles.historySearchInput}
-              placeholder="Buscar neste historico"
-              value={draftSearch}
-              onChange={(event) => setDraftSearch(event.target.value)}
-            />
-          </div>
-          <button type="submit" style={styles.historySearchBtn}>
-            Buscar
-          </button>
-          {trimmedHistorySearch ? (
+        {historySearchOpen ? (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              onHistorySearch(draftSearch.trim());
+            }}
+            style={{ ...styles.historySearchWrap, padding: isMobile ? '0.55rem' : styles.historySearchWrap.padding }}
+          >
+            <div style={styles.historySearchField}>
+              <Search size={15} strokeWidth={2.2} style={styles.searchIcon} />
+              <input
+                autoFocus
+                style={styles.historySearchInput}
+                placeholder="Buscar neste historico"
+                value={draftSearch}
+                onChange={(event) => setDraftSearch(event.target.value)}
+                aria-label="Buscar no historico desta conversa"
+              />
+            </div>
+            <button type="submit" className="inbox-control" style={styles.historySearchBtn}>
+              Buscar
+            </button>
             <button
               type="button"
+              className="inbox-control"
               style={styles.historySearchClearBtn}
               onClick={() => {
                 setDraftSearch('');
                 onHistorySearch('');
+                setHistorySearchOpen(false);
               }}
+              aria-label="Fechar busca no historico"
+              title="Fechar busca"
             >
-              Limpar
+              <X size={15} />
             </button>
-          ) : null}
-        </form>
+          </form>
+        ) : (
+          <div style={styles.historySearchToggleRow}>
+            <button
+              type="button"
+              className="inbox-control"
+              style={styles.historySearchToggle}
+              onClick={() => setHistorySearchOpen(true)}
+              aria-expanded="false"
+              aria-label="Buscar no historico desta conversa"
+              title="Buscar no historico"
+            >
+              <Search size={15} />
+              {isMobile ? null : 'Buscar historico'}
+            </button>
+          </div>
+        )}
 
         {trimmedHistorySearch ? (
           <div style={styles.historySearchMeta}>
