@@ -218,7 +218,80 @@ export default function CRM() {
   );
 }
 
-function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoading, error, onRetry, onClose }) {
+export function CrmCustomerProfileModal({ customerId, initialCustomer, onClose, onOpenConversation, onOpenServiceOrder }) {
+  const [customer, setCustomer] = useState(initialCustomer || null);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [relatedLoading, setRelatedLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function loadProfile() {
+    if (!customerId) return;
+    setLoading(true);
+    setRelatedLoading(false);
+    setError('');
+    try {
+      const response = await getCrmCustomer(customerId);
+      const fullCustomer = response.data || initialCustomer;
+      setCustomer(fullCustomer);
+      setLoading(false);
+      setRelatedLoading(true);
+
+      const [contractsResult, ordersResult, view360Result] = await Promise.allSettled([
+        getCrmCustomerContracts(customerId),
+        getCrmCustomerServiceOrders(customerId, 25),
+        getCrmCustomer360(customerId),
+      ]);
+      const contracts = contractsResult.status === 'fulfilled' ? contractsResult.value.data?.items || [] : [];
+      const serviceOrders = ordersResult.status === 'fulfilled' ? ordersResult.value.data?.items || [] : [];
+      const customer360 = view360Result.status === 'fulfilled' ? view360Result.value.data || null : null;
+      setCustomer((current) => ({
+        ...(current || fullCustomer),
+        contracts,
+        serviceOrders,
+        customer360,
+        operationalSummary: {
+          ...(current?.operationalSummary || fullCustomer?.operationalSummary || {}),
+          contracts: contracts.length,
+          activeContracts: contracts.filter(isContractActive).length,
+          contractValue: contracts.filter(isContractActive).reduce((total, contract) => total + Number(contract.monthlyValue || contract.value || 0), 0),
+          openServiceOrders: serviceOrders.filter((order) => !isOrderClosed(order)).length,
+          lastServiceOrderAt: serviceOrders[0]?.openedAt || null,
+        },
+      }));
+      if (contractsResult.status === 'rejected' || ordersResult.status === 'rejected' || view360Result.status === 'rejected') {
+        setError('Algumas informações complementares não puderam ser carregadas. Você pode tentar novamente.');
+      }
+    } catch (requestError) {
+      setError(requestError.code === 'ECONNABORTED'
+        ? 'A consulta ao servidor demorou mais que o esperado. Tente novamente.'
+        : 'Não foi possível atualizar os dados deste cliente.');
+    } finally {
+      setLoading(false);
+      setRelatedLoading(false);
+    }
+  }
+
+  useEffect(() => { loadProfile(); }, [customerId]);
+
+  if (!customer) return null;
+  return (
+    <CustomerModal
+      customer={customer}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      loading={loading}
+      relatedLoading={relatedLoading}
+      error={error}
+      onRetry={loadProfile}
+      onClose={onClose}
+      onOpenConversation={onOpenConversation}
+      onOpenServiceOrder={onOpenServiceOrder}
+    />
+  );
+}
+
+function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoading, error, onRetry, onClose, onOpenConversation, onOpenServiceOrder }) {
   const equipments = arrayOf(customer.equipments);
   const contracts = arrayOf(customer.contracts);
   const serviceOrders = arrayOf(customer.serviceOrders, customer.orders, customer.osHistory);
@@ -265,7 +338,7 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
           {loading ? <div style={s.loadingBox}><RefreshCw size={18} /> Carregando informações atualizadas do ILUX...</div> : null}
           {!loading && relatedLoading ? <div style={s.loadingInline}><RefreshCw size={16} /> Montando a visão 360 do cliente em segundo plano...</div> : null}
           {!loading && error ? <div style={s.errorBox}><AlertCircle size={17} /><span style={{ flex: 1 }}>{error}</span><button type="button" style={s.retryBtn} onClick={onRetry}>Tentar novamente</button></div> : null}
-          {!loading && activeTab === 'overview' ? <OverviewTab customer={customer} equipments={equipments} contracts={contracts} serviceOrders={serviceOrders} customer360={customer360} /> : null}
+          {!loading && activeTab === 'overview' ? <OverviewTab customer={customer} equipments={equipments} contracts={contracts} serviceOrders={serviceOrders} customer360={customer360} onOpenConversation={onOpenConversation} onOpenServiceOrder={onOpenServiceOrder} /> : null}
           {!loading && activeTab === 'timeline' ? <TimelineTab timeline={arrayOf(customer360.timeline)} /> : null}
           {!loading && activeTab === 'units' ? <UnitsTab units={arrayOf(customer360.units)} /> : null}
           {!loading && activeTab === 'contacts' ? <ContactsTab contacts={arrayOf(customer360.contacts)} /> : null}
@@ -285,7 +358,7 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
   );
 }
 
-function OverviewTab({ customer, equipments, contracts, serviceOrders, customer360 }) {
+function OverviewTab({ customer, equipments, contracts, serviceOrders, customer360, onOpenConversation, onOpenServiceOrder }) {
   const operational = customer.operationalSummary || {};
   const alerts = arrayOf(customer360?.alerts);
   const sla = customer360?.sla || null;
@@ -302,7 +375,7 @@ function OverviewTab({ customer, equipments, contracts, serviceOrders, customer3
         <MiniStat icon={<AlertCircle size={18} />} value={openOrders} label="O.S. em aberto" warning={openOrders > 0} />
         <MiniStat icon={<CircleDollarSign size={18} />} value={formatCurrency(monthlyValue)} label="Valor mensal" />
       </div>
-      {customer360?.quickActions ? <QuickActions actions={customer360.quickActions} /> : null}
+      {customer360?.quickActions ? <QuickActions actions={customer360.quickActions} onOpenConversation={onOpenConversation} onOpenServiceOrder={onOpenServiceOrder} /> : null}
       {alerts.length ? <AlertsPanel alerts={alerts} /> : (
         customer360?.generatedAt ? <div style={s.healthyBox}><ShieldCheck size={18} /> Nenhum alerta operacional identificado para este cliente.</div> : null
       )}
@@ -337,9 +410,11 @@ function OverviewTab({ customer, equipments, contracts, serviceOrders, customer3
   );
 }
 
-function QuickActions({ actions }) {
+function QuickActions({ actions, onOpenConversation, onOpenServiceOrder }) {
   const openInbox = (openOs = false) => {
     if (!actions.ticketId) return;
+    if (openOs && onOpenServiceOrder) return onOpenServiceOrder();
+    if (!openOs && onOpenConversation) return onOpenConversation();
     window.location.assign(`/inbox?ticketId=${encodeURIComponent(actions.ticketId)}${openOs ? '&openOs=1' : ''}`);
   };
   return (
@@ -823,7 +898,7 @@ const s = {
   badgeMuted: { display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: 999, padding: '0.25rem 0.5rem', fontSize: '0.7rem', fontWeight: 800 },
   openHint: { display: 'inline-flex', alignItems: 'center', gap: 2, color: 'var(--text-muted)', fontSize: '0.76rem', fontWeight: 900, whiteSpace: 'nowrap' },
   emptyState: { gridColumn: '1 / -1', textAlign: 'center', color: 'var(--text-muted)', padding: '2rem', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 14 },
-  modalBackdrop: { position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,.76)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' },
+  modalBackdrop: { position: 'fixed', inset: 0, zIndex: 3500, background: 'rgba(0,0,0,.76)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' },
   modal: { width: 'min(1180px, 97vw)', height: 'min(860px, 94vh)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 22, boxShadow: '0 28px 90px rgba(0,0,0,.55)' },
   modalHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', padding: '1.15rem 1.4rem', borderBottom: '1px solid var(--border-color)' },
   modalIdentity: { display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 },

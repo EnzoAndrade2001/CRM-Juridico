@@ -460,7 +460,7 @@ export function MediaContent({ message, onImageClick, styles }) {
   return null;
 }
 
-export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile, onLinkCRM, onUnlinkCRM, styles }) {
+export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile, onLinkCRM, onUnlinkCRM, onOpenCRM, styles }) {
   const contact = ticket.contact;
   const contactName = getContactDisplayName(contact);
   const contactPhone = getContactPhone(contact);
@@ -883,11 +883,11 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
           {linkedCrm ? (
             <button
               type="button"
-              onClick={() => window.location.assign('/crm')}
+              onClick={() => onOpenCRM?.(linkedCrm)}
               style={{ color: '#D4AF37', fontSize: '0.9rem', fontWeight: 800, marginBottom: 12, padding: '6px 16px', background: 'rgba(212,175,55,0.1)', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.2)', display: 'inline-flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
-              title="Abrir aba CRM"
+              title="Abrir visão 360 sem sair da conversa"
             >
-              CRM {linkedCrm.fantasyName || linkedCrm.name}
+              <ClipboardList size={15} /> Visão 360 — {linkedCrm.fantasyName || linkedCrm.name}
             </button>
           ) : contact.fantasyName ? (
             <div style={{ color: 'var(--accent)', fontSize: '0.9rem', fontWeight: 700, marginBottom: 8, padding: '4px 12px', background: 'rgba(212,175,55,0.1)', borderRadius: '8px', display: 'inline-block' }}>

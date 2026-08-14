@@ -25,6 +25,7 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import CreateOsModal from '../components/CreateOsModal';
 import LinkContactModal from '../components/LinkContactModal';
 import InstanceSelectionModal from '../components/InstanceSelectionModal';
+import { CrmCustomerProfileModal } from './CRM';
 import { ChatHeader, ContactPanel, ForwardModal, MessageComposer, MessageList, TicketSidebar, TransferModal } from './inbox/components';
 import { Empty } from './inbox/helpers.jsx';
 import { useInboxMessages, useInboxRealtime, useInboxTickets } from './inbox/hooks';
@@ -104,6 +105,7 @@ export default function Inbox() {
   const [historySearch, setHistorySearch] = useState('');
   const [showReopenInstanceModal, setShowReopenInstanceModal] = useState(false);
   const [reopening, setReopening] = useState(false);
+  const [crmProfile, setCrmProfile] = useState(null);
   const openOsHandledRef = useRef(false);
   const isMobile = useIsMobile();
   const { instances } = useOutletContext() || { instances: [] };
@@ -694,12 +696,26 @@ export default function Inbox() {
             isMobile={isMobile}
             onLinkCRM={() => setLinkModal(true)}
             onUnlinkCRM={handleUnlinkCRM}
+            onOpenCRM={(crmCustomer) => setCrmProfile(crmCustomer)}
             styles={s}
           />
         </InboxSectionErrorBoundary>
       )}
 
       {/* Modais */}
+
+      {crmProfile ? (
+        <CrmCustomerProfileModal
+          customerId={crmProfile.id}
+          initialCustomer={crmProfile}
+          onClose={() => setCrmProfile(null)}
+          onOpenConversation={() => setCrmProfile(null)}
+          onOpenServiceOrder={() => {
+            setCrmProfile(null);
+            setShowOsModal(true);
+          }}
+        />
+      ) : null}
 
       {showReopenInstanceModal && selectedTicket ? (
         <InstanceSelectionModal
