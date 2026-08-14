@@ -69,15 +69,26 @@ function normalizeContract(record) {
   const startsAt = asDate(rawValue(payload, 'startsAt', 'dtcontratoini'));
   const endsAt = asDate(rawValue(payload, 'endsAt', 'dtcontratofin'));
   const status = first(rawValue(payload, 'status'));
+  const totalValue = asNumber(rawValue(payload, 'totalValue', 'valor_total_contrato', 'valortotal_contrato')) || 0;
+  const fixedValue = asNumber(rawValue(payload, 'fixedValue', 'tr_vl_fixo')) || 0;
+  const franchiseValue = asNumber(rawValue(payload, 'franchiseValue', 'valor_franquia', 'valfranquia')) || 0;
+  const informedMonthlyValue = asNumber(rawValue(payload, 'monthlyValue'));
+  const monthlyValue = informedMonthlyValue ?? (fixedValue + franchiseValue);
   return {
     id: record?.id || null,
     externalId: first(record?.externalId, rawValue(payload, 'externalId', 'seqcontrato')),
     number: first(rawValue(payload, 'contractNumber', 'nrcontrato')),
     clientExternalId: first(rawValue(payload, 'clientExternalId', 'cdcliente')),
-    type: first(rawValue(payload, 'contractType', 'tipocontrato')),
+    type: first(rawValue(payload, 'contractType', 'nmcontratotp', 'tipocontrato')),
+    typeCode: first(rawValue(payload, 'contractTypeCode', 'cdcontratotp', 'tipocontrato')),
     status,
     isActive: contractIsActive(status, endsAt),
-    value: asNumber(rawValue(payload, 'value', 'valor_total_contrato', 'valortotal_contrato')),
+    value: monthlyValue || asNumber(rawValue(payload, 'value')) || totalValue,
+    monthlyValue,
+    fixedValue,
+    franchiseValue,
+    totalValue,
+    equipmentCount: asNumber(rawValue(payload, 'equipmentCount', 'qt_equipamentos')) || 0,
     startsAt,
     endsAt,
     updatedAt: asDate(rawValue(payload, 'updatedAt', 'atualizado')) || record?.syncedAt || record?.receivedAt || null,
@@ -331,9 +342,13 @@ async function getSummary(req, res) {
   ]);
 
   const contracts = contractRecords.map(normalizeContract);
-  const monthlyRevenue = customerRevenue.reduce((total, customer) => {
+  const customerMonthlyRevenue = customerRevenue.reduce((total, customer) => {
     return total + (asNumber(rawValue(customer.raw || {}, 'total_mensalidade')) || 0);
   }, 0);
+  const contractMonthlyRevenue = contracts
+    .filter((contract) => contract.isActive)
+    .reduce((total, contract) => total + (contract.monthlyValue || contract.value || 0), 0);
+  const monthlyRevenue = Math.max(customerMonthlyRevenue, contractMonthlyRevenue);
 
   res.json({
     // Campos antigos mantidos para compatibilidade.
@@ -431,10 +446,34 @@ async function getCustomer(req, res) {
 async function getCustomerContracts(req, res) {
   const customer = await prisma.crmCustomer.findFirst({
     where: { id: req.params.id, tenantId: req.user.tenantId },
-    select: { externalId: true },
+    select: {
+      externalId: true,
+      raw: true,
+      equipments: { select: { contractExternalId: true } },
+    },
   });
   if (!customer) return res.status(404).json({ error: 'Cliente CRM nao encontrado' });
   const contracts = await loadContracts(req.user.tenantId, customer.externalId);
+  const activeContracts = contracts.filter((contract) => contract.isActive);
+
+  for (const contract of contracts) {
+    const linkedCount = customer.equipments.filter((equipment) => (
+      text(equipment.contractExternalId) === text(contract.externalId)
+    )).length;
+    if (linkedCount > contract.equipmentCount) contract.equipmentCount = linkedCount;
+  }
+
+  // Compatibilidade imediata com a base ja sincronizada: quando o cliente tem
+  // um unico contrato ativo, o total_mensalidade do cadastro pertence a ele.
+  if (activeContracts.length === 1) {
+    const onlyContract = activeContracts[0];
+    const customerMonthlyValue = asNumber(rawValue(customer.raw || {}, 'total_mensalidade')) || 0;
+    if (!onlyContract.monthlyValue && customerMonthlyValue) {
+      onlyContract.monthlyValue = customerMonthlyValue;
+      onlyContract.value = customerMonthlyValue;
+    }
+    if (!onlyContract.equipmentCount) onlyContract.equipmentCount = customer.equipments.length;
+  }
   res.json({ items: contracts, total: contracts.length, active: contracts.filter((item) => item.isActive).length });
 }
 

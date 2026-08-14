@@ -696,13 +696,19 @@ class FirebirdRepository:
                 cli.ENDERECO, cli.NUM, cli.COMPLEMENTO, cli.BAIRRO, cli.DDD, cli.FONE1, cli.FONE2, cli.CELULAR, cli.FAX, cli.EMAIL, cli.CONTATO,
                 cli.INCLUSAO, cli.ATUALIZADO,
                 (
-                    select sum(m.VALFRANQUIA)
+                    select sum(
+                        coalesce(c.TR_VL_FIXO, 0) +
+                        coalesce((
+                            select sum(m.VALFRANQUIA)
+                            from IXLCONTRATOSMED m
+                            where m.SEQCONTRATO = c.SEQCONTRATO
+                              and coalesce(m.TFMEDIDORATIVO, 'S') <> 'N'
+                        ), 0)
+                    )
                     from IXLCONTRATOSGRP g
                     join IXLCONTRATOS c on c.SEQCONTRATOGRP = g.SEQCONTRATOGRP
-                    join IXLCONTRATOSMED m on m.SEQCONTRATO = c.SEQCONTRATO
                     where g.CDCLIENTE = cli.CDCLIENTE
                       and c.STATUS = 'G'
-                      and m.TFMEDIDORATIVO = 'S'
                 ) as TOTAL_MENSALIDADE
             from ICLIENTES cli
             where cli.CDCLIENTE > ?
@@ -714,6 +720,7 @@ class FirebirdRepository:
         sql = """
             select
                 eq.CDEQUIPAMENTO, eq.CDCLIENTE, eq.CDPRODUTO, eq.SERIE, eq.MODELO, eq.FABRICANTE,
+                eq.SEQCONTRATO, eq.PATRIMONIO, eq.TFINATIVO,
                 eq.ENDERECO, eq.NUM, eq.BAIRRO, eq.COMPLEMENTO, eq.LOCALINSTAL, eq.DEPARTAMENTO, eq.CONTATO, eq.FONE, eq.DDD, eq.CIDADE, eq.UF,
                 eq.INCLUSAO, eq.ATUALIZADO,
                 p.NMPRODUTO as PRODUCT_NAME
@@ -727,12 +734,28 @@ class FirebirdRepository:
     def fetch_contracts(self, cursor: int) -> Iterator[dict[str, Any]]:
         sql = """
             select
-                SEQCONTRATO, NRCONTRATO, CDCLIENTE, STATUS, DTCONTRATOINI, DTCONTRATOFIN,
-                TIPOCONTRATO, VALOR_TOTAL_CONTRATO, TFATENDIMENTO, TF_BLOQUEIA_OS,
-                INCLUSAO, ATUALIZADO
-            from IXLCONTRATOS
-            where SEQCONTRATO > ?
-            order by SEQCONTRATO
+                ct.SEQCONTRATO, ct.NRCONTRATO, ct.CDCLIENTE, ct.STATUS,
+                ct.DTCONTRATOINI, ct.DTCONTRATOFIN, ct.TIPOCONTRATO,
+                ct.CDCONTRATOTP, tp.NMCONTRATOTP,
+                ct.VALOR_TOTAL_CONTRATO, ct.TR_VL_FIXO,
+                coalesce(med.VALOR_FRANQUIA, 0) as VALOR_FRANQUIA,
+                coalesce(it.QT_EQUIPAMENTOS, 0) as QT_EQUIPAMENTOS,
+                ct.TFATENDIMENTO, ct.TF_BLOQUEIA_OS, ct.INCLUSAO, ct.ATUALIZADO
+            from IXLCONTRATOS ct
+            left join ICLIENTESPRODCONT tp on tp.CDCONTRATOTP = ct.CDCONTRATOTP
+            left join (
+                select SEQCONTRATO, count(distinct CDEQUIPAMENTO) as QT_EQUIPAMENTOS
+                from IXLCONTRATOSIT
+                group by SEQCONTRATO
+            ) it on it.SEQCONTRATO = ct.SEQCONTRATO
+            left join (
+                select SEQCONTRATO, sum(coalesce(VALFRANQUIA, 0)) as VALOR_FRANQUIA
+                from IXLCONTRATOSMED
+                where coalesce(TFMEDIDORATIVO, 'S') <> 'N'
+                group by SEQCONTRATO
+            ) med on med.SEQCONTRATO = ct.SEQCONTRATO
+            where ct.SEQCONTRATO > ?
+            order by ct.SEQCONTRATO
         """
         yield from self._rows(sql, (cursor,))
 
@@ -1162,13 +1185,23 @@ def normalize_equipment(record: dict[str, Any]) -> dict[str, Any]:
 
 def normalize_contract(record: dict[str, Any]) -> dict[str, Any]:
     external_id = str(record["seqcontrato"]).strip()
+    total_value = float(record.get("valor_total_contrato") or 0)
+    fixed_value = float(record.get("tr_vl_fixo") or 0)
+    franchise_value = float(record.get("valor_franquia") or 0)
+    monthly_value = fixed_value + franchise_value
     return {
         "externalId": external_id,
         "clientExternalId": str(record["cdcliente"]).strip() if record.get("cdcliente") is not None else None,
         "contractNumber": first_non_empty(record.get("nrcontrato")),
         "status": first_non_empty(record.get("status")),
-        "contractType": first_non_empty(record.get("tipocontrato")),
-        "value": float(val) if (val := (record.get("valortotal_contrato") if "valortotal_contrato" in record else record.get("valor_total_contrato"))) is not None else None,
+        "contractType": first_non_empty(record.get("nmcontratotp"), record.get("tipocontrato"), record.get("cdcontratotp")),
+        "contractTypeCode": first_non_empty(record.get("cdcontratotp"), record.get("tipocontrato")),
+        "value": monthly_value if monthly_value > 0 else total_value,
+        "monthlyValue": monthly_value,
+        "fixedValue": fixed_value,
+        "franchiseValue": franchise_value,
+        "totalValue": total_value,
+        "equipmentCount": int(record.get("qt_equipamentos") or 0),
         "startsAt": parse_firebird_timestamp(record.get("dtcontratoini")),
         "endsAt": parse_firebird_timestamp(record.get("dtcontratofin")),
         "updatedAt": parse_firebird_timestamp(record.get("atualizado")),
@@ -1387,6 +1420,8 @@ def run_cycle(
 ) -> None:
     repo = FirebirdRepository(config)
     crm = CRMClient(config)
+    contract_details_version = 1
+    refresh_contract_details = int(state.data.get("contract_details_version", 0) or 0) < contract_details_version
 
     if full:
         state.data["cursors"] = {
@@ -1396,6 +1431,13 @@ def run_cycle(
             "serviceOrders": 0,
             "serviceOrderAttendances": 0,
         }
+        state.save()
+    elif refresh_contract_details:
+        # Esta versao passou a trazer valor fixo, franquia e vinculos reais do
+        # contrato. Refaz apenas contratos/equipamentos uma vez, preservando a
+        # sincronizacao pesada de contatos e O.S.
+        state.set_cursor("equipments", 0)
+        state.set_cursor("contracts", 0)
         state.save()
 
     state.data["batch_size"] = config.batch_size
@@ -1413,6 +1455,11 @@ def run_cycle(
         logging.info("Iniciando sincronização de %s", entity)
         if not sync_entity(repo, crm, state, entity, config.batch_size, stop_event):
             return
+
+    if refresh_contract_details:
+        state.data["contract_details_version"] = contract_details_version
+        state.save()
+        logging.info("Detalhes financeiros e vinculos de contratos atualizados")
 
     if full:
         # A carga completa ja enviou o estado atual de todas as O.S. Portanto,

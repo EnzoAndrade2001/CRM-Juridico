@@ -7,7 +7,7 @@ Cliente de integração para rodar no servidor da empresa, ler o Firebird localm
 - Lê clientes de `ICLIENTES`
 - Lê equipamentos de `IXLEQUIPAMENTO`
 - Lê contratos de `IXLCONTRATOS`
-- A sincronização histórica de O.S. fica desativada por padrão para não reenviar milhares de registros nem competir com a abertura imediata
+- Sincroniza novas O.S. e atendimentos de forma incremental, em lotes pequenos, sem reler todo o histórico
 - Envia os lotes para o endpoint `/api/integrations/firebird/push`
 - Mantém um cursor local em `state.json`
 - Registra logs em `logs/client.log` com rotação automática
@@ -16,7 +16,7 @@ Cliente de integração para rodar no servidor da empresa, ler o Firebird localm
 - Consulta somente os cinco chamados anteriores e os atendimentos da nova O.S. para montar o PDF completo
 - No pacote atualizado, roda como `FirebirdCRMClient.exe` e não depende de Python instalado
 
-Para reativar deliberadamente o histórico de O.S., configure `SYNC_SERVICE_ORDERS=true`. Isso não é necessário para abrir chamados pelo WhatsApp.
+O incremental de O.S. vem ativo por padrão. Para desativá-lo deliberadamente, configure `SYNC_SERVICE_ORDERS_INCREMENTAL=false`.
 
 ## Instalação
 

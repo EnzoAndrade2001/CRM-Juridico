@@ -267,7 +267,9 @@ function OverviewTab({ customer, equipments, contracts, serviceOrders }) {
   const operational = customer.operationalSummary || {};
   const activeContracts = pick(operational, 'activeContracts') ?? contracts.filter(isContractActive).length;
   const openOrders = pick(operational, 'openServiceOrders') ?? serviceOrders.filter((order) => !isOrderClosed(order)).length;
-  const monthlyValue = pick(operational, 'monthlyRevenue', 'contractValue') ?? sumMonthlyValue(contracts);
+  const monthlyValue = Number(operational.monthlyRevenue || 0)
+    || Number(operational.contractValue || 0)
+    || sumMonthlyValue(contracts);
   return (
     <div style={s.sectionStack}>
       <div style={s.profileStats}>
@@ -392,7 +394,9 @@ function ContractsTab({ contracts }) {
             </div>
             <div style={s.contractGrid}>
               <Info label="Vigência" value={formatPeriod(pick(contract, 'startDate', 'startsAt'), pick(contract, 'endDate', 'endsAt'))} />
-              <Info label="Valor do contrato" value={formatCurrency(pick(contract, 'monthlyValue', 'value', 'amount'))} />
+              <Info label="Valor mensal" value={formatCurrency(pick(contract, 'monthlyValue', 'value', 'amount'))} />
+              <Info label="Valor fixo" value={formatCurrency(pick(contract, 'fixedValue'))} />
+              <Info label="Franquia" value={formatCurrency(pick(contract, 'franchiseValue'))} />
               <Info label="Equipamentos" value={`${equipmentCount} vinculado${equipmentCount === 1 ? '' : 's'}`} />
               <Info label="Tipo" value={pick(contract, 'typeName', 'contractType', 'type')} />
             </div>
@@ -621,7 +625,7 @@ const s = {
   contractHeader: { display: 'flex', alignItems: 'center', gap: '0.7rem', paddingBottom: '0.8rem', borderBottom: '1px solid var(--border-color)' },
   contractIcon: { width: 38, height: 38, display: 'grid', placeItems: 'center', color: 'var(--accent)', background: 'var(--accent-light)', borderRadius: 10 },
   contractTitle: { margin: '0.15rem 0 0', fontSize: '0.95rem' },
-  contractGrid: { display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: '0.8rem', paddingTop: '0.8rem' },
+  contractGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '0.8rem', paddingTop: '0.8rem' },
   osToolbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' },
   toolbarTitle: { display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.35rem 0.65rem' },
   filterGroup: { display: 'flex', padding: 3, background: 'var(--bg-base)', border: '1px solid var(--border-color)', borderRadius: 10 },
