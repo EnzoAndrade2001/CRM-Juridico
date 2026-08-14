@@ -192,7 +192,7 @@ async function findTenantCustomer(tenantId, id) {
     include: {
       equipments: { orderBy: [{ isActive: 'desc' }, { model: 'asc' }] },
       whatsappContacts: {
-        select: { id: true, phone: true, whatsapp: true, name: true, externalSource: true, updatedAt: true },
+        select: { id: true, phone: true, whatsapp: true, name: true, externalSource: true, createdAt: true },
       },
     },
   });
