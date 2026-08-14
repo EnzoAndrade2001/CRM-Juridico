@@ -18,7 +18,6 @@ import {
   Map,
   MapPin,
   MapPinned,
-  MessageCircle,
   PackageSearch,
   Phone,
   Printer,
@@ -324,7 +323,6 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
 
         <nav style={s.tabs}>
           <Tab active={activeTab === 'overview'} icon={<User size={16} />} label="Visão geral" onClick={() => setActiveTab('overview')} />
-          <Tab active={activeTab === 'timeline'} icon={<MessageCircle size={16} />} label="Linha do tempo" onClick={() => setActiveTab('timeline')} />
           <Tab active={activeTab === 'units'} icon={<MapPinned size={16} />} label={`Unidades (${arrayOf(customer360.units).length})`} onClick={() => setActiveTab('units')} />
           <Tab active={activeTab === 'contacts'} icon={<Phone size={16} />} label={`Contatos (${arrayOf(customer360.contacts).length})`} onClick={() => setActiveTab('contacts')} />
           <Tab active={activeTab === 'equipments'} icon={<Printer size={16} />} label={`Equipamentos (${equipments.length})`} onClick={() => setActiveTab('equipments')} />
@@ -339,7 +337,6 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
           {!loading && relatedLoading ? <div style={s.loadingInline}><RefreshCw size={16} /> Montando a visão 360 do cliente em segundo plano...</div> : null}
           {!loading && error ? <div style={s.errorBox}><AlertCircle size={17} /><span style={{ flex: 1 }}>{error}</span><button type="button" style={s.retryBtn} onClick={onRetry}>Tentar novamente</button></div> : null}
           {!loading && activeTab === 'overview' ? <OverviewTab customer={customer} equipments={equipments} contracts={contracts} serviceOrders={serviceOrders} customer360={customer360} onOpenConversation={onOpenConversation} onOpenServiceOrder={onOpenServiceOrder} /> : null}
-          {!loading && activeTab === 'timeline' ? <TimelineTab timeline={arrayOf(customer360.timeline)} /> : null}
           {!loading && activeTab === 'units' ? <UnitsTab units={arrayOf(customer360.units)} /> : null}
           {!loading && activeTab === 'contacts' ? <ContactsTab contacts={arrayOf(customer360.contacts)} /> : null}
           {!loading && activeTab === 'equipments' ? <EquipmentsTab equipments={equipments} evolution={arrayOf(customer360.equipmentEvolution)} /> : null}
@@ -465,37 +462,6 @@ function SlaPanel({ sla }) {
 
 function Metric({ value, label, danger = false }) {
   return <div style={{ ...s.metricCard, ...(danger ? s.metricDanger : {}) }}><strong>{value}</strong><span>{label}</span></div>;
-}
-
-function TimelineTab({ timeline }) {
-  const [filter, setFilter] = useState('all');
-  const visible = filter === 'all' ? timeline : timeline.filter((item) => item.type === filter);
-  if (!timeline.length) return <Empty icon={<MessageCircle size={28} />} title="Linha do tempo vazia" text="Ainda não há conversas, contratos ou atendimentos sincronizados para este cliente." />;
-  return (
-    <div style={s.sectionStack}>
-      <div style={s.timelineToolbar}>
-        <div><strong>Linha do tempo do relacionamento</strong><span>{timeline.length} eventos recentes</span></div>
-        <div style={s.filterGroup}>
-          {[['all', 'Tudo'], ['whatsapp', 'WhatsApp'], ['service_order', 'O.S.'], ['ticket', 'Atendimentos'], ['contract', 'Contratos'], ['financial', 'Financeiro']].map(([value, label]) => (
-            <button key={value} type="button" style={{ ...s.filterBtn, ...(filter === value ? s.activeFilterBtn : {}) }} onClick={() => setFilter(value)}>{label}</button>
-          ))}
-        </div>
-      </div>
-      <div style={s.timelineList}>
-        {visible.map((item) => (
-          <article key={item.id} style={s.timelineItem}>
-            <div style={s.timelineMarker}>{timelineIcon(item.type)}</div>
-            <div style={s.timelineContent}>
-              <div style={s.timelineHeading}><strong>{item.title}</strong><time>{formatDate(item.occurredAt)}</time></div>
-              <p>{item.description}</p>
-              {(item.meta || item.status) ? <div style={s.timelineMeta}>{item.meta ? <span>{item.meta}</span> : null}{item.status ? <span>{humanStatus(item.status)}</span> : null}</div> : null}
-            </div>
-          </article>
-        ))}
-        {!visible.length ? <div style={s.noFilterResult}>Nenhum evento neste filtro.</div> : null}
-      </div>
-    </div>
-  );
 }
 
 function UnitsTab({ units }) {
@@ -813,14 +779,6 @@ function equipmentLocation(item) { return [item.address, item.complement, pick(i
 function searchableEquipment(item) { return [item.model, item.manufacturer, item.serialNumber, item.assetTag, equipmentLocation(item), item.externalId].filter(Boolean).join(' ').toLowerCase(); }
 function unitLocation(item) { return [item.address, item.neighborhood, [item.city, item.state].filter(Boolean).join(' / ')].filter(Boolean).join(' • '); }
 
-function timelineIcon(type) {
-  if (type === 'whatsapp') return <MessageCircle size={16} />;
-  if (type === 'service_order') return <ClipboardList size={16} />;
-  if (type === 'contract') return <FileText size={16} />;
-  if (type === 'financial') return <CreditCard size={16} />;
-  return <User size={16} />;
-}
-
 function financeStatus(value) {
   if (value === 'paid') return 'Pago';
   if (value === 'overdue') return 'Vencido';
@@ -830,10 +788,6 @@ function financeStatus(value) {
 function financeStatusStyle(value) {
   const color = value === 'paid' ? '#22c55e' : value === 'overdue' ? '#ef4444' : '#f59e0b';
   return { color, fontSize: '0.7rem', fontWeight: 900 };
-}
-
-function humanStatus(value) {
-  return String(value || '').replaceAll('_', ' ').toLowerCase().replace(/^./, (letter) => letter.toUpperCase());
 }
 
 function isContractActive(contract) {
@@ -946,13 +900,6 @@ const s = {
   wideInfo: { gridColumn: '1 / -1' },
   notes: { margin: 0, color: 'var(--text-muted)', whiteSpace: 'pre-wrap', lineHeight: 1.55 },
   equipmentLayout: { display: 'grid', gridTemplateColumns: 'minmax(290px,.42fr) minmax(400px,1fr)', gap: '1rem', alignItems: 'start' },
-  timelineToolbar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.8rem', color: 'var(--text-main)' },
-  timelineList: { display: 'grid', gap: 0, position: 'relative' },
-  timelineItem: { display: 'grid', gridTemplateColumns: '38px 1fr', gap: '0.7rem', minWidth: 0 },
-  timelineMarker: { width: 32, height: 32, display: 'grid', placeItems: 'center', color: 'var(--accent)', background: 'var(--accent-light)', border: '1px solid var(--accent-border)', borderRadius: 10, position: 'relative', zIndex: 1 },
-  timelineContent: { display: 'grid', gap: '0.35rem', marginBottom: '0.7rem', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: 12, background: 'rgba(8,12,22,.3)', minWidth: 0 },
-  timelineHeading: { display: 'flex', justifyContent: 'space-between', gap: '0.8rem', flexWrap: 'wrap' },
-  timelineMeta: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', color: 'var(--text-dim)', fontSize: '0.7rem' },
   unitsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(330px,1fr))', gap: '0.85rem' },
   unitCard: { display: 'grid', gap: '0.8rem', alignContent: 'start', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 15, background: 'rgba(8,12,22,.3)' },
   unitHeader: { display: 'flex', alignItems: 'center', gap: '0.7rem' },

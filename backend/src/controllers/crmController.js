@@ -306,12 +306,6 @@ function buildCustomerUnits(customer) {
   }));
 }
 
-function timelineDate(item) {
-  const value = item?.occurredAt;
-  const timestamp = value ? new Date(value).getTime() : 0;
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-}
-
 async function findTenantCustomer(tenantId, id) {
   return prisma.crmCustomer.findFirst({
     where: { id, tenantId },
@@ -608,7 +602,7 @@ async function getCustomer360(req, res) {
   const contactIds = customer.whatsappContacts.map((contact) => contact.id);
   const equipmentExternalIds = customer.equipments.map((equipment) => text(equipment.externalId)).filter(Boolean);
   const canViewFinancial = ['admin', 'superadmin'].includes(String(req.user.role || '').toLowerCase());
-  const [contracts, orders, settings, tickets, messages, receivableRecords, meterRecords] = await Promise.all([
+  const [contracts, orders, settings, tickets, receivableRecords, meterRecords] = await Promise.all([
     loadContracts(tenantId, customer.externalId),
     loadCustomerOrders(tenantId, customer, HISTORY_MAX_LIMIT),
     prisma.tenantSettings.findUnique({
@@ -631,23 +625,6 @@ async function getCustomer360(req, res) {
         },
         orderBy: { createdAt: 'desc' },
         take: 50,
-      })
-      : [],
-    contactIds.length
-      ? prisma.message.findMany({
-        where: { ticket: { tenantId, contactId: { in: contactIds } }, isDeleted: false },
-        select: {
-          id: true,
-          body: true,
-          fromMe: true,
-          fromBot: true,
-          mediaType: true,
-          createdAt: true,
-          agent: { select: { name: true } },
-          ticket: { select: { id: true, subject: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 40,
       })
       : [],
     canViewFinancial && customer.externalId
@@ -834,51 +811,6 @@ async function getCustomer360(req, res) {
     description: `Campos ausentes: ${missingFields.join(', ')}.`, count: missingFields.length,
   });
 
-  const timeline = [];
-  for (const order of orders) timeline.push({
-    id: `os-${order.externalId || order.id}`,
-    type: 'service_order',
-    occurredAt: order.openedAt || order.updatedAt,
-    title: `O.S. #${order.number || order.externalId || '-'}`,
-    description: order.defect || 'Atendimento tecnico',
-    status: order.status,
-    meta: first(order.equipmentModel, order.technician),
-  });
-  for (const message of messages) timeline.push({
-    id: `message-${message.id}`,
-    type: 'whatsapp',
-    occurredAt: message.createdAt,
-    title: message.fromMe ? 'Mensagem enviada' : 'Mensagem recebida',
-    description: text(message.body)?.slice(0, 220) || (message.mediaType ? `Midia: ${message.mediaType}` : 'Mensagem sem texto'),
-    meta: first(message.agent?.name, message.ticket?.subject, message.fromBot ? 'Bot' : null),
-  });
-  for (const ticket of tickets) timeline.push({
-    id: `ticket-${ticket.id}`,
-    type: 'ticket',
-    occurredAt: ticket.createdAt,
-    title: 'Atendimento iniciado no WhatsApp',
-    description: ticket.subject || 'Conversa de atendimento',
-    status: ticket.status,
-    meta: ticket.agent?.name || null,
-  });
-  for (const contract of contracts) if (contract.startsAt) timeline.push({
-    id: `contract-${contract.externalId}`,
-    type: 'contract',
-    occurredAt: contract.startsAt,
-    title: `Contrato #${contract.number || contract.externalId || '-'}`,
-    description: contract.type || 'Contrato iniciado',
-    status: contract.isActive ? 'ATIVO' : 'INATIVO',
-  });
-  for (const receivable of receivables.slice(0, 30)) timeline.push({
-    id: `receivable-${receivable.externalId}`,
-    type: 'financial',
-    occurredAt: receivable.paidAt || receivable.issuedAt || receivable.dueAt,
-    title: receivable.status === 'paid' ? 'Pagamento recebido' : `Titulo #${receivable.externalId}`,
-    description: `${receivable.invoiceNumber ? `NF ${receivable.invoiceNumber} · ` : ''}${receivable.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
-    status: receivable.status,
-    meta: receivable.paymentMethod,
-  });
-
   res.json({
     generatedAt: new Date().toISOString(),
     sla: {
@@ -917,7 +849,6 @@ async function getCustomer360(req, res) {
     } : { allowed: false, reason: 'Informacoes financeiras disponiveis apenas para administradores.' },
     equipmentEvolution,
     alerts,
-    timeline: timeline.filter((item) => item.occurredAt).sort((a, b) => timelineDate(b) - timelineDate(a)).slice(0, 100),
   });
 }
 
