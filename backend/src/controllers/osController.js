@@ -536,22 +536,40 @@ async function generatePdf(req, res) {
 
     const settings = os.tenant.settings;
     const primaryColor = '#000000'; // Cor padrão preto
+    const firebirdOrder = osPrintData?.serviceOrder || {};
+    const firebirdClient = osPrintData?.client || {};
+    const firebirdEquipment = osPrintData?.equipment || {};
+    const firebirdContract = osPrintData?.contract || {};
+    const firebirdOsType = osPrintData?.osType || {};
+    const firebirdCompany = osPrintData?.company || {};
+    const firstValue = (...values) => values.find((value) => value !== undefined && value !== null && String(value).trim() !== '');
+    const joinAddress = (record = {}) => [
+      firstValue(record.endereco, record.address),
+      firstValue(record.num, record.numero),
+      record.complemento,
+    ].filter((value) => value !== undefined && value !== null && String(value).trim()).join(', ');
+    const joinPhone = (record = {}) => {
+      const phone = firstValue(record.fone1, record.fone, record.telefone, record.celular);
+      const ddd = firstValue(record.ddd, record.dddfone);
+      if (!phone) return '';
+      return ddd && !String(phone).startsWith(String(ddd)) ? `${ddd} ${phone}` : String(phone);
+    };
 
     // Fallback inteligente para dados da empresa
     const company = {
-      name: settings?.companyName || 'CLAUDIA CARDINALI DOS SANTOS FONTOURA LTDA',
-      cnpj: settings?.companyCnpj || '35.692.721/0001-94',
-      ie: settings?.companyIE || '0963799100',
-      address: settings?.companyAddress || 'RUA VINTE E QUATRO DE AGOSTO, 103',
-      bairro: settings?.companyBairro || 'JARDIM SABARA',
-      cep: settings?.companyCep || '91.215-280',
-      city: settings?.companyCity || 'PORTO ALEGRE',
-      state: settings?.companyState || 'RS',
-      phone: settings?.companyPhone || '(051) 3028-3222'
+      name: firstValue(firebirdCompany.nmempresa, settings?.companyName, 'CLAUDIA CARDINALI DOS SANTOS FONTOURA LTDA'),
+      cnpj: firstValue(firebirdCompany.cnpj, settings?.companyCnpj, '35.692.721/0001-94'),
+      ie: firstValue(firebirdCompany.inscest, settings?.companyIE, '0963799100'),
+      address: firstValue(joinAddress(firebirdCompany), settings?.companyAddress, 'RUA VINTE E QUATRO DE AGOSTO, 103'),
+      bairro: firstValue(firebirdCompany.bairro, settings?.companyBairro, 'JARDIM SABARA'),
+      cep: firstValue(firebirdCompany.cep, settings?.companyCep, '91.215-280'),
+      city: firstValue(firebirdCompany.cidade, settings?.companyCity, 'PORTO ALEGRE'),
+      state: firstValue(firebirdCompany.uf, settings?.companyState, 'RS'),
+      phone: firstValue(joinPhone(firebirdCompany), settings?.companyPhone, '(051) 3028-3222')
     };
 
     // Identificação do atendente com fallback para o usuário atual que está gerando o documento
-    let attendantName = os.user ? (os.user.firebirdSupportName || os.user.name) : 'N/A';
+    let attendantName = firstValue(firebirdOrder.nmsuportea, os.user ? (os.user.firebirdSupportName || os.user.name) : null, 'N/A');
     if ((attendantName === 'N/A' || !os.user) && req.user?.userId) {
       const activeUser = await prisma.user.findUnique({
         where: { id: req.user.userId }
@@ -562,10 +580,10 @@ async function generatePdf(req, res) {
     }
 
     // Tradução limpa do tipo de O.S.
-    let displayOsType = 'ATENDIMENTO AVULSO';
-    if (os.cdOstp === '01') {
+    let displayOsType = firstValue(firebirdOsType.nmostp, 'ATENDIMENTO AVULSO');
+    if (!firebirdOsType.nmostp && os.cdOstp === '01') {
       displayOsType = 'ATENDIMENTO CONTRATOS';
-    } else if (os.cdOstp) {
+    } else if (!firebirdOsType.nmostp && os.cdOstp) {
       // Se tiver outro código cadastrado, tenta cruzar com o nome do tipo
       const typeRecord = await prisma.crmOsType.findFirst({
         where: { tenantId: req.user.tenantId, code: os.cdOstp }
@@ -661,7 +679,7 @@ async function generatePdf(req, res) {
           {},
         ]];
 
-    const currentPrintOrder = osPrintData?.serviceOrder || {};
+    const currentPrintOrder = firebirdOrder;
     const firstPrintAttendance = printAttendances[0] || {};
     const timeText = (value) => {
       if (!value) return '';
@@ -673,19 +691,41 @@ async function generatePdf(req, res) {
     );
     const visitStart = timeText(firstPrintAttendance.hratendimento || firstPrintAttendance.datahora);
     const visitEnd = timeText(lastPrintAttendance.hratendimentofin || lastPrintAttendance.hratendimento1);
-    const clientExternalId = currentPrintOrder.cdcliente || os.contact.externalId || crmCustomer?.externalId || 'N/A';
-    const equipmentExternalId = currentPrintOrder.cdequipamento || os.equipment.externalId || 'N/A';
+    const clientExternalId = firstValue(currentPrintOrder.cdcliente, firebirdClient.cdcliente, os.contact.externalId, crmCustomer?.externalId, 'N/A');
+    const clientName = firstValue(currentPrintOrder.nmcliente, firebirdClient.nmcliente, crmCustomer?.name, clientData.name, 'N/A');
+    const clientAddress = firstValue(joinAddress(currentPrintOrder), joinAddress(firebirdClient), crmCustomer?.address, clientData.address, 'N/A');
+    const clientNeighborhood = firstValue(currentPrintOrder.bairro, firebirdClient.bairro, crmCustomer?.neighborhood, 'N/A');
+    const clientZipCode = firstValue(currentPrintOrder.cep, firebirdClient.cep, crmCustomer?.zipCode, clientData.zipCode, 'N/A');
+    const clientCity = firstValue(currentPrintOrder.cidade, firebirdClient.cidade, crmCustomer?.city, clientData.city, 'N/A');
+    const clientState = firstValue(currentPrintOrder.uf, firebirdClient.uf, crmCustomer?.state, clientData.state, 'N/A');
+    const clientDocument = firstValue(firebirdClient.cnpj, firebirdClient.cpf, crmCustomer?.cpfCnpj, clientData.cpfCnpj, 'N/A');
+    const clientStateRegistration = firstValue(firebirdClient.inscest, firebirdClient.inscmun, 'N/A');
+    const clientContact = firstValue(currentPrintOrder.contato, firebirdClient.contato, crmCustomer?.contactName, solicitante, 'N/A');
+    const clientPhone = firstValue(joinPhone(currentPrintOrder), joinPhone(firebirdClient), crmCustomer?.phone, os.contact.phone, 'N/A');
+    const equipmentExternalId = firstValue(currentPrintOrder.cdequipamento, firebirdEquipment.cdequipamento, os.equipment.externalId, 'N/A');
+    const equipmentModel = firstValue(firebirdEquipment.modelo, os.equipment.model, 'N/A');
+    const equipmentSerial = firstValue(firebirdEquipment.serie, os.equipment.serialNumber, 'N/A');
+    const equipmentAsset = firstValue(firebirdEquipment.patrimonio, 'N/A');
+    const contractType = firstValue(firebirdContract.cdcontratotp, firebirdEquipment.cdcontratotp, 'N/A');
+    const territory = firstValue(firebirdEquipment.cdterritorio, currentPrintOrder.cdterritorio, 'N/A');
     const department = currentPrintOrder.departamento
+      || firebirdEquipment.departamento
       || crmEquipment?.raw?.departamento
       || crmEquipment?.raw?.DEPARTAMENTO
       || os.equipment.sector
       || 'N/A';
     const installLocation = currentPrintOrder.localinstal
+      || firebirdEquipment.localinstal
       || crmEquipment?.installLocation
       || crmEquipment?.raw?.localinstal
       || crmEquipment?.raw?.LOCALINSTAL
       || os.equipment.sector
       || 'N/A';
+    const currentOsDate = currentPrintOrder.dtinclusao ? formatHistoryDate(currentPrintOrder.dtinclusao) : dataOS;
+    const currentOsTime = timeText(currentPrintOrder.hrinclusao) || horaOS;
+    const currentTechnician = firstValue(currentPrintOrder.nmsuportet, currentPrintOrder.nmsuportel, os.nmsuportet, '');
+    const currentDefect = firstValue(currentPrintOrder.obsdefeitocli, os.defect, '');
+    const currentFollowUp = [currentPrintOrder.obsdefeitoats, followUpText].filter(Boolean).join('\n');
     const checkbox = (checked, label) => `${checked ? '[X]' : '[ ]'} ${label}`;
     const isAttendance = ['A', 'ATENDIMENTO'].includes(String(currentPrintOrder.tporcatend || 'A').toUpperCase());
     const isWarranty = ['G', 'GARANTIA'].includes(String(currentPrintOrder.tpchamado || '').toUpperCase());
@@ -730,10 +770,10 @@ async function generatePdf(req, res) {
             { text: 'ORDEM DE SERVIÇO', fontSize: 8, alignment: 'center', margin: [0, 27, 0, 0] },
             {
               stack: [
-                { text: `Número: ${os.externalId || os.id.slice(-6).toUpperCase()}   Data: ${dataOS}`, bold: true, fontSize: 6.5 },
-                { text: `Hora: ${horaOS}`, bold: true, fontSize: 6.5 },
+                { text: `Número: ${os.externalId || os.id.slice(-6).toUpperCase()}   Data: ${currentOsDate}`, bold: true, fontSize: 6.5 },
+                { text: `Hora: ${currentOsTime}`, bold: true, fontSize: 6.5 },
                 { text: `Técnico abertura: ${attendantName.toUpperCase()}`, bold: true, fontSize: 6.5 },
-                { text: `Técnico atendimento: ${(os.nmsuportet || '').toUpperCase()}`, bold: true, fontSize: 6.5 },
+                { text: `Técnico atendimento: ${String(currentTechnician).toUpperCase()}`, bold: true, fontSize: 6.5 },
                 { text: `Atendimento Prev: ${formatHistoryDate(currentPrintOrder.dtpreventrega)} ${timeText(currentPrintOrder.hrpreventrega)}   Priorid. ${currentPrintOrder.prioridade || ''}`, bold: true, fontSize: 6.3 },
                 { text: `Tipo O.S.: ${displayOsType}`, bold: true, fontSize: 6.3 },
                 { text: `${checkbox(isAttendance, 'Atendimento')}   ${checkbox(isWarranty, 'Garantia')}\n${checkbox(isBudget, 'Orçamento')}`, fontSize: 6.3 },
@@ -764,21 +804,21 @@ async function generatePdf(req, res) {
           body: [[
             {
               stack: [
-                { text: [{ text: 'Código iLux: ', bold: true }, String(clientExternalId), { text: '   Cliente: ', bold: true }, crmCustomer?.name || clientData.name || 'N/A'] },
-                { text: [{ text: 'Endereço: ', bold: true }, crmCustomer?.address || clientData.address || 'N/A'] },
-                { text: [{ text: 'Bairro: ', bold: true }, crmCustomer?.neighborhood || 'N/A', { text: '   CEP: ', bold: true }, crmCustomer?.zipCode || clientData.zipCode || 'N/A'] },
-                { text: [{ text: 'Cidade: ', bold: true }, crmCustomer?.city || clientData.city || 'N/A', { text: '   U.F.: ', bold: true }, crmCustomer?.state || clientData.state || 'N/A'] },
-                { text: [{ text: 'CNPJ/CPF: ', bold: true }, crmCustomer?.cpfCnpj || clientData.cpfCnpj || 'N/A'] },
-                { text: [{ text: 'Contato: ', bold: true }, crmCustomer?.contactName || solicitante || 'N/A', { text: '   Fone: ', bold: true }, crmCustomer?.phone || os.contact.phone || 'N/A'] },
+                { text: [{ text: 'Código iLux: ', bold: true }, String(clientExternalId), { text: '   Cliente: ', bold: true }, String(clientName)] },
+                { text: [{ text: 'Endereço: ', bold: true }, String(clientAddress)] },
+                { text: [{ text: 'Bairro: ', bold: true }, String(clientNeighborhood), { text: '   CEP: ', bold: true }, String(clientZipCode)] },
+                { text: [{ text: 'Cidade: ', bold: true }, String(clientCity), { text: '   U.F.: ', bold: true }, String(clientState)] },
+                { text: [{ text: 'CNPJ/CPF: ', bold: true }, String(clientDocument), { text: '   Insc.Estadual: ', bold: true }, String(clientStateRegistration)] },
+                { text: [{ text: 'Contato: ', bold: true }, String(clientContact), { text: '   Fone: ', bold: true }, String(clientPhone)] },
               ],
               fontSize: 6.5,
             },
             {
               stack: [
                 { text: [{ text: 'Equipamento: ', bold: true }, String(equipmentExternalId)] },
-                { text: [{ text: 'Modelo: ', bold: true }, os.equipment.model || 'N/A'] },
-                { text: [{ text: 'Série: ', bold: true }, os.equipment.serialNumber || 'N/A'] },
-                { text: [{ text: 'Tipo de Contrato: ', bold: true }, crmEquipment?.contractExternalId || 'N/A', { text: '   Território: ', bold: true }, currentPrintOrder.cdterritorio || 'N/A'] },
+                { text: [{ text: 'Modelo: ', bold: true }, String(equipmentModel)] },
+                { text: [{ text: 'Série: ', bold: true }, String(equipmentSerial), { text: '   Patrimônio: ', bold: true }, String(equipmentAsset)] },
+                { text: [{ text: 'Tipo de Contrato: ', bold: true }, String(contractType), { text: '   Território: ', bold: true }, String(territory)] },
                 { text: [{ text: 'Departamento: ', bold: true }, String(department)] },
                 { text: [{ text: 'Localização: ', bold: true }, { text: String(installLocation), bold: true, fontSize: 9 }] },
               ],
@@ -808,7 +848,7 @@ async function generatePdf(req, res) {
             stack: [
               { text: `Data Visita: ${visitDate === '-' ? '' : visitDate}    Hora Inicial: ${visitStart}    Hora Final: ${visitEnd}`, bold: true, fontSize: 6.5 },
               { text: `Medidor 01: ${attendanceMeterCode}    Contador Medidor 01: ${lastPrintAttendance.medidor ?? ''}`, bold: true, fontSize: 6.5 },
-              { text: [{ text: 'Defeito:   ', bold: true, fontSize: 7 }, { text: os.defect || '', fontSize: 11 }], margin: [0, 9, 0, 4] },
+              { text: [{ text: 'Defeito:   ', bold: true, fontSize: 7 }, { text: currentDefect, fontSize: 11 }], margin: [0, 9, 0, 4] },
               { text: [{ text: 'Sintoma:   ', bold: true }, lastPrintAttendance.sintoma || ''], fontSize: 7, margin: [0, 2, 0, 2] },
               { text: [{ text: 'Causa:     ', bold: true }, lastPrintAttendance.causa || ''], fontSize: 7, margin: [0, 2, 0, 2] },
               { text: [{ text: 'Ação:      ', bold: true }, lastPrintAttendance.acao || ''], fontSize: 7, margin: [0, 2, 0, 4] },
@@ -832,7 +872,7 @@ async function generatePdf(req, res) {
         layout: 'noBorders',
       },
       {
-        table: { widths: ['*'], body: [[{ text: followUpText || '\n\n', fontSize: 7, minHeight: 36 }]] },
+        table: { widths: ['*'], body: [[{ text: currentFollowUp || '\n\n', fontSize: 7, minHeight: 36 }]] },
         layout: {
           hLineWidth: () => 1,
           vLineWidth: () => 2,
@@ -863,13 +903,14 @@ async function generatePdf(req, res) {
         },
       },
       {
-        table: { widths: ['*'], body: [[{ text: 'Aceite da O.S.', bold: true, fontSize: 7, fillColor: '#D9D9D9' }]] },
-        margin: [0, 8, 0, 0],
+        table: { widths: [527], body: [[{ text: 'Aceite da O.S.', bold: true, fontSize: 7, fillColor: '#D9D9D9' }]] },
+        absolutePosition: { x: 30, y: 755 },
         layout: 'noBorders',
       },
       {
+        absolutePosition: { x: 30, y: 769 },
         table: {
-          widths: ['68%', '32%'],
+          widths: [354, 166],
           body: [[
             {
               stack: [
@@ -1231,7 +1272,7 @@ async function generatePdf(req, res) {
       defaultStyle: { font: 'Roboto' }
     };
 
-    const doc = pdfmake.createPdf({ ...docDefinition, content: fullIluxContent });
+    const doc = pdfmake.createPdf({ ...docDefinition, footer: () => ({ text: '' }), content: fullIluxContent });
     const stream = await doc.getStream();
     
     res.setHeader('Content-Type', 'application/pdf');

@@ -772,22 +772,44 @@ class FirebirdRepository:
                     for row in cur.fetchall()
                 ]
 
+            def pick(record: dict[str, Any], *fields: str) -> dict[str, Any]:
+                return {field: record.get(field) for field in fields if field in record}
+
             current_rows = fetch_all(
-                """
-                select SEQOS, CDCLIENTE, CDEQUIPAMENTO, DTINCLUSAO, HRINCLUSAO,
-                       OBSDEFEITOCLI, OBSDEFEITOATS, NMSUPORTEA, NMSUPORTET,
-                       NMSUPORTEL, USUARIO_FECHAMENTO, STATUS, PRIORIDADE,
-                       DTPREVENTREGA, HRPREVENTREGA, TPORCATEND, TPCHAMADO,
-                       TIPO_OS, CDTERRITORIO, DEPARTAMENTO, LOCALINSTAL
-                  from IXLOS
-                 where SEQOS = ?
-                """,
+                "select * from IXLOS where SEQOS = ?",
                 (seq_os,),
             )
             if not current_rows:
                 return {"history": [], "attendances": []}
 
             current = current_rows[0]
+            client_rows = fetch_all(
+                "select * from ICLIENTES where CDCLIENTE = ?",
+                (current.get("cdcliente"),),
+            ) if current.get("cdcliente") else []
+            equipment_rows = fetch_all(
+                "select * from IXLEQUIPAMENTO where CDEQUIPAMENTO = ?",
+                (current.get("cdequipamento"),),
+            ) if current.get("cdequipamento") else []
+            equipment = equipment_rows[0] if equipment_rows else {}
+            contract_id = current.get("seqcontrato") or equipment.get("seqcontrato")
+            contract_rows = fetch_all(
+                "select * from IXLCONTRATOS where SEQCONTRATO = ?",
+                (contract_id,),
+            ) if contract_id else []
+            contract_group_id = contract_rows[0].get("seqcontratogrp") if contract_rows else None
+            contract_group_rows = fetch_all(
+                "select * from IXLCONTRATOSGRP where SEQCONTRATOGRP = ?",
+                (contract_group_id,),
+            ) if contract_group_id else []
+            os_type_rows = fetch_all(
+                "select * from IXLOSTP where CDOSTP = ?",
+                (current.get("cdostp"),),
+            ) if current.get("cdostp") else []
+            company_rows = fetch_all(
+                "select * from IEMPRESA where CDEMPRESA = ?",
+                (current.get("cdempresa") or 1,),
+            )
             history_rows = fetch_all(
                 """
                 select first 5
@@ -812,7 +834,40 @@ class FirebirdRepository:
                 (seq_os,),
             )
             return {
-                "serviceOrder": current,
+                "serviceOrder": pick(
+                    current,
+                    "seqos", "cdcliente", "cdequipamento", "seqcontrato", "cdempresa", "cdostp",
+                    "dtinclusao", "hrinclusao", "dtatendimento", "hratendimento", "hratendimento1",
+                    "obsdefeitocli", "obsdefeitoats", "nmsuportea", "nmsuportet", "nmsuportel",
+                    "usuario_fechamento", "status", "prioridade", "dtpreventrega", "hrpreventrega",
+                    "tporcatend", "tpchamado", "tipo_os", "cdterritorio", "departamento", "localinstal",
+                    "nmcliente", "endereco", "num", "complemento", "bairro", "cidade", "uf", "cep",
+                    "ddd", "fone", "celular", "contato",
+                ),
+                "client": pick(
+                    client_rows[0] if client_rows else {},
+                    "cdcliente", "nmcliente", "endereco", "num", "complemento", "bairro", "cidade",
+                    "uf", "cep", "cnpj", "cpf", "inscest", "inscmun", "ddd", "fone1", "celular", "contato",
+                ),
+                "equipment": pick(
+                    equipment,
+                    "cdequipamento", "modelo", "serie", "patrimonio", "cdcontratotp", "cdterritorio",
+                    "departamento", "localinstal", "seqcontrato",
+                ),
+                "contract": pick(
+                    contract_rows[0] if contract_rows else {},
+                    "seqcontrato", "nrcontrato", "cdcontratotp", "seqcontratogrp",
+                ),
+                "contractGroup": pick(
+                    contract_group_rows[0] if contract_group_rows else {},
+                    "seqcontratogrp", "nmcontratogrp", "cdterritorio",
+                ),
+                "osType": pick(os_type_rows[0] if os_type_rows else {}, "cdostp", "nmostp"),
+                "company": pick(
+                    company_rows[0] if company_rows else {},
+                    "cdempresa", "nmempresa", "cnpj", "inscest", "endereco", "num", "bairro", "cidade",
+                    "uf", "cep", "ddd", "fone", "fone1",
+                ),
                 "history": history_rows,
                 "attendances": attendance_rows,
                 "capturedAt": datetime.now().isoformat(timespec="seconds"),
