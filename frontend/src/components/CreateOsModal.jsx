@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api, { getEquipments } from '../services/api';
-import { FileText, Wand2 } from 'lucide-react';
+import { CheckCircle2, FileText, LoaderCircle, Wand2 } from 'lucide-react';
 
 export default function CreateOsModal({ ticket, onClose, onCreated }) {
   const [equipments, setEquipments] = useState([]);
@@ -8,6 +8,13 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
   const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
   const [drafting, setDrafting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [pendingOrderId, setPendingOrderId] = useState('');
+  const [createdOrder, setCreatedOrder] = useState(null);
+  const [requestKey] = useState(() => (
+    globalThis.crypto?.randomUUID?.() || `os-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  ));
   const [formData, setFormData] = useState({ equipmentId: '', defect: '', cdOstp: '', nmsuportet: '' });
 
   useEffect(() => {
@@ -65,20 +72,44 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
     if (!formData.equipmentId) return alert('Selecione um equipamento');
     if (!formData.cdOstp) return alert('Selecione o tipo de O.S.');
     if (!formData.defect) return alert('Informe o defeito reportado');
+    setSaving(true);
+    setError('');
     try {
       const res = await api.post('/os', {
         contactId: ticket.contact?.id,
         equipmentId: formData.equipmentId,
         ticketId: ticket.id,
+        requestKey,
         defect: formData.defect,
-        status: 'PENDENTE',
         cdOstp: formData.cdOstp,
         nmsuportet: formData.nmsuportet
       });
-      
+      setCreatedOrder(res.data);
       onCreated(res.data);
     } catch (e) {
-      alert('Erro ao criar O.S.');
+      setPendingOrderId(e.response?.data?.serviceOrderId || '');
+      setError(e.response?.data?.error || 'Não foi possível confirmar a abertura no iLux.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function checkStatus() {
+    if (!pendingOrderId) return;
+    setSaving(true);
+    setError('');
+    try {
+      const { data } = await api.get(`/os/${pendingOrderId}/status`);
+      if (!data.externalId) {
+        setError('A abertura ainda não foi confirmada pelo agente do iLux.');
+        return;
+      }
+      setCreatedOrder(data);
+      onCreated(data);
+    } catch (e) {
+      setError(e.response?.data?.error || 'Não foi possível consultar a abertura.');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -98,7 +129,19 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
       <div style={s.modal}>
         <h2 style={s.title}><FileText size={20}/> Nova Ordem de Serviço</h2>
         
-        {loading || drafting ? (
+        {createdOrder ? (
+          <div style={{ textAlign: 'center', padding: '24px 8px 8px' }}>
+            <CheckCircle2 size={48} color="#22c55e" style={{ marginBottom: '12px' }} />
+            <h3 style={{ margin: '0 0 8px', color: 'var(--text-main)' }}>O.S. criada no iLux</h3>
+            <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--accent)', marginBottom: '8px' }}>
+              Nº {createdOrder.externalId}
+            </div>
+            <p style={{ color: 'var(--text-muted)', margin: '0 0 20px' }}>
+              O número acima foi confirmado diretamente pelo banco do iLux.
+            </p>
+            <button style={s.saveBtn} onClick={onClose}>Concluir</button>
+          </div>
+        ) : loading || drafting ? (
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
             <Wand2 size={32} style={{ animation: 'spin 2s linear infinite', marginBottom: '16px' }} />
             <div>A IA está lendo a conversa e rascunhando a O.S...</div>
@@ -148,9 +191,28 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
               onChange={e => setFormData({...formData, defect: e.target.value})}
             />
 
+            {error ? (
+              <div style={{ padding: '10px 12px', marginBottom: '12px', borderRadius: '8px', background: 'rgba(229, 62, 62, 0.08)', border: '1px solid rgba(229, 62, 62, 0.35)', color: '#ef4444', fontSize: '0.85rem' }}>
+                {error}
+              </div>
+            ) : null}
+
             <div style={s.btnGroup}>
-              <button style={s.cancelBtn} onClick={onClose}>Cancelar</button>
-              <button style={s.saveBtn} onClick={handleSave}>Salvar e Gerar PDF</button>
+              <button style={s.cancelBtn} onClick={onClose} disabled={saving}>Cancelar</button>
+              {pendingOrderId ? (
+                <>
+                  <button style={{ ...s.saveBtn, opacity: saving ? 0.65 : 1 }} onClick={checkStatus} disabled={saving}>
+                    {saving ? 'Consultando...' : 'Verificar no iLux'}
+                  </button>
+                  <button style={{ ...s.saveBtn, opacity: saving ? 0.65 : 1 }} onClick={handleSave} disabled={saving}>
+                    Tentar novamente
+                  </button>
+                </>
+              ) : (
+                <button style={{ ...s.saveBtn, opacity: saving ? 0.65 : 1 }} onClick={handleSave} disabled={saving}>
+                  {saving ? <><LoaderCircle size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} />Abrindo no iLux...</> : 'Abrir O.S. no iLux'}
+                </button>
+              )}
             </div>
           </div>
         )}

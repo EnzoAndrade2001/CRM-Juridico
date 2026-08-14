@@ -7,10 +7,12 @@ customtkinter_folder = os.path.dirname(customtkinter.__file__)
 
 PyInstaller.__main__.run([
     'gui.py',
-    '--name=AgenteCRM',
+    '--name=FirebirdCRMClient',
     '--windowed',         # No console window
     '--onefile',          # Pack everything into a single .exe
+    '--hidden-import=main',
+    '--exclude-module=chardet',
     f'--add-data={customtkinter_folder};customtkinter/',
     '--clean'
 ])
-print("\n[OK] Build concluído! O arquivo AgenteCRM.exe está na pasta 'dist'.")
+print("\n[OK] Build concluído! O arquivo FirebirdCRMClient.exe está na pasta 'dist'.")

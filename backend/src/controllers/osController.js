@@ -4,6 +4,32 @@ const path = require('path');
 const fs = require('fs');
 const { draftServiceOrder } = require('../services/geminiService');
 
+const OS_CONFIRMATION_TIMEOUT_MS = Math.max(
+  5_000,
+  Number.parseInt(process.env.OS_CONFIRMATION_TIMEOUT_MS, 10) || 30_000
+);
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForIluxConfirmation(id, tenantId) {
+  const deadline = Date.now() + OS_CONFIRMATION_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const order = await prisma.serviceOrder.findFirst({
+      where: { id, tenantId },
+      include: { contact: true, equipment: true },
+    });
+    if (!order) return null;
+    if (order.externalId || order.status === 'ERRO_INTEGRACAO') return order;
+    await sleep(250);
+  }
+  return prisma.serviceOrder.findFirst({
+    where: { id, tenantId },
+    include: { contact: true, equipment: true },
+  });
+}
+
 async function getEquipments(req, res) {
   const { contactId } = req.params;
   const { tenantId } = req.user;
@@ -121,34 +147,139 @@ async function getOSList(req, res) {
 }
 
 async function createOS(req, res) {
-  const { contactId, equipmentId, ticketId, defect, status, cdOstp, nmsuportet } = req.body;
+  const { contactId, equipmentId, ticketId, requestKey, defect, cdOstp, nmsuportet } = req.body;
   const { tenantId } = req.user;
 
   try {
-    const equipment = await prisma.equipment.findUnique({ where: { id: equipmentId } });
-    const isFirebird = equipment?.externalSource === 'firebird';
+    if (!contactId || !equipmentId || !ticketId || !requestKey || !cdOstp || !String(defect || '').trim()) {
+      return res.status(400).json({ error: 'Cliente, equipamento, ticket, identificador, tipo e defeito são obrigatórios.' });
+    }
+    const normalizedRequestKey = String(requestKey).trim().slice(0, 120);
 
-    const os = await prisma.serviceOrder.create({
-      data: {
-        tenantId,
-        userId: req.user.userId,
-        contactId,
-        equipmentId,
-        ticketId,
-        defect,
-        status: status || 'PENDENTE',
-        cdOstp,
-        nmsuportet,
-        externalSource: isFirebird ? 'firebird' : 'manual',
-        externalId: null
-      },
-      include: { contact: true, equipment: true }
+    const [ticket, contact, equipment, osType] = await Promise.all([
+      prisma.ticket.findFirst({ where: { id: ticketId, tenantId } }),
+      prisma.contact.findFirst({
+        where: { id: contactId, tenantId },
+        include: { crmCustomer: true },
+      }),
+      prisma.equipment.findFirst({ where: { id: equipmentId, tenantId } }),
+      prisma.crmOsType.findFirst({ where: { tenantId, code: String(cdOstp) } }),
+    ]);
+
+    if (!ticket || ticket.contactId !== contactId) {
+      return res.status(400).json({ error: 'O ticket não pertence ao cliente informado.' });
+    }
+    if (!contact) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    if (!contact.externalId && !contact.crmCustomer?.externalId) {
+      return res.status(400).json({ error: 'Vincule a conversa a um cliente do iLux antes de abrir a O.S.' });
+    }
+    if (!equipment || equipment.contactId !== contactId) {
+      return res.status(400).json({ error: 'O equipamento não pertence ao cliente desta conversa.' });
+    }
+    if (equipment.externalSource !== 'firebird' || !equipment.externalId) {
+      return res.status(400).json({ error: 'Selecione um equipamento sincronizado com o iLux.' });
+    }
+    if (!osType) return res.status(400).json({ error: 'O tipo de O.S. não existe no cadastro sincronizado do iLux.' });
+
+    if (nmsuportet) {
+      const technician = await prisma.crmTechnician.findFirst({
+        where: { tenantId, name: nmsuportet, isActive: true },
+      });
+      if (!technician) return res.status(400).json({ error: 'O técnico selecionado não está ativo no iLux.' });
+    }
+
+    let os = await prisma.serviceOrder.findFirst({
+      where: { tenantId, requestKey: normalizedRequestKey },
+      orderBy: { createdAt: 'desc' },
+      include: { contact: true, equipment: true },
     });
-    res.json(os);
+
+    if (!os) {
+      os = await prisma.serviceOrder.findFirst({
+        where: {
+          tenantId,
+          ticketId,
+          externalSource: 'firebird',
+          externalId: null,
+          status: { in: ['AGUARDANDO_ILUX', 'PROCESSANDO_ILUX', 'ERRO_INTEGRACAO'] },
+        },
+        orderBy: { createdAt: 'desc' },
+        include: { contact: true, equipment: true },
+      });
+    }
+
+    if (os?.externalId) {
+      return res.json({ ...os, reused: true, confirmed: true });
+    }
+
+    if (os) {
+      os = await prisma.serviceOrder.update({
+        where: { id: os.id },
+        data: {
+          status: 'AGUARDANDO_ILUX',
+          equipmentId,
+          defect: String(defect).trim(),
+          cdOstp: String(cdOstp),
+          nmsuportet: nmsuportet || null,
+        },
+        include: { contact: true, equipment: true },
+      });
+    } else {
+      os = await prisma.serviceOrder.upsert({
+        where: {
+          tenantId_requestKey: {
+            tenantId,
+            requestKey: normalizedRequestKey,
+          },
+        },
+        update: {},
+        create: {
+          tenantId,
+          userId: req.user.userId,
+          contactId,
+          equipmentId,
+          ticketId,
+          defect: String(defect).trim(),
+          status: 'AGUARDANDO_ILUX',
+          cdOstp: String(cdOstp),
+          nmsuportet: nmsuportet || null,
+          externalSource: 'firebird',
+          externalId: null,
+          requestKey: normalizedRequestKey,
+        },
+        include: { contact: true, equipment: true },
+      });
+    }
+
+    const confirmed = await waitForIluxConfirmation(os.id, tenantId);
+    if (!confirmed) return res.status(404).json({ error: 'Solicitação de O.S. não encontrada.' });
+    if (confirmed.externalId) {
+      return res.status(201).json({ ...confirmed, confirmed: true });
+    }
+    if (confirmed.status === 'ERRO_INTEGRACAO') {
+      return res.status(502).json({
+        error: 'O agente encontrou um erro e a abertura não foi confirmada no iLux.',
+        serviceOrderId: confirmed.id,
+      });
+    }
+    return res.status(504).json({
+      error: 'O agente do iLux não confirmou a abertura dentro do tempo esperado. Verifique o agente antes de tentar novamente.',
+      serviceOrderId: confirmed.id,
+      status: confirmed.status,
+    });
   } catch (err) {
     console.error('[createOS] erro:', err.message);
     res.status(500).json({ error: 'Erro ao criar ordem de serviço.' });
   }
+}
+
+async function getOSStatus(req, res) {
+  const order = await prisma.serviceOrder.findFirst({
+    where: { id: req.params.id, tenantId: req.user.tenantId },
+    select: { id: true, externalId: true, status: true, ticketId: true, updatedAt: true },
+  });
+  if (!order) return res.status(404).json({ error: 'O.S. não encontrada.' });
+  return res.json({ ...order, confirmed: Boolean(order.externalId) });
 }
 
 async function getOSTypes(req, res) {
@@ -743,4 +874,4 @@ async function draftOS(req, res) {
   }
 }
 
-module.exports = { getEquipments, addEquipment, updateEquipment, deleteEquipment, getOSList, createOS, updateOS, generatePdf, draftOS, getOSTypes, getOSTechnicians };
+module.exports = { getEquipments, addEquipment, updateEquipment, deleteEquipment, getOSList, createOS, getOSStatus, updateOS, generatePdf, draftOS, getOSTypes, getOSTechnicians };

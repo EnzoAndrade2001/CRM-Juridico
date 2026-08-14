@@ -414,6 +414,7 @@ model ServiceOrder {
   externalSource    String?   @default("manual")
   externalId        String?
   externalUpdatedAt DateTime?
+  requestKey        String?
   ticketId          String?
   cdOstp            String?
   nmsuportet        String?
@@ -438,6 +439,7 @@ model ServiceOrder {
   ticket    Ticket?   @relation(fields: [ticketId], references: [id], onDelete: SetNull)
 
   @@unique([tenantId, externalSource, externalId])
+  @@unique([tenantId, requestKey])
 }
 
 model ExternalSyncRecord {

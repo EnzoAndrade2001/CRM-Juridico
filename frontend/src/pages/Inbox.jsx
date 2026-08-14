@@ -19,7 +19,6 @@ import api, {
   getSettings,
   forwardMessage,
   createTicketNote,
-  BACKEND_URL,
 } from '../services/api';
 import { toast } from '../utils/toast';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -792,9 +791,8 @@ export default function Inbox() {
           ticket={selectedTicket}
           onClose={() => setShowOsModal(false)}
           onCreated={(os) => {
-            setShowOsModal(false);
-            const token = localStorage.getItem('token');
-            window.open(`${BACKEND_URL}/api/os/${os.id}/pdf?token=${token}`, '_blank');
+            toast.success(`O.S. ${os.externalId} criada no iLux!`);
+            loadMessages({ ticketId: selectedTicket.id, replace: true, background: true });
           }}
         />
       )}

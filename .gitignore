@@ -79,6 +79,8 @@ firebird-client/dist/
 firebird-client/__pycache__/
 firebird-client/*.spec
 firebird-client/buildspec/
+firebird-client/command-results.json
+firebird-client/command-results.json.tmp
 
 # ===========================
 # Impeccable Critique

@@ -1740,6 +1740,7 @@ export const MessageList = React.memo(function MessageList({
                   transferred: `Transferiu para ${getSafeText(payload?.teamName, 'outra equipe')}`,
                   resolved: 'Encerrou o atendimento',
                   reopened: 'Reabriu o atendimento',
+                  os_created: `Abriu a O.S. ${getSafeText(payload?.seqOs, '')} no iLux`,
                   ooo_message: 'Aviso de fora de horario enviado',
                 }[message.type] || message.type;
 

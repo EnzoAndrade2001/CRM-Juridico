@@ -9,6 +9,7 @@ import re
 from decimal import Decimal
 import sys
 import time
+import threading
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -41,6 +42,12 @@ def first_non_empty(*values: Any) -> str | None:
         if text:
             return text
     return None
+
+
+def fit_text(value: Any, max_length: int) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()[:max_length]
 
 
 def parse_firebird_timestamp(value: Any) -> str | None:
@@ -214,6 +221,45 @@ class StateStore:
         self.data["last_sync_at"] = value
 
 
+class CommandResultStore:
+    """Durable idempotency ledger for commands that write to Firebird."""
+
+    def __init__(self, path: Path):
+        self.path = path
+        self.lock = threading.Lock()
+        self.data: dict[str, dict[str, Any]] = {}
+        self._load()
+
+    def _load(self) -> None:
+        if not self.path.exists():
+            return
+        try:
+            raw = json.loads(self.path.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                self.data = raw
+        except Exception as exc:
+            logging.warning("Falha ao ler resultados de comandos %s: %s", self.path, exc)
+
+    def get(self, command_id: str) -> dict[str, Any] | None:
+        with self.lock:
+            value = self.data.get(str(command_id))
+            return dict(value) if isinstance(value, dict) else None
+
+    def set(self, command_id: str, result: dict[str, Any]) -> None:
+        with self.lock:
+            self.data[str(command_id)] = {
+                **result,
+                "recordedAt": datetime.now().isoformat(timespec="seconds"),
+            }
+            temporary = self.path.with_suffix(self.path.suffix + ".tmp")
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            temporary.write_text(
+                json.dumps(self.data, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            temporary.replace(self.path)
+
+
 class CRMClient:
     def __init__(self, config: AppConfig):
         self.config = config
@@ -242,13 +288,21 @@ class CRMClient:
         response.raise_for_status()
         return response.json()
 
-    def process_pending_commands(self, repo: FirebirdRepository) -> None:
+    def process_pending_commands(
+        self,
+        repo: FirebirdRepository,
+        result_store: CommandResultStore,
+        wait_seconds: int = 0,
+    ) -> None:
         url = f"{self.config.crm_base_url}/api/integrations/firebird/pending-commands"
         try:
             response = self.session.get(
                 url,
-                params={"tenantSlug": self.config.crm_tenant_slug},
-                timeout=30
+                params={
+                    "tenantSlug": self.config.crm_tenant_slug,
+                    "wait": max(0, min(int(wait_seconds), 25)),
+                },
+                timeout=max(30, wait_seconds + 10),
             )
             response.raise_for_status()
             commands = response.json()
@@ -263,7 +317,19 @@ class CRMClient:
 
                 try:
                     if cmd_type == "CREATE_OS":
-                        seq_os = repo.create_service_order(payload)
+                        cached = result_store.get(cmd_id)
+                        if cached and cached.get("seqOs"):
+                            seq_os = int(cached["seqOs"])
+                            logging.info(
+                                "Comando %s ja processado; reenviando SEQOS %s.",
+                                cmd_id,
+                                seq_os,
+                            )
+                        else:
+                            seq_os = repo.create_service_order(payload)
+                            # Persist before callback. If HTTPS fails, replaying this
+                            # command returns the same SEQOS instead of inserting again.
+                            result_store.set(cmd_id, {"seqOs": seq_os})
                         self.report_command_result(cmd_id, success=True, result={"seqOs": seq_os})
                         logging.info("O.S. criada no Firebird com sucesso. SEQOS: %s", seq_os)
                     elif cmd_type == "PROCESS_BILLING":
@@ -281,19 +347,29 @@ class CRMClient:
 
     def report_command_result(self, command_id: str, success: bool, result: dict | None = None, error: str | None = None) -> None:
         url = f"{self.config.crm_base_url}/api/integrations/firebird/pending-commands/{command_id}/callback"
-        try:
-            self.session.post(
-                url,
-                json={
-                    "tenantSlug": self.config.crm_tenant_slug,
-                    "success": success,
-                    "result": result,
-                    "error": error
-                },
-                timeout=30
-            )
-        except Exception as e:
-            logging.error("Falha ao reportar resultado do comando %s: %s", command_id, e)
+        for attempt in range(1, 4):
+            try:
+                response = self.session.post(
+                    url,
+                    json={
+                        "tenantSlug": self.config.crm_tenant_slug,
+                        "success": success,
+                        "result": result,
+                        "error": error
+                    },
+                    timeout=30
+                )
+                response.raise_for_status()
+                return
+            except Exception as exc:
+                logging.error(
+                    "Falha ao reportar resultado do comando %s (tentativa %s/3): %s",
+                    command_id,
+                    attempt,
+                    exc,
+                )
+                if attempt < 3:
+                    time.sleep(attempt)
 
     def send_ping(self) -> None:
         url = f"{self.config.crm_base_url}/api/integrations/firebird/ping"
@@ -658,7 +734,7 @@ class FirebirdRepository:
     def create_service_order(self, data: dict[str, Any]) -> int:
         cd_cliente = int(data["cdCliente"]) if data.get("cdCliente") else None
         cd_equipamento = int(data["cdEquipamento"]) if data.get("cdEquipamento") else None
-        cd_ostp = str(data.get("cdOstp", "02")).strip()
+        cd_ostp = fit_text(data.get("cdOstp", "02"), 10)
 
         now = datetime.now()
         dt_inclusao = now.strftime("%Y-%m-%d")
@@ -671,8 +747,8 @@ class FirebirdRepository:
         cd_status = "E1"  # Aberto
 
         defect = str(data.get("defect", "")).strip()
-        nmsuportet = str(data.get("nmsuportet", "")).strip()
-        attendant_name = str(data.get("attendantName", "")).strip()
+        nmsuportet = fit_text(data.get("nmsuportet", ""), 10)
+        attendant_name = fit_text(data.get("attendantName", ""), 10)
 
         num = None
         if data.get("num"):
@@ -696,63 +772,45 @@ class FirebirdRepository:
             nmsuportet if nmsuportet else attendant_name,
             attendant_name,
 
-            str(data.get("nmCliente", ""))[:50],
-            str(data.get("endereco", ""))[:50],
+            fit_text(data.get("nmCliente", ""), 50),
+            fit_text(data.get("endereco", ""), 50),
             num,
-            str(data.get("complemento", ""))[:30],
-            str(data.get("bairro", ""))[:30],
-            str(data.get("cidade", ""))[:40],
-            str(data.get("uf", ""))[:2],
-            str(data.get("cep", ""))[:9],
-            str(data.get("ddd", ""))[:3],
-            str(data.get("fone", ""))[:15],
-            str(data.get("celular", ""))[:15],
-            str(data.get("email", ""))[:50],
-            str(data.get("contato", ""))[:30],
+            fit_text(data.get("complemento", ""), 30),
+            fit_text(data.get("bairro", ""), 30),
+            fit_text(data.get("cidade", ""), 40),
+            fit_text(data.get("uf", ""), 2),
+            fit_text(digits(data.get("cep")), 8),
+            fit_text(data.get("ddd", ""), 10),
+            fit_text(data.get("fone", ""), 15),
+            fit_text(data.get("celular", ""), 15),
+            fit_text(data.get("email", ""), 50),
+            fit_text(data.get("contato", ""), 20),
 
-            str(data.get("departamento", "")).strip()[:40],
-            str(data.get("localInstal", "")).strip()[:40],
+            fit_text(data.get("departamento", ""), 45),
+            fit_text(data.get("localInstal", ""), 50),
             data_prev_entrega, hr_inclusao,
-            f"{now.strftime('%d/%m/%Y %H:%M:%S')} CA I"
+            fit_text(f"{now.strftime('%d/%m/%Y %H:%M:%S')} CA I", 25)
         )
 
-        # Tenta descobrir o gerador de SEQOS para evitar erro de validação (Null)
-        seq_os = None
+        # A reserva do numero e a insercao precisam compartilhar a transacao.
+        # Isso serializa o CRM com o Desktop e evita numeros duplicados.
         con = self.connect()
         try:
             cur = con.cursor()
-            
-            # 1. Tenta buscar da tabela de controle IXLCONTROLESEQ (Padrão ILUX)
-            try:
-                cur.execute("select SEQUENCIAL from IXLCONTROLESEQ where TABELA = 'ORDEMSERVICO'")
-                row = cur.fetchone()
-                if row:
-                    seq_os = (row[0] or 0) + 1
-                    cur.execute("update IXLCONTROLESEQ set SEQUENCIAL = ? where TABELA = 'ORDEMSERVICO'", (seq_os,))
-                    con.commit()
-                    logging.info("SEQOS obtido via IXLCONTROLESEQ: %d", seq_os)
-            except Exception as e:
-                logging.warning(f"Erro ao obter SEQUENCIAL da IXLCONTROLESEQ: {e}")
-
-            # 2. Se falhou, pega o max SEQOS e atualiza a IXLCONTROLESEQ
-            if not seq_os:
-                try:
-                    cur.execute("select max(SEQOS) from IXLOS")
-                    row = cur.fetchone()
-                    seq_os = (row[0] or 0) + 1
-                    logging.info("SEQOS obtido via MAX(SEQOS): %d", seq_os)
-                    try:
-                        cur.execute("update IXLCONTROLESEQ set SEQUENCIAL = ? where TABELA = 'ORDEMSERVICO'", (seq_os,))
-                        con.commit()
-                    except Exception as e2:
-                        logging.warning(f"Erro ao atualizar IXLCONTROLESEQ apos MAX: {e2}")
-                except Exception as e:
-                    logging.warning(f"Erro ao obter MAX(SEQOS): {e}")
-
-        finally:
-            con.close()
-
-        if seq_os is not None:
+            cur.execute(
+                """
+                update IXLCONTROLESEQ
+                   set SEQUENCIAL = COALESCE(SEQUENCIAL, 0) + 1
+                 where TABELA = 'ORDEMSERVICO'
+                 returning SEQUENCIAL
+                """
+            )
+            row = cur.fetchone()
+            if not row or row[0] is None:
+                raise RuntimeError(
+                    "IXLCONTROLESEQ nao possui a linha ORDEMSERVICO; abertura cancelada."
+                )
+            seq_os = int(row[0])
             logging.info("Inserindo com SEQOS gerado manualmente: %s", seq_os)
             sql = """
                 insert into IXLOS (
@@ -768,34 +826,9 @@ class FirebirdRepository:
                 )
             """
             insert_params = (seq_os,) + params
-        else:
-            logging.warning("Nenhum gerador encontrado. Tentando inserção padrão...")
-            sql = """
-                insert into IXLOS (
-                    CDCLIENTE, CDCLIENTEENT, CDEQUIPAMENTO, CDOSTP, DTINCLUSAO, HRINCLUSAO, STATUS, CDSTATUS, OBSDEFEITOCLI, NMSUPORTET, NMSUPORTEA,
-                    NMCLIENTE, ENDERECO, NUM, COMPLEMENTO, BAIRRO, CIDADE, UF, CEP, DDD, FONE, CELULAR, EMAIL, CONTATO,
-                    DEPARTAMENTO, LOCALINSTAL, DTPREVENTREGA, HRPREVENTREGA, CDEMPRESA, TPORCATEND, TPCHAMADO, CDTERRITORIO, EQUIPCLI, STATUSEQUIP,
-                    SEQOSORIGEM, TIPO_OS, TFLIBERADO
-                ) values (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, 1, 'A', '1', 'GERAL', 'E', '0',
-                    -1, '1', 'S'
-                ) returning SEQOS
-            """
-            insert_params = params
-
-        con = self.connect()
-        try:
-            cur = con.cursor()
             cur.execute(sql, insert_params)
-            if seq_os is not None:
-                con.commit()
-                return seq_os
-            else:
-                generated_id = cur.fetchone()[0]
-                con.commit()
-                return int(generated_id)
+            con.commit()
+            return seq_os
         except Exception:
             con.rollback()
             raise
@@ -1059,16 +1092,27 @@ def run_cycle(config: AppConfig, state: StateStore, full: bool = False) -> None:
         logging.info("Iniciando sincronização de %s", entity)
         sync_entity(repo, crm, state, entity, config.batch_size)
 
-    # Process pending commands from CRM (like opening an O.S.)
-    logging.info("Buscando comandos pendentes do CRM...")
-    crm.process_pending_commands(repo)
-
     # Process billing files
     logging.info("Verificando pasta de cobranças...")
     crm.process_billing_folder()
 
     # Inform backend that agent is alive
     crm.send_ping()
+
+
+def run_command_listener(config: AppConfig, stop_event: threading.Event | None = None) -> None:
+    """Keep an outbound HTTPS request ready for immediate CRM commands."""
+    repo = FirebirdRepository(config)
+    crm = CRMClient(config)
+    result_store = CommandResultStore(ROOT / "command-results.json")
+    logging.info("Listener imediato de comandos iniciado.")
+
+    while stop_event is None or not stop_event.is_set():
+        try:
+            crm.process_pending_commands(repo, result_store, wait_seconds=25)
+        except Exception as exc:
+            logging.exception("Falha no listener de comandos: %s", exc)
+            time.sleep(2)
 
 
 def inspect_schema(config: AppConfig) -> Path:
@@ -1144,9 +1188,20 @@ def main() -> None:
 
     if args.once:
         run_cycle(config, state, full=args.full)
+        CRMClient(config).process_pending_commands(
+            FirebirdRepository(config),
+            CommandResultStore(ROOT / "command-results.json"),
+        )
         return
 
     logging.info("Client iniciado. Intervalo: %ss", config.sync_interval_seconds)
+    command_thread = threading.Thread(
+        target=run_command_listener,
+        args=(config,),
+        name="firebird-command-listener",
+        daemon=True,
+    )
+    command_thread.start()
 
     while True:
         try:

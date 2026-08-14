@@ -11,6 +11,8 @@ Cliente de integração para rodar no servidor da empresa, ler o Firebird localm
 - Envia os lotes para o endpoint `/api/integrations/firebird/push`
 - Mantém um cursor local em `state.json`
 - Registra logs em `logs/client.log` com rotação automática
+- Mantém um listener HTTPS para abrir O.S. imediatamente e devolver o `SEQOS`
+- Guarda resultados em `command-results.json` para impedir duplicação após falha de callback
 - No pacote atualizado, roda como `FirebirdCRMClient.exe` e não depende de Python instalado
 
 ## Instalação

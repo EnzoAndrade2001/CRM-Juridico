@@ -36,6 +36,7 @@ class AgentGUI(ctk.CTk):
         
         self.is_running = False
         self.agent_thread = None
+        self.command_stop_event = None
         self.tray_icon = None
         
         self.create_widgets()
@@ -156,7 +157,7 @@ class AgentGUI(ctk.CTk):
                 except Exception:
                     pass
 
-    def hide_window(self):
+    def hide_window(self, icon=None, item=None):
         self.withdraw()
         image = create_tray_image()
         menu = pystray.Menu(
@@ -192,6 +193,8 @@ class AgentGUI(ctk.CTk):
             self.agent_thread.start()
         else:
             self.is_running = False
+            if self.command_stop_event:
+                self.command_stop_event.set()
             self.action_btn.configure(text="▶ Iniciar Agente", fg_color="green", hover_color="darkgreen")
             self.log_message("Sinal de parada enviado. O agente vai parar em breve.")
             
@@ -219,6 +222,13 @@ class AgentGUI(ctk.CTk):
         try:
             config = agent_main.AppConfig.from_env()
             state = agent_main.StateStore(config.state_file)
+            self.command_stop_event = threading.Event()
+            threading.Thread(
+                target=agent_main.run_command_listener,
+                args=(config, self.command_stop_event),
+                name="firebird-command-listener",
+                daemon=True,
+            ).start()
             
             while self.is_running:
                 try:
@@ -237,6 +247,8 @@ class AgentGUI(ctk.CTk):
         except Exception as e:
             logging.exception("Agente encontrou um erro fatal.")
         finally:
+            if self.command_stop_event:
+                self.command_stop_event.set()
             self.log_message_raw("Agente parado.")
             self.is_running = False
             self.after(0, lambda: self.action_btn.configure(text="▶ Iniciar Agente", fg_color="green", hover_color="darkgreen"))

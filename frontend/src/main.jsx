@@ -18,7 +18,6 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Connections = lazy(() => import('./pages/Connections'));
 const KnowledgeBase = lazy(() => import('./pages/KnowledgeBase'));
 const Campaigns = lazy(() => import('./pages/Campaigns'));
-const ServiceOrders = lazy(() => import('./pages/ServiceOrders'));
 const QuickResponses = lazy(() => import('./pages/QuickResponses'));
 const SuperAdmin = lazy(() => import('./pages/SuperAdmin'));
 const LeadScraper = lazy(() => import('./pages/LeadScraper'));
@@ -167,7 +166,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/connections" element={<Connections />} />
             <Route path="/knowledge" element={<KnowledgeBase />} />
             <Route path="/campaigns" element={<Campaigns />} />
-            <Route path="/os" element={<ServiceOrders />} />
+            <Route path="/os" element={<Navigate to="/inbox" replace />} />
             <Route path="/quick-responses" element={<QuickResponses />} />
             <Route path="/superadmin" element={<SuperAdmin />} />
             <Route path="/leads" element={<LeadScraper />} />

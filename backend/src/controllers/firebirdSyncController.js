@@ -536,28 +536,61 @@ async function upsertCrmTechnician(tenant, data) {
 async function getPendingCommands(req, res) {
   try {
     const { tenantSlug } = req.query;
+    const waitSeconds = Math.max(0, Math.min(Number.parseInt(req.query.wait, 10) || 0, 25));
     if (!tenantSlug) {
       return res.status(400).json({ error: 'tenantSlug é obrigatório.' });
     }
     const { tenant } = await resolveTenantContext(tenantSlug);
     assertToken(req, tenant);
 
-    const pendingOS = await prisma.serviceOrder.findMany({
-      where: {
-        tenantId: tenant.id,
-        externalSource: 'firebird',
-        externalId: null,
-      },
-      include: {
-        contact: {
-          include: {
-            crmCustomer: true,
-          },
+    const deadline = Date.now() + (waitSeconds * 1000);
+    let pendingOS = [];
+
+    do {
+      const leaseExpiredAt = new Date(Date.now() - 45_000);
+      const candidate = await prisma.serviceOrder.findFirst({
+        where: {
+          tenantId: tenant.id,
+          externalSource: 'firebird',
+          externalId: null,
+          OR: [
+            { status: 'AGUARDANDO_ILUX' },
+            { status: 'PROCESSANDO_ILUX', updatedAt: { lt: leaseExpiredAt } },
+            { status: 'PENDENTE' },
+          ],
         },
-        equipment: true,
-        user: true,
-      },
-    });
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, status: true, updatedAt: true },
+      });
+
+      if (candidate) {
+        const claimed = await prisma.serviceOrder.updateMany({
+          where: {
+            id: candidate.id,
+            tenantId: tenant.id,
+            externalId: null,
+            status: candidate.status,
+            updatedAt: candidate.updatedAt,
+          },
+          data: { status: 'PROCESSANDO_ILUX' },
+        });
+
+        if (claimed.count === 1) {
+          const claimedOrder = await prisma.serviceOrder.findUnique({
+            where: { id: candidate.id },
+            include: {
+              contact: { include: { crmCustomer: true } },
+              equipment: true,
+              user: true,
+            },
+          });
+          if (claimedOrder) pendingOS = [claimedOrder];
+        }
+      }
+
+      if (pendingOS.length > 0 || tenant.settings?.firebirdQueueBillingProcess || Date.now() >= deadline) break;
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    } while (true);
 
     const equipmentExternalIds = pendingOS.map(os => os.equipment.externalId).filter(Boolean);
     const crmEquipments = await prisma.crmEquipment.findMany({
@@ -586,11 +619,11 @@ async function getPendingCommands(req, res) {
         num: os.contact.crmCustomer?.raw?.['num'] || os.contact.crmCustomer?.raw?.['NUM'] || '',
         bairro: os.contact.crmCustomer?.neighborhood || os.contact.neighborhood || '',
         complemento: os.contact.crmCustomer?.raw?.['complemento'] || os.contact.crmCustomer?.raw?.['COMPLEMENTO'] || '',
-        city: os.contact.crmCustomer?.city || os.contact.city || '',
-        state: os.contact.crmCustomer?.state || os.contact.state || '',
-        zipCode: os.contact.crmCustomer?.zipCode || os.contact.zipCode || '',
+        cidade: os.contact.crmCustomer?.city || os.contact.city || '',
+        uf: os.contact.crmCustomer?.state || os.contact.state || '',
+        cep: os.contact.crmCustomer?.zipCode || os.contact.zipCode || '',
         ddd: os.contact.crmCustomer?.raw?.['ddd'] || os.contact.crmCustomer?.raw?.['DDD'] || '',
-        phone: os.contact.crmCustomer?.phone || os.contact.phone || '',
+        fone: os.contact.crmCustomer?.phone || os.contact.phone || '',
         celular: os.contact.crmCustomer?.raw?.['celular'] || os.contact.crmCustomer?.raw?.['CELULAR'] || '',
         email: os.contact.crmCustomer?.email || os.contact.email || '',
         contato: os.contact.crmCustomer?.contactName || os.contact.name || '',
@@ -637,14 +670,43 @@ async function commandCallback(req, res) {
     }
 
     if (success && result?.seqOs) {
-      await prisma.serviceOrder.update({
+      const serviceOrder = await prisma.serviceOrder.update({
         where: { id, tenantId: tenant.id },
         data: {
           externalId: String(result.seqOs),
+          status: 'PENDENTE',
         },
       });
+      if (serviceOrder.ticketId) {
+        const payload = JSON.stringify({
+          serviceOrderId: serviceOrder.id,
+          seqOs: String(result.seqOs),
+        });
+        const existingEvent = await prisma.ticketEvent.findFirst({
+          where: {
+            ticketId: serviceOrder.ticketId,
+            tenantId: tenant.id,
+            type: 'os_created',
+            payload,
+          },
+        });
+        if (!existingEvent) {
+          await prisma.ticketEvent.create({
+            data: {
+              ticketId: serviceOrder.ticketId,
+              tenantId: tenant.id,
+              type: 'os_created',
+              payload,
+            },
+          });
+        }
+      }
       console.log(`[pending-commands] OS ${id} associada ao SEQOS ${result.seqOs} com sucesso.`);
     } else {
+      await prisma.serviceOrder.updateMany({
+        where: { id, tenantId: tenant.id, externalId: null },
+        data: { status: 'ERRO_INTEGRACAO' },
+      });
       console.warn(`[pending-commands] Falha ao processar comando OS ${id}:`, error);
     }
 

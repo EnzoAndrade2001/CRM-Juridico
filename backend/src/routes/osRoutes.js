@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const authenticate = require('../middlewares/authenticate');
-const { getEquipments, addEquipment, updateEquipment, deleteEquipment, getOSList, createOS, updateOS, generatePdf, draftOS, getOSTypes, getOSTechnicians } = require('../controllers/osController');
+const { getEquipments, addEquipment, updateEquipment, deleteEquipment, getOSList, createOS, getOSStatus, updateOS, generatePdf, draftOS, getOSTypes, getOSTechnicians } = require('../controllers/osController');
 
 router.use(authenticate);
 
@@ -18,6 +18,7 @@ router.delete('/equipments/:id', deleteEquipment);
 router.get('/', getOSList);
 router.post('/', createOS);
 router.post('/draft', draftOS);
+router.get('/:id/status', getOSStatus);
 router.patch('/:id', updateOS);
 router.get('/:id/pdf', generatePdf);
 

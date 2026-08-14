@@ -12,14 +12,15 @@ A integração é híbrida e assíncrona, composta por três partes principais:
 
 1. **CRM Backend (Node.js/Express na VPS):**
    - Expõe endpoints protegidos por token para recebimento de dados em lote (`/api/integrations/firebird/push`).
-   - Mantém uma fila de comandos pendentes no endpoint `/api/integrations/firebird/pending-commands` (por exemplo, quando um atendente abre uma O.S. no CRM).
+   - Mantém uma fila de comandos no endpoint `/api/integrations/firebird/pending-commands` e aguarda a confirmação do iLux durante o clique de abertura.
    - Fornece um callback (`/api/integrations/firebird/commands/:id/callback`) para receber confirmações do client local.
 
 2. **Client de Integração (`firebird-client` - Executável no Servidor Local):**
    - Script em Python (`main.py`) compilado para um executável autônomo do Windows (`FirebirdCRMClient.exe`).
-   - Roda em loop contínuo (padrão 300s / 5 minutos) no servidor onde o banco de dados Firebird (`.FDB`) está localizado.
+   - Mantém um listener HTTPS de saída em long polling para receber comandos de O.S. imediatamente, separado da sincronização periódica de 300s.
    - Sincroniza metadados (técnicos, tipos de O.S.) e entidades (clientes, equipamentos) do ERP para o CRM via HTTPS (apenas tráfego de saída).
-   - Consome a fila de comandos de criação de O.S. do CRM, insere-as diretamente no Firebird e devolve o código gerado (`SEQOS`) via callback.
+   - Consome a fila de comandos de criação de O.S., insere no Firebird e devolve o `SEQOS` via callback antes de a tela confirmar a abertura.
+   - Persiste `commandId → SEQOS` em `command-results.json` para repetir callbacks sem repetir inserts.
 
 3. **Banco de Dados Firebird (ERP ILUX):**
    - Tabela `ICLIENTES`: Cadastro de clientes.
@@ -43,15 +44,17 @@ sequenceDiagram
     autonumber
     Atendente->>CRM Frontend: Cria O.S. preenchendo Tipo, Técnico e Defeito
     CRM Frontend->>CRM Backend: POST /api/os (Salva O.S. como PENDENTE, externalId = null)
-    loop A cada ciclo do Client (ex: 5 min)
-        Client->>CRM Backend: GET /pending-commands
+    Client->>CRM Backend: GET /pending-commands?wait=25
+    Note over Client,CRM Backend: Requisição HTTPS de saída permanece aguardando
+    Atendente->>CRM Frontend: Confirma "Abrir O.S. no iLux"
+    CRM Frontend->>CRM Backend: POST /api/os com requestKey único
+    CRM Backend-->>Client: Libera imediatamente o comando CREATE_OS
         CRM Backend-->>Client: Retorna comando CREATE_OS com payload da O.S.
-        Client->>Firebird: 1. Obtém e incrementa SEQOS da IXLCONTROLESEQ
-        Client->>Firebird: 2. Insere registro na tabela IXLOS
+        Client->>Firebird: Na mesma transação: incrementa IXLCONTROLESEQ e insere IXLOS
         Client->>CRM Backend: POST /commands/:id/callback (Envia seqOs gerado)
         CRM Backend->>CRM Backend: Atualiza O.S. (salva externalId = seqOs, status = PENDENTE)
-    end
-    Note over CRM Frontend, CRM Backend: O.S. agora exibe o Código ERP (SEQOS) correto.
+    CRM Backend-->>CRM Frontend: Retorna a O.S. confirmada com o SEQOS real
+    Note over CRM Frontend,CRM Backend: A tela só informa sucesso após a confirmação do Firebird.
 ```
 
 ---
@@ -117,18 +120,16 @@ O banco Firebird do ILUX não utiliza geradores nativos (`GENERATORS`/`SEQUENCES
 
 Para evitar colisões e erros de violação de chave primária, o client executa o seguinte algoritmo antes de inserir na `IXLOS`:
 
-1. Executa um select com trava/atualização na tabela de controle:
+1. Executa uma atualização atômica na tabela de controle:
    ```sql
-   SELECT SEQUENCIAL FROM IXLCONTROLESEQ WHERE TABELA = 'ORDEMSERVICO'
+   UPDATE IXLCONTROLESEQ
+      SET SEQUENCIAL = COALESCE(SEQUENCIAL, 0) + 1
+    WHERE TABELA = 'ORDEMSERVICO'
+    RETURNING SEQUENCIAL
    ```
-2. Caso encontre o valor:
-   - Incrementa em 1 (`seq_os = sequencial + 1`).
-   - Atualiza a tabela: `UPDATE IXLCONTROLESEQ SET SEQUENCIAL = ? WHERE TABELA = 'ORDEMSERVICO'`.
-   - Utiliza esse valor explicitamente na query de `INSERT INTO IXLOS`.
-3. Caso falhe (tabela ausente ou erro de transação):
-   - Executa `SELECT MAX(SEQOS) FROM IXLOS` como plano de contingência.
-   - Incrementa o valor em 1.
-   - Tenta atualizar a `IXLCONTROLESEQ` com o novo sequencial e usa-o no `INSERT`.
+2. Usa o valor retornado no `INSERT INTO IXLOS`, na mesma conexão e transação.
+3. Executa `COMMIT` somente após o insert; qualquer falha executa `ROLLBACK`.
+4. Não existe fallback por `MAX(SEQOS)`: sem o controle oficial, a abertura falha explicitamente.
 
 ---
 
