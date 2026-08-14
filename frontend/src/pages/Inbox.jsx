@@ -790,9 +790,20 @@ export default function Inbox() {
         <CreateOsModal
           ticket={selectedTicket}
           onClose={() => setShowOsModal(false)}
-          onCreated={(os) => {
+          onCreated={async (os) => {
             toast.success(`O.S. ${os.externalId} criada no iLux!`);
-            loadMessages({ ticketId: selectedTicket.id, replace: true, background: true });
+            const ticketId = os.ticketId || selectedTicket.id;
+            try {
+              await sendMessage(
+                ticketId,
+                `Sua O.S. foi aberta com sucesso.\n*Número da O.S.: ${os.externalId}*`
+              );
+              toast.success('Mensagem com o número da O.S. enviada ao cliente!');
+            } catch (e) {
+              toast.error(`A O.S. foi criada, mas a mensagem não foi enviada: ${e.response?.data?.error || e.message}`);
+            } finally {
+              loadMessages({ ticketId, replace: true, background: true });
+            }
           }}
         />
       )}

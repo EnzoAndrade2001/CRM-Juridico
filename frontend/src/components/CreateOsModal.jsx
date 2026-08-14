@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import api, { getEquipments } from '../services/api';
-import { CheckCircle2, FileText, LoaderCircle, Wand2 } from 'lucide-react';
+import api, { BACKEND_URL, getEquipments } from '../services/api';
+import { CheckCircle2, FileText, LoaderCircle, Printer, Wand2 } from 'lucide-react';
 
 export default function CreateOsModal({ ticket, onClose, onCreated }) {
   const [equipments, setEquipments] = useState([]);
@@ -10,12 +10,39 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
   const [drafting, setDrafting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [printBlocked, setPrintBlocked] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState('');
   const [createdOrder, setCreatedOrder] = useState(null);
   const [requestKey] = useState(() => (
     globalThis.crypto?.randomUUID?.() || `os-${Date.now()}-${Math.random().toString(16).slice(2)}`
   ));
   const [formData, setFormData] = useState({ equipmentId: '', defect: '', cdOstp: '', nmsuportet: '' });
+
+  function getPdfUrl(order) {
+    const token = encodeURIComponent(localStorage.getItem('token') || '');
+    return `${BACKEND_URL}/api/os/${order.id}/pdf?token=${token}`;
+  }
+
+  function preparePrintWindow() {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.title = 'Gerando O.S...';
+      printWindow.document.body.innerHTML = '<p style="font-family: sans-serif; padding: 24px">Aguardando a confirmação da O.S. no iLux...</p>';
+    }
+    return printWindow;
+  }
+
+  function completeOrder(order, printWindow) {
+    setCreatedOrder(order);
+    if (printWindow) {
+      printWindow.location.replace(getPdfUrl(order));
+    } else {
+      setPrintBlocked(true);
+    }
+    Promise.resolve(onCreated?.(order)).catch((callbackError) => {
+      console.error('[CreateOsModal] erro após confirmar O.S.:', callbackError);
+    });
+  }
 
   useEffect(() => {
     loadData();
@@ -72,6 +99,7 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
     if (!formData.equipmentId) return alert('Selecione um equipamento');
     if (!formData.cdOstp) return alert('Selecione o tipo de O.S.');
     if (!formData.defect) return alert('Informe o defeito reportado');
+    const printWindow = preparePrintWindow();
     setSaving(true);
     setError('');
     try {
@@ -84,9 +112,9 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
         cdOstp: formData.cdOstp,
         nmsuportet: formData.nmsuportet
       });
-      setCreatedOrder(res.data);
-      onCreated(res.data);
+      completeOrder(res.data, printWindow);
     } catch (e) {
+      printWindow?.close();
       setPendingOrderId(e.response?.data?.serviceOrderId || '');
       setError(e.response?.data?.error || 'Não foi possível confirmar a abertura no iLux.');
     } finally {
@@ -96,17 +124,19 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
 
   async function checkStatus() {
     if (!pendingOrderId) return;
+    const printWindow = preparePrintWindow();
     setSaving(true);
     setError('');
     try {
       const { data } = await api.get(`/os/${pendingOrderId}/status`);
       if (!data.externalId) {
+        printWindow?.close();
         setError('A abertura ainda não foi confirmada pelo agente do iLux.');
         return;
       }
-      setCreatedOrder(data);
-      onCreated(data);
+      completeOrder(data, printWindow);
     } catch (e) {
+      printWindow?.close();
       setError(e.response?.data?.error || 'Não foi possível consultar a abertura.');
     } finally {
       setSaving(false);
@@ -139,7 +169,22 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
             <p style={{ color: 'var(--text-muted)', margin: '0 0 20px' }}>
               O número acima foi confirmado diretamente pelo banco do iLux.
             </p>
-            <button style={s.saveBtn} onClick={onClose}>Concluir</button>
+            {printBlocked ? (
+              <p style={{ color: '#f59e0b', margin: '0 0 12px', fontSize: '0.85rem' }}>
+                O navegador bloqueou a nova aba. Use o botão abaixo para imprimir.
+              </p>
+            ) : null}
+            <div style={s.btnGroup}>
+              <a
+                href={getPdfUrl(createdOrder)}
+                target="_blank"
+                rel="noreferrer"
+                style={{ ...s.saveBtn, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                <Printer size={16} /> Imprimir O.S.
+              </a>
+              <button style={s.cancelBtn} onClick={onClose}>Concluir</button>
+            </div>
           </div>
         ) : loading || drafting ? (
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
