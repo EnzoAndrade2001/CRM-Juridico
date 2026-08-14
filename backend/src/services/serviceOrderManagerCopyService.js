@@ -1,9 +1,16 @@
 const prisma = require('../lib/prisma');
 const evolution = require('./evolutionService');
 const { generatePdfBuffer } = require('../controllers/osController');
+const { mediaPath } = require('../utils/uploads');
+const crypto = require('crypto');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
+
+let io;
+
+function setIo(socketIo) {
+  io = socketIo;
+}
 
 function valueOrDash(value) {
   const normalized = String(value || '').trim();
@@ -72,6 +79,176 @@ function errorDetail(error) {
   return String(detail || error?.message || 'Erro desconhecido ao enviar o PDF.');
 }
 
+function evolutionMessageId(result) {
+  return result?.key?.id
+    || result?.message?.key?.id
+    || result?.data?.key?.id
+    || result?.id
+    || null;
+}
+
+function storedPdfFilename(displayFilename) {
+  const safeName = String(displayFilename || 'ordem-de-servico.pdf')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9._-]+/g, '_')
+    .replace(/_+/g, '_');
+  return `${Date.now()}-${crypto.randomBytes(6).toString('hex')}-${safeName}`;
+}
+
+function ticketInclude() {
+  return {
+    contact: { include: { crmCustomer: true } },
+    agent: { select: { id: true, name: true } },
+    team: true,
+    instance: { select: { instanceName: true } },
+  };
+}
+
+async function findOrCreateManagerContact({ tenantId, instanceId, phones }) {
+  const whatsappJids = phones.map((phone) => `${phone}@s.whatsapp.net`);
+  let contact = await prisma.contact.findFirst({
+    where: {
+      tenantId,
+      instanceId,
+      OR: [
+        { phone: { in: phones } },
+        { whatsapp: { in: phones } },
+        { whatsappJid: { in: whatsappJids } },
+      ],
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (contact) return contact;
+
+  const phone = phones[0];
+  try {
+    contact = await prisma.contact.create({
+      data: {
+        tenantId,
+        instanceId,
+        phone,
+        whatsapp: phone,
+        whatsappJid: `${phone}@s.whatsapp.net`,
+        name: 'Gestor de O.S.',
+        externalSource: 'manual',
+      },
+    });
+  } catch (error) {
+    if (error?.code !== 'P2002') throw error;
+    contact = await prisma.contact.findFirst({ where: { tenantId, instanceId, phone } });
+  }
+
+  if (!contact) throw new Error('Não foi possível localizar ou criar o contato do gestor.');
+  return contact;
+}
+
+async function registerManagerChatMessage({
+  tenantId,
+  instance,
+  order,
+  sentTo,
+  configuredPhone,
+  caption,
+  filename,
+  storedFilename,
+  externalId,
+}) {
+  const now = new Date();
+  let message = externalId
+    ? await prisma.message.findFirst({ where: { externalId } })
+    : null;
+  let ticket;
+
+  // O webhook pode chegar antes da resposta da API. Se isso acontecer,
+  // completamos o registro já criado em vez de duplicar a mensagem.
+  if (message) {
+    message = await prisma.message.update({
+      where: { id: message.id },
+      data: {
+        body: caption,
+        fromMe: true,
+        mediaUrl: `/uploads/media/${storedFilename}`,
+        mediaType: 'document',
+        mediaStatus: 'ok',
+        fileName: filename,
+      },
+    });
+    ticket = await prisma.ticket.update({
+      where: { id: message.ticketId },
+      data: { lastMessageAt: now },
+      include: ticketInclude(),
+    });
+  } else {
+    const phones = [...new Set([
+      sentTo,
+      ...brazilianPhoneCandidates(configuredPhone),
+    ].filter(Boolean))];
+    const contact = await findOrCreateManagerContact({
+      tenantId,
+      instanceId: instance.id,
+      phones,
+    });
+
+    ticket = await prisma.ticket.findFirst({
+      where: { tenantId, instanceId: instance.id, contactId: contact.id },
+      orderBy: [{ lastMessageAt: 'desc' }, { updatedAt: 'desc' }],
+    });
+
+    if (ticket) {
+      ticket = await prisma.ticket.update({
+        where: { id: ticket.id },
+        data: {
+          status: 'open',
+          lastMessageAt: now,
+          ...(!ticket.agentId && order.userId ? { agentId: order.userId } : {}),
+        },
+        include: ticketInclude(),
+      });
+    } else {
+      ticket = await prisma.ticket.create({
+        data: {
+          tenantId,
+          instanceId: instance.id,
+          contactId: contact.id,
+          agentId: order.userId || null,
+          status: 'open',
+          subject: 'Cópias de O.S.',
+          lastMessageAt: now,
+        },
+        include: ticketInclude(),
+      });
+    }
+
+    message = await prisma.message.create({
+      data: {
+        ticketId: ticket.id,
+        agentId: order.userId || ticket.agentId || null,
+        body: caption,
+        fromMe: true,
+        mediaUrl: `/uploads/media/${storedFilename}`,
+        mediaType: 'document',
+        mediaStatus: 'ok',
+        fileName: filename,
+        externalId,
+      },
+    });
+  }
+
+  if (io) {
+    io.to(tenantId).emit('new_message', {
+      ticket,
+      message,
+      contact: ticket.contact,
+      fromMe: true,
+    });
+    io.to(tenantId).emit('ticket_updated', { ticketId: ticket.id, ticket });
+  }
+
+  return { ticketId: ticket.id, messageId: message.id };
+}
+
 async function sendServiceOrderManagerCopy(tenantId, serviceOrderId, { force = false } = {}) {
   const settings = await prisma.tenantSettings.findUnique({
     where: { tenantId },
@@ -133,17 +310,19 @@ async function sendServiceOrderManagerCopy(tenantId, serviceOrderId, { force = f
     if (!pdf.buffer?.length) throw new Error('O PDF da O.S. foi gerado vazio.');
 
     const filename = safePdfFilename(order);
-    const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'multi-os-'));
-    const filePath = path.join(tempDir, filename);
+    const storedFilename = storedPdfFilename(filename);
+    const filePath = path.join(mediaPath, storedFilename);
+    const caption = buildManagerMessage(order, osType);
     let lastError = null;
     let sentTo = null;
+    let sendResult = null;
 
     try {
       await fs.promises.writeFile(filePath, pdf.buffer);
       const phoneCandidates = brazilianPhoneCandidates(settings.serviceOrderManagerPhone);
       for (const phone of phoneCandidates) {
         try {
-          await evolution.sendMedia(
+          sendResult = await evolution.sendMedia(
             evolutionUrl,
             evolutionKey,
             instance.instanceName,
@@ -153,7 +332,7 @@ async function sendServiceOrderManagerCopy(tenantId, serviceOrderId, { force = f
               media: pdf.buffer.toString('base64'),
               mimetype: 'application/pdf',
               filename,
-              caption: buildManagerMessage(order, osType),
+              caption,
               filePath,
             },
           );
@@ -165,13 +344,39 @@ async function sendServiceOrderManagerCopy(tenantId, serviceOrderId, { force = f
         }
       }
       if (!sentTo) throw lastError || new Error('Nenhum formato de telefone foi aceito pelo WhatsApp.');
-    } finally {
+    } catch (error) {
       await fs.promises.unlink(filePath).catch(() => {});
-      await fs.promises.rmdir(tempDir).catch(() => {});
+      throw error;
+    }
+
+    let chatRegistered = false;
+    let chatWarning = null;
+    try {
+      await registerManagerChatMessage({
+        tenantId,
+        instance,
+        order,
+        sentTo,
+        configuredPhone: settings.serviceOrderManagerPhone,
+        caption,
+        filename,
+        storedFilename,
+        externalId: evolutionMessageId(sendResult),
+      });
+      chatRegistered = true;
+    } catch (chatError) {
+      // O WhatsApp já recebeu o PDF. Não liberamos um novo envio automático,
+      // pois isso duplicaria o documento no celular do gestor.
+      chatWarning = `PDF entregue no WhatsApp, mas não registrado no chat: ${errorDetail(chatError)}`.slice(0, 2000);
+      await prisma.serviceOrder.updateMany({
+        where: { id: serviceOrderId, tenantId, managerCopySentAt: claimedAt },
+        data: { managerCopyLastError: chatWarning },
+      });
+      console.error(`[serviceOrderManagerCopy] ${chatWarning}`);
     }
 
     console.log(`[serviceOrderManagerCopy] Cópia da O.S. ${order.externalId} enviada para ${sentTo} pela instância ${instance.instanceName}.`);
-    return { sent: true, phone: sentTo, filename };
+    return { sent: true, phone: sentTo, filename, chatRegistered, warning: chatWarning };
   } catch (error) {
     const detail = errorDetail(error).slice(0, 2000);
     await prisma.serviceOrder.updateMany({
@@ -182,4 +387,4 @@ async function sendServiceOrderManagerCopy(tenantId, serviceOrderId, { force = f
   }
 }
 
-module.exports = { sendServiceOrderManagerCopy };
+module.exports = { sendServiceOrderManagerCopy, setIo };

@@ -28,6 +28,8 @@ async function sendManagerCopy(req, res) {
       externalId: order.externalId,
       phone: result.phone,
       filename: result.filename,
+      chatRegistered: result.chatRegistered,
+      warning: result.warning,
     });
   } catch (error) {
     console.error(`[sendManagerCopy] Falha no reenvio manual da O.S. ${order?.externalId || req.params.id}:`, error.message);
