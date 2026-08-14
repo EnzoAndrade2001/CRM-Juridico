@@ -337,6 +337,7 @@ class CRMClient:
                         cached = result_store.get(cmd_id)
                         if cached and cached.get("seqOs"):
                             seq_os = int(cached["seqOs"])
+                            command_result = dict(cached)
                             logging.info(
                                 "Comando %s ja processado; reenviando SEQOS %s.",
                                 cmd_id,
@@ -344,10 +345,19 @@ class CRMClient:
                             )
                         else:
                             seq_os = repo.create_service_order(payload)
+                            command_result = {"seqOs": seq_os}
+                            try:
+                                command_result["printData"] = repo.fetch_service_order_print_data(seq_os)
+                            except Exception as print_data_error:
+                                logging.warning(
+                                    "O.S. %s criada, mas o historico para impressao nao foi consultado: %s",
+                                    seq_os,
+                                    print_data_error,
+                                )
                             # Persist before callback. If HTTPS fails, replaying this
                             # command returns the same SEQOS instead of inserting again.
-                            result_store.set(cmd_id, {"seqOs": seq_os})
-                        self.report_command_result(cmd_id, success=True, result={"seqOs": seq_os})
+                            result_store.set(cmd_id, command_result)
+                        self.report_command_result(cmd_id, success=True, result=command_result)
                         logging.info("O.S. criada no Firebird com sucesso. SEQOS: %s", seq_os)
                     elif cmd_type == "PROCESS_BILLING":
                         logging.info("Comando PROCESS_BILLING recebido sob demanda. Processando...")
@@ -747,6 +757,69 @@ class FirebirdRepository:
     def fetch_technicians(self) -> Iterator[dict[str, Any]]:
         sql = "select NMSUPORTE, TFATIVO from IXLOSSUPORTE"
         yield from self._rows(sql, ())
+
+    def fetch_service_order_print_data(self, seq_os: int) -> dict[str, Any]:
+        """Read only the small Firebird snapshot required by the A4 form."""
+        con = self.connect()
+        try:
+            cur = con.cursor()
+
+            def fetch_all(sql: str, params: tuple[Any, ...]) -> list[dict[str, Any]]:
+                cur.execute(sql, params)
+                columns = [str(item[0]).strip().lower() for item in cur.description]
+                return [
+                    {column: json_safe(value) for column, value in zip(columns, row)}
+                    for row in cur.fetchall()
+                ]
+
+            current_rows = fetch_all(
+                """
+                select SEQOS, CDCLIENTE, CDEQUIPAMENTO, DTINCLUSAO, HRINCLUSAO,
+                       OBSDEFEITOCLI, OBSDEFEITOATS, NMSUPORTEA, NMSUPORTET,
+                       NMSUPORTEL, USUARIO_FECHAMENTO, STATUS
+                  from IXLOS
+                 where SEQOS = ?
+                """,
+                (seq_os,),
+            )
+            if not current_rows:
+                return {"history": [], "attendances": []}
+
+            current = current_rows[0]
+            history_rows = fetch_all(
+                """
+                select first 5
+                       os.SEQOS, os.DTINCLUSAO, os.HRINCLUSAO,
+                       os.CDEQUIPAMENTO, os.OBSDEFEITOCLI, os.OBSDEFEITOATS,
+                       os.NMSUPORTEA, os.NMSUPORTET, os.NMSUPORTEL,
+                       os.USUARIO_FECHAMENTO, os.STATUS, tp.NMOSTP
+                  from IXLOS os
+                  left join IXLOSTP tp on tp.CDOSTP = os.CDOSTP
+                 where os.CDCLIENTE = ? and os.SEQOS <> ?
+                 order by os.DTINCLUSAO desc, os.HRINCLUSAO desc, os.SEQOS desc
+                """,
+                (current.get("cdcliente"), seq_os),
+            )
+            attendance_rows = fetch_all(
+                """
+                select *
+                  from IXLOSATENDIMENTO
+                 where SEQOS = ?
+                 order by DATAHORA, ID_ATENDIMENTO
+                """,
+                (seq_os,),
+            )
+            return {
+                "serviceOrder": current,
+                "history": history_rows,
+                "attendances": attendance_rows,
+                "capturedAt": datetime.now().isoformat(timespec="seconds"),
+            }
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
 
     def create_service_order(self, data: dict[str, Any]) -> int:
         cd_cliente = int(data["cdCliente"]) if data.get("cdCliente") else None

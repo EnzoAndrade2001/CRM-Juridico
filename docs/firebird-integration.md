@@ -125,6 +125,8 @@ O contador `IXLCONTROLESEQ / ORDEMSERVICO` foi encontrado atrasado em relação 
 
 A sincronização histórica de `serviceOrders` fica desativada por padrão (`SYNC_SERVICE_ORDERS=false`). O listener de comandos continua independente e abre O.S. imediatamente, sem percorrer o histórico.
 
+Na confirmação de uma nova O.S., o agente faz uma consulta pequena e direcionada: lê os atendimentos da O.S. recém-criada e até cinco chamados anteriores do mesmo `CDCLIENTE`. Esse retrato é enviado no callback e usado pelo PDF A4 do multiatendimento para apresentar chamado, fechamento, responsáveis e técnico, sem voltar à sincronização integral da tabela `IXLOS`.
+
 ---
 
 ## 6. Vinculação de Atendente no Perfil do Usuário

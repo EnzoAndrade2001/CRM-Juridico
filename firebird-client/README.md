@@ -13,6 +13,7 @@ Cliente de integração para rodar no servidor da empresa, ler o Firebird localm
 - Registra logs em `logs/client.log` com rotação automática
 - Mantém um listener HTTPS para abrir O.S. imediatamente e devolver o `SEQOS`
 - Guarda resultados em `command-results.json` para impedir duplicação após falha de callback
+- Consulta somente os cinco chamados anteriores e os atendimentos da nova O.S. para montar o PDF completo
 - No pacote atualizado, roda como `FirebirdCRMClient.exe` e não depende de Python instalado
 
 Para reativar deliberadamente o histórico de O.S., configure `SYNC_SERVICE_ORDERS=true`. Isso não é necessário para abrir chamados pelo WhatsApp.

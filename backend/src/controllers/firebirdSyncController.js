@@ -677,6 +677,22 @@ async function commandCallback(req, res) {
           status: 'PENDENTE',
         },
       });
+      if (result.printData && typeof result.printData === 'object') {
+        try {
+          await upsertRawRecord(
+            tenant.id,
+            'firebird',
+            'osPrintData',
+            String(result.seqOs),
+            result.printData,
+          );
+        } catch (printDataError) {
+          console.warn(
+            `[pending-commands] O.S. ${result.seqOs} confirmada, mas o histórico de impressão não foi armazenado:`,
+            printDataError.message,
+          );
+        }
+      }
       if (serviceOrder.ticketId) {
         const payload = JSON.stringify({
           serviceOrderId: serviceOrder.id,

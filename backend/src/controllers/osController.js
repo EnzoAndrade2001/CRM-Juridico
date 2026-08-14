@@ -440,6 +440,72 @@ async function generatePdf(req, res) {
     console.error('[generatePdf] erro ao buscar dados estruturados adicionais:', err);
   }
 
+  let osPrintData = null;
+  let previousOrders = [];
+  try {
+    if (os.externalId) {
+      const printRecord = await prisma.externalSyncRecord.findUnique({
+        where: {
+          tenantId_source_entity_externalId: {
+            tenantId: req.user.tenantId,
+            source: 'firebird',
+            entity: 'osPrintData',
+            externalId: String(os.externalId),
+          },
+        },
+      });
+      osPrintData = printRecord?.payload || null;
+    }
+
+    const normalizeHistoryItem = (item) => {
+      const raw = item?.raw && typeof item.raw === 'object' ? item.raw : item || {};
+      return {
+        externalId: String(item?.externalId || raw.seqos || ''),
+        createdAt: item?.createdAt || item?.updatedAt || raw.dtinclusao || null,
+        time: raw.hrinclusao || '',
+        osType: raw.nmostp || item?.osType || '',
+        equipmentExternalId: String(item?.equipmentExternalId || raw.cdequipamento || ''),
+        attendant: raw.nmsuportea || item?.attendant || '',
+        status: item?.status || raw.nmstatus || raw.status || '',
+        defect: item?.defect || raw.obsdefeitocli || '',
+        closing: item?.closing || item?.observacao || raw.obsdefeitoats || '',
+        closedBy: raw.usuario_fechamento || raw.nmsuportel || raw.nmsuportet || '',
+        technician: item?.nmSuporteT || raw.nmsuportet || raw.nmsuportel || '',
+      };
+    };
+
+    if (Array.isArray(osPrintData?.history)) {
+      previousOrders = osPrintData.history.map(normalizeHistoryItem);
+    }
+
+    const clientExternalId = String(
+      osPrintData?.serviceOrder?.cdcliente
+      || os.contact.externalId
+      || crmCustomer?.externalId
+      || ''
+    );
+    if (previousOrders.length === 0 && clientExternalId) {
+      const syncedHistory = await prisma.externalSyncRecord.findMany({
+        where: {
+          tenantId: req.user.tenantId,
+          source: 'firebird',
+          entity: 'serviceOrders',
+          payload: { path: ['clientExternalId'], equals: clientExternalId },
+        },
+        select: { payload: true },
+      });
+      previousOrders = syncedHistory.map((item) => normalizeHistoryItem(item.payload));
+    }
+
+    previousOrders = previousOrders
+      .filter((item) => item.externalId && item.externalId !== String(os.externalId || ''))
+      .sort((left, right) => Number(right.externalId || 0) - Number(left.externalId || 0))
+      .slice(0, 5);
+  } catch (err) {
+    console.error('[generatePdf] erro ao carregar histórico do iLux:', err);
+    previousOrders = [];
+  }
+
   try {
     const fontsPath = path.join(__dirname, '..', '..', 'node_modules', 'pdfmake', 'fonts', 'Roboto');
     console.log('[generatePdf] Carregando fontes de:', fontsPath);
@@ -510,6 +576,90 @@ async function generatePdf(req, res) {
         displayOsType = `TIPO ${os.cdOstp}`;
       }
     }
+
+    const printAttendances = Array.isArray(osPrintData?.attendances) ? osPrintData.attendances : [];
+    const lastPrintAttendance = printAttendances[printAttendances.length - 1] || {};
+    const attendanceMeterCode = String(lastPrintAttendance.cdmedidor || '').toUpperCase();
+    if (lastPrintAttendance.medidor !== undefined && lastPrintAttendance.medidor !== null) {
+      if (attendanceMeterCode.includes('COR')) meters.color = lastPrintAttendance.medidor;
+      else if (attendanceMeterCode.includes('SCAN')) meters.scan = lastPrintAttendance.medidor;
+      else meters.mono = lastPrintAttendance.medidor;
+    }
+    const compactText = (value, fallback = '', maxLength = 280) => {
+      const text = String(value || '').replace(/\s+/g, ' ').trim();
+      if (!text) return fallback;
+      return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
+    };
+    const formatHistoryDate = (value) => {
+      if (!value) return '-';
+      const text = String(value);
+      const isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (isoMatch) return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+      const brMatch = text.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      if (brMatch) return `${brMatch[1]}/${brMatch[2]}/${brMatch[3]}`;
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? text.slice(0, 10) : parsed.toLocaleDateString('pt-BR');
+    };
+    const attendanceFollowUp = printAttendances
+      .map((item) => {
+        const note = item.observacao || item.acao || item.sintoma || '';
+        if (!note) return '';
+        const who = item.nmatendente || item.nmsuportet || '';
+        return `${formatHistoryDate(item.dtatendimento || item.datahora)}${who ? ` — ${who}` : ''}: ${note}`;
+      })
+      .filter(Boolean);
+    const followUpText = [os.technicalNotes, ...attendanceFollowUp].filter(Boolean).join('\n');
+    const historyTableBody = previousOrders.length > 0
+      ? previousOrders.map((item) => [
+          {
+            stack: [
+              { text: formatHistoryDate(item.createdAt), bold: true, fontSize: 7 },
+              { text: item.time || '', fontSize: 6.5, color: '#555' },
+              { text: `O.S. ${item.externalId}`, bold: true, fontSize: 7, margin: [0, 2, 0, 0] },
+            ],
+            alignment: 'center',
+          },
+          {
+            stack: [
+              {
+                text: [
+                  { text: `Tipo: ${compactText(item.osType, 'N/A', 50)}   `, bold: true },
+                  { text: `Equip.: ${compactText(item.equipmentExternalId, 'N/A', 30)}   ` },
+                  { text: `Abertura: ${compactText(item.attendant, 'N/A', 30)}   ` },
+                  { text: `Status: ${compactText(item.status, 'N/A', 40)}` },
+                ],
+                fontSize: 6.5,
+                margin: [0, 0, 0, 2],
+              },
+              {
+                columns: [
+                  { text: [{ text: 'Chamado: ', bold: true }, compactText(item.defect, 'Sem descrição informada.')], width: '*' },
+                  { text: [{ text: 'Fechamento: ', bold: true }, compactText(item.closing, 'Sem fechamento registrado.')], width: '*' },
+                  {
+                    text: [
+                      { text: 'Fechada por: ', bold: true }, compactText(item.closedBy, 'Não informado', 40),
+                      '\n',
+                      { text: 'Técnico: ', bold: true }, compactText(item.technician, 'Não informado', 40),
+                    ],
+                    width: 105,
+                  },
+                ],
+                columnGap: 7,
+                fontSize: 6.5,
+              },
+            ],
+          },
+        ])
+      : [[
+          {
+            text: 'Nenhum chamado anterior encontrado para este cliente no iLux.',
+            colSpan: 2,
+            alignment: 'center',
+            color: '#666',
+            fontSize: 7,
+          },
+          {},
+        ]];
 
     const docDefinition = {
       pageSize: 'A4',
@@ -667,11 +817,11 @@ async function generatePdf(req, res) {
                 {
                   stack: [
                     { text: `Defeito: ${os.defect || 'Nenhum defeito reportado'}`, style: 'boxContent' },
-                    { text: '\nSintoma:', style: 'label' },
-                    { text: '\nCausa:', style: 'label' },
-                    { text: '\nAção:', style: 'label' }
+                    { text: `\nSintoma: ${lastPrintAttendance.sintoma || ''}`, style: 'boxContent' },
+                    { text: `\nCausa: ${lastPrintAttendance.causa || ''}`, style: 'boxContent' },
+                    { text: `\nAção: ${lastPrintAttendance.acao || ''}`, style: 'boxContent' }
                   ],
-                  minHeight: 100,
+                  minHeight: previousOrders.length ? 72 : 100,
                   border: [true, false, true, true]
                 }
               ]
@@ -753,9 +903,9 @@ async function generatePdf(req, res) {
             body: [
               [
                 {
-                  text: os.technicalNotes || '\n\n\n\n\n\n\n\n',
+                  text: followUpText || '\n\n\n',
                   style: 'boxContent',
-                  minHeight: 120,
+                  minHeight: previousOrders.length ? 45 : 120,
                   border: [true, false, true, true]
                 }
               ]
@@ -771,9 +921,37 @@ async function generatePdf(req, res) {
           }
         },
 
+        // Previous iLux service calls
+        {
+          table: {
+            widths: ['*'],
+            body: [[{ text: 'HISTÓRICO DOS ÚLTIMOS CHAMADOS', style: 'sectionTitle', fillColor: '#E0E0E0' }]]
+          },
+          margin: [0, 8, 0, 0],
+          layout: 'noBorders'
+        },
+        {
+          table: {
+            headerRows: 0,
+            dontBreakRows: true,
+            widths: [62, '*'],
+            body: historyTableBody,
+          },
+          layout: {
+            hLineWidth: () => 0.7,
+            vLineWidth: () => 0.7,
+            hLineColor: () => '#777777',
+            vLineColor: () => '#777777',
+            paddingTop: () => 3,
+            paddingBottom: () => 3,
+            paddingLeft: () => 4,
+            paddingRight: () => 4,
+          },
+        },
+
         // Signatures Section
         {
-          margin: [0, 25, 0, 0],
+          margin: [0, 16, 0, 0],
           columns: [
             {
               stack: [
