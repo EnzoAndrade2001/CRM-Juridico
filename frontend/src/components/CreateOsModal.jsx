@@ -10,7 +10,6 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
   const [drafting, setDrafting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [printBlocked, setPrintBlocked] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState('');
   const [createdOrder, setCreatedOrder] = useState(null);
   const [requestKey] = useState(() => (
@@ -23,22 +22,8 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
     return `${BACKEND_URL}/api/os/${order.id}/pdf?token=${token}`;
   }
 
-  function preparePrintWindow() {
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.title = 'Gerando O.S...';
-      printWindow.document.body.innerHTML = '<p style="font-family: sans-serif; padding: 24px">Aguardando a confirmação da O.S. no iLux...</p>';
-    }
-    return printWindow;
-  }
-
-  function completeOrder(order, printWindow) {
+  function completeOrder(order) {
     setCreatedOrder(order);
-    if (printWindow) {
-      printWindow.location.replace(getPdfUrl(order));
-    } else {
-      setPrintBlocked(true);
-    }
     Promise.resolve(onCreated?.(order)).catch((callbackError) => {
       console.error('[CreateOsModal] erro após confirmar O.S.:', callbackError);
     });
@@ -99,7 +84,6 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
     if (!formData.equipmentId) return alert('Selecione um equipamento');
     if (!formData.cdOstp) return alert('Selecione o tipo de O.S.');
     if (!formData.defect) return alert('Informe o defeito reportado');
-    const printWindow = preparePrintWindow();
     setSaving(true);
     setError('');
     try {
@@ -112,9 +96,8 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
         cdOstp: formData.cdOstp,
         nmsuportet: formData.nmsuportet
       });
-      completeOrder(res.data, printWindow);
+      completeOrder(res.data);
     } catch (e) {
-      printWindow?.close();
       setPendingOrderId(e.response?.data?.serviceOrderId || '');
       setError(e.response?.data?.error || 'Não foi possível confirmar a abertura no iLux.');
     } finally {
@@ -124,19 +107,16 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
 
   async function checkStatus() {
     if (!pendingOrderId) return;
-    const printWindow = preparePrintWindow();
     setSaving(true);
     setError('');
     try {
       const { data } = await api.get(`/os/${pendingOrderId}/status`);
       if (!data.externalId) {
-        printWindow?.close();
         setError('A abertura ainda não foi confirmada pelo agente do iLux.');
         return;
       }
-      completeOrder(data, printWindow);
+      completeOrder(data);
     } catch (e) {
-      printWindow?.close();
       setError(e.response?.data?.error || 'Não foi possível consultar a abertura.');
     } finally {
       setSaving(false);
@@ -169,11 +149,6 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
             <p style={{ color: 'var(--text-muted)', margin: '0 0 20px' }}>
               O número acima foi confirmado diretamente pelo banco do iLux.
             </p>
-            {printBlocked ? (
-              <p style={{ color: '#f59e0b', margin: '0 0 12px', fontSize: '0.85rem' }}>
-                O navegador bloqueou a nova aba. Use o botão abaixo para imprimir.
-              </p>
-            ) : null}
             <div style={s.btnGroup}>
               <a
                 href={getPdfUrl(createdOrder)}

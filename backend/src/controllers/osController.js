@@ -661,6 +661,244 @@ async function generatePdf(req, res) {
           {},
         ]];
 
+    const currentPrintOrder = osPrintData?.serviceOrder || {};
+    const firstPrintAttendance = printAttendances[0] || {};
+    const timeText = (value) => {
+      if (!value) return '';
+      const match = String(value).match(/(\d{2}:\d{2})/);
+      return match ? match[1] : String(value);
+    };
+    const visitDate = formatHistoryDate(
+      lastPrintAttendance.dtatendimento || lastPrintAttendance.datahora || ''
+    );
+    const visitStart = timeText(firstPrintAttendance.hratendimento || firstPrintAttendance.datahora);
+    const visitEnd = timeText(lastPrintAttendance.hratendimentofin || lastPrintAttendance.hratendimento1);
+    const clientExternalId = currentPrintOrder.cdcliente || os.contact.externalId || crmCustomer?.externalId || 'N/A';
+    const equipmentExternalId = currentPrintOrder.cdequipamento || os.equipment.externalId || 'N/A';
+    const department = currentPrintOrder.departamento
+      || crmEquipment?.raw?.departamento
+      || crmEquipment?.raw?.DEPARTAMENTO
+      || os.equipment.sector
+      || 'N/A';
+    const installLocation = currentPrintOrder.localinstal
+      || crmEquipment?.installLocation
+      || crmEquipment?.raw?.localinstal
+      || crmEquipment?.raw?.LOCALINSTAL
+      || os.equipment.sector
+      || 'N/A';
+    const checkbox = (checked, label) => `${checked ? '[X]' : '[ ]'} ${label}`;
+    const isAttendance = ['A', 'ATENDIMENTO'].includes(String(currentPrintOrder.tporcatend || 'A').toUpperCase());
+    const isWarranty = ['G', 'GARANTIA'].includes(String(currentPrintOrder.tpchamado || '').toUpperCase());
+    const isBudget = ['2', 'O', 'ORCAMENTO'].includes(String(currentPrintOrder.tipo_os || '').toUpperCase());
+
+    let companyLogoContent = { text: 'LCD', bold: true, fontSize: 23, color: '#D71920', alignment: 'center', width: 58 };
+    try {
+      if (os.tenant.logoUrl) {
+        const { uploadsPath } = require('../utils/uploads');
+        const logoFilename = os.tenant.logoUrl.split('/').pop();
+        const logoPath = path.resolve(uploadsPath, logoFilename);
+        if (['.png', '.jpg', '.jpeg'].includes(path.extname(logoFilename).toLowerCase()) && fs.existsSync(logoPath)) {
+          companyLogoContent = { image: logoPath, width: 55, alignment: 'center' };
+        }
+      }
+    } catch (logoError) {
+      console.warn('[generatePdf] não foi possível carregar a logomarca:', logoError.message);
+    }
+
+    const fullIluxContent = [
+      {
+        table: {
+          widths: [265, 92, '*'],
+          body: [[
+            {
+              columns: [
+                companyLogoContent,
+                {
+                  width: '*',
+                  stack: [
+                    { text: 'LCD DIGITAL OUTSOURCING DE IMPRESSÃO', bold: true, fontSize: 9, alignment: 'center' },
+                    { text: company.name, bold: true, fontSize: 8, alignment: 'center', margin: [0, 1, 0, 2] },
+                    { text: `CNPJ: ${company.cnpj}   Insc.Estadual: ${company.ie}`, fontSize: 6.5, alignment: 'center' },
+                    { text: `Endereço: ${company.address}`, fontSize: 6.5, alignment: 'center' },
+                    { text: `Cidade: ${company.city} (${company.state})   Bairro: ${company.bairro}`, fontSize: 6.5, alignment: 'center' },
+                    { text: `Fone: ${company.phone}   CEP: ${company.cep}`, fontSize: 6.5, alignment: 'center' },
+                  ],
+                },
+              ],
+              margin: [2, 4, 2, 4],
+            },
+            { text: 'ORDEM DE SERVIÇO', fontSize: 8, alignment: 'center', margin: [0, 27, 0, 0] },
+            {
+              stack: [
+                { text: `Número: ${os.externalId || os.id.slice(-6).toUpperCase()}   Data: ${dataOS}`, bold: true, fontSize: 6.5 },
+                { text: `Hora: ${horaOS}`, bold: true, fontSize: 6.5 },
+                { text: `Técnico abertura: ${attendantName.toUpperCase()}`, bold: true, fontSize: 6.5 },
+                { text: `Técnico atendimento: ${(os.nmsuportet || '').toUpperCase()}`, bold: true, fontSize: 6.5 },
+                { text: `Atendimento Prev: ${formatHistoryDate(currentPrintOrder.dtpreventrega)} ${timeText(currentPrintOrder.hrpreventrega)}   Priorid. ${currentPrintOrder.prioridade || ''}`, bold: true, fontSize: 6.3 },
+                { text: `Tipo O.S.: ${displayOsType}`, bold: true, fontSize: 6.3 },
+                { text: `${checkbox(isAttendance, 'Atendimento')}   ${checkbox(isWarranty, 'Garantia')}\n${checkbox(isBudget, 'Orçamento')}`, fontSize: 6.3 },
+              ],
+              margin: [3, 3, 2, 2],
+            },
+          ]],
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => '#222',
+          vLineColor: () => '#222',
+          paddingLeft: () => 2,
+          paddingRight: () => 2,
+          paddingTop: () => 1,
+          paddingBottom: () => 1,
+        },
+      },
+      {
+        table: { widths: ['*'], body: [[{ text: 'Cliente                                      Equipamento', bold: true, fontSize: 7, fillColor: '#D9D9D9' }]] },
+        margin: [0, 4, 0, 0],
+        layout: 'noBorders',
+      },
+      {
+        table: {
+          widths: ['54%', '46%'],
+          body: [[
+            {
+              stack: [
+                { text: [{ text: 'Código iLux: ', bold: true }, String(clientExternalId), { text: '   Cliente: ', bold: true }, crmCustomer?.name || clientData.name || 'N/A'] },
+                { text: [{ text: 'Endereço: ', bold: true }, crmCustomer?.address || clientData.address || 'N/A'] },
+                { text: [{ text: 'Bairro: ', bold: true }, crmCustomer?.neighborhood || 'N/A', { text: '   CEP: ', bold: true }, crmCustomer?.zipCode || clientData.zipCode || 'N/A'] },
+                { text: [{ text: 'Cidade: ', bold: true }, crmCustomer?.city || clientData.city || 'N/A', { text: '   U.F.: ', bold: true }, crmCustomer?.state || clientData.state || 'N/A'] },
+                { text: [{ text: 'CNPJ/CPF: ', bold: true }, crmCustomer?.cpfCnpj || clientData.cpfCnpj || 'N/A'] },
+                { text: [{ text: 'Contato: ', bold: true }, crmCustomer?.contactName || solicitante || 'N/A', { text: '   Fone: ', bold: true }, crmCustomer?.phone || os.contact.phone || 'N/A'] },
+              ],
+              fontSize: 6.5,
+            },
+            {
+              stack: [
+                { text: [{ text: 'Equipamento: ', bold: true }, String(equipmentExternalId)] },
+                { text: [{ text: 'Modelo: ', bold: true }, os.equipment.model || 'N/A'] },
+                { text: [{ text: 'Série: ', bold: true }, os.equipment.serialNumber || 'N/A'] },
+                { text: [{ text: 'Tipo de Contrato: ', bold: true }, crmEquipment?.contractExternalId || 'N/A', { text: '   Território: ', bold: true }, currentPrintOrder.cdterritorio || 'N/A'] },
+                { text: [{ text: 'Departamento: ', bold: true }, String(department)] },
+                { text: [{ text: 'Localização: ', bold: true }, { text: String(installLocation), bold: true, fontSize: 9 }] },
+              ],
+              fontSize: 6.5,
+            },
+          ]],
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => '#222',
+          vLineColor: () => '#222',
+          paddingLeft: () => 3,
+          paddingRight: () => 3,
+          paddingTop: () => 2,
+          paddingBottom: () => 2,
+        },
+      },
+      {
+        table: { widths: ['*'], body: [[{ text: 'Descrição/Visita', bold: true, color: '#FFF', fillColor: '#D62828', fontSize: 7 }]] },
+        layout: 'noBorders',
+      },
+      {
+        table: {
+          widths: ['*'],
+          body: [[{
+            stack: [
+              { text: `Data Visita: ${visitDate === '-' ? '' : visitDate}    Hora Inicial: ${visitStart}    Hora Final: ${visitEnd}`, bold: true, fontSize: 6.5 },
+              { text: `Medidor 01: ${attendanceMeterCode}    Contador Medidor 01: ${lastPrintAttendance.medidor ?? ''}`, bold: true, fontSize: 6.5 },
+              { text: [{ text: 'Defeito:   ', bold: true, fontSize: 7 }, { text: os.defect || '', fontSize: 11 }], margin: [0, 9, 0, 4] },
+              { text: [{ text: 'Sintoma:   ', bold: true }, lastPrintAttendance.sintoma || ''], fontSize: 7, margin: [0, 2, 0, 2] },
+              { text: [{ text: 'Causa:     ', bold: true }, lastPrintAttendance.causa || ''], fontSize: 7, margin: [0, 2, 0, 2] },
+              { text: [{ text: 'Ação:      ', bold: true }, lastPrintAttendance.acao || ''], fontSize: 7, margin: [0, 2, 0, 4] },
+            ],
+            minHeight: 105,
+          }]],
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 2,
+          hLineColor: () => '#222',
+          vLineColor: () => '#D62828',
+          paddingLeft: () => 3,
+          paddingRight: () => 3,
+          paddingTop: () => 3,
+          paddingBottom: () => 3,
+        },
+      },
+      {
+        table: { widths: ['*'], body: [[{ text: 'Follow-up/Ação', bold: true, color: '#FFF', fillColor: '#D62828', fontSize: 7 }]] },
+        layout: 'noBorders',
+      },
+      {
+        table: { widths: ['*'], body: [[{ text: followUpText || '\n\n', fontSize: 7, minHeight: 36 }]] },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 2,
+          hLineColor: () => '#222',
+          vLineColor: () => '#D62828',
+          paddingLeft: () => 3,
+          paddingRight: () => 3,
+          paddingTop: () => 3,
+          paddingBottom: () => 3,
+        },
+      },
+      {
+        table: { widths: ['*'], body: [[{ text: 'HISTÓRICO DOS ÚLTIMOS CHAMADOS', bold: true, fontSize: 7, fillColor: '#D9D9D9' }]] },
+        margin: [0, 4, 0, 0],
+        layout: 'noBorders',
+      },
+      {
+        table: { widths: [62, '*'], dontBreakRows: true, body: historyTableBody },
+        layout: {
+          hLineWidth: () => 0.8,
+          vLineWidth: () => 0.8,
+          hLineColor: () => '#555',
+          vLineColor: () => '#555',
+          paddingLeft: () => 3,
+          paddingRight: () => 3,
+          paddingTop: () => 2,
+          paddingBottom: () => 2,
+        },
+      },
+      {
+        table: { widths: ['*'], body: [[{ text: 'Aceite da O.S.', bold: true, fontSize: 7, fillColor: '#D9D9D9' }]] },
+        margin: [0, 8, 0, 0],
+        layout: 'noBorders',
+      },
+      {
+        table: {
+          widths: ['68%', '32%'],
+          body: [[
+            {
+              stack: [
+                { text: 'Favor efetuar o aceite da implantação/retirada dos serviços (se mais relacionado(s))', bold: true, fontSize: 7 },
+                { text: 'Local: ________________________________     Data: ____ / ____ / ______', bold: true, fontSize: 7, margin: [0, 12, 0, 0] },
+              ],
+              minHeight: 42,
+            },
+            {
+              stack: [
+                { text: '\n\n________________________________', alignment: 'center', fontSize: 7 },
+                { text: 'Assinatura/Carimbo Cliente', alignment: 'center', fontSize: 6.5 },
+              ],
+            },
+          ]],
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => '#222',
+          vLineColor: () => '#222',
+          paddingLeft: () => 3,
+          paddingRight: () => 3,
+          paddingTop: () => 2,
+          paddingBottom: () => 2,
+        },
+      },
+    ];
+
     const docDefinition = {
       pageSize: 'A4',
       pageMargins: [30, 20, 30, 25],
@@ -993,7 +1231,7 @@ async function generatePdf(req, res) {
       defaultStyle: { font: 'Roboto' }
     };
 
-    const doc = pdfmake.createPdf(docDefinition);
+    const doc = pdfmake.createPdf({ ...docDefinition, content: fullIluxContent });
     const stream = await doc.getStream();
     
     res.setHeader('Content-Type', 'application/pdf');

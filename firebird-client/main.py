@@ -776,7 +776,9 @@ class FirebirdRepository:
                 """
                 select SEQOS, CDCLIENTE, CDEQUIPAMENTO, DTINCLUSAO, HRINCLUSAO,
                        OBSDEFEITOCLI, OBSDEFEITOATS, NMSUPORTEA, NMSUPORTET,
-                       NMSUPORTEL, USUARIO_FECHAMENTO, STATUS
+                       NMSUPORTEL, USUARIO_FECHAMENTO, STATUS, PRIORIDADE,
+                       DTPREVENTREGA, HRPREVENTREGA, TPORCATEND, TPCHAMADO,
+                       TIPO_OS, CDTERRITORIO, DEPARTAMENTO, LOCALINSTAL
                   from IXLOS
                  where SEQOS = ?
                 """,
