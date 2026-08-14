@@ -880,9 +880,11 @@ async function generatePdf(req, res) {
       })),
     });
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Content-Disposition', `inline; filename="OS_${os.externalId || os.id.substring(os.id.length - 6)}.html"`);
-    return res.send(officialHtml);
+    if (typeof res.capturePdf !== 'function') {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Content-Disposition', `inline; filename="OS_${os.externalId || os.id.substring(os.id.length - 6)}.html"`);
+      return res.send(officialHtml);
+    }
 
     let companyLogoContent = { text: 'LCD', bold: true, fontSize: 23, color: '#D71920', alignment: 'center', width: 58 };
     try {

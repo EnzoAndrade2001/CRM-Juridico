@@ -729,7 +729,7 @@ function OsTab({ serviceOrders, onRefresh }) {
                 </div>
                 {pick(order, 'resolution', 'closingNotes', 'solution', 'fechamento', 'closing') ? <div style={s.resolution}><strong>Fechamento:</strong> {pick(order, 'resolution', 'closingNotes', 'solution', 'fechamento', 'closing')}</div> : null}
                 <div style={s.osActions}>
-                  <button type="button" style={s.osActionBtn} disabled={!identifier} onClick={() => openPdf(order)}><FileText size={14} /> Abrir PDF / Reimprimir</button>
+                  <button type="button" style={s.osActionBtn} disabled={!identifier} onClick={() => openPdf(order)}><FileText size={14} /> Abrir O.S. / Reimprimir</button>
                   <button type="button" style={s.osActionPrimary} disabled={!identifier || Boolean(sendingId)} onClick={() => sendToManager(order)}>
                     {sending ? <RefreshCw size={14} /> : <Send size={14} />} {sending ? 'Enviando...' : 'Enviar ao gestor'}
                   </button>

@@ -173,11 +173,12 @@ async function sendServiceOrderManagerCopy(tenantId, serviceOrderId, { force = f
     console.log(`[serviceOrderManagerCopy] Cópia da O.S. ${order.externalId} enviada para ${sentTo} pela instância ${instance.instanceName}.`);
     return { sent: true, phone: sentTo, filename };
   } catch (error) {
+    const detail = errorDetail(error).slice(0, 2000);
     await prisma.serviceOrder.updateMany({
       where: { id: serviceOrderId, tenantId, managerCopySentAt: claimedAt },
-      data: { managerCopySentAt: null, managerCopyLastError: errorDetail(error).slice(0, 2000) },
+      data: { managerCopySentAt: null, managerCopyLastError: detail },
     });
-    throw error;
+    throw new Error(detail);
   }
 }
 
