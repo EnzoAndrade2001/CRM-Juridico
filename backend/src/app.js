@@ -35,6 +35,7 @@ const revenueRoutes = require('./routes/revenue');
 const crmRoutes = require('./routes/crm');
 const integrationRoutes = require('./routes/integrations');
 const firebirdSyncRoutes = require('./routes/firebirdSync');
+const legalRoutes = require('./routes/legal');
 
 const app = express();
 app.use('/api/report', require('./routes/report'));
@@ -109,6 +110,7 @@ app.use('/api/revenue', revenueRoutes);
 app.use('/api/crm', crmRoutes);
 app.use('/api/integrations/firebird', firebirdSyncRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/legal', legalRoutes);
 
 const jwt = require('jsonwebtoken');
 
