@@ -15,6 +15,24 @@ Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
+## Clientes do escritório
+
+O CRM jurídico reutiliza a entidade central de contatos do sistema. Um cliente pode ser cadastrado antes de possuir conversa ou conexão no WhatsApp.
+
+### `GET /api/contacts`
+
+Lista os clientes do escritório autenticado. O parâmetro opcional `q` pesquisa nome, documento e telefone.
+
+### `POST /api/contacts`
+
+Cria um cliente. `name` e `phone` são os campos mínimos da interface jurídica. `email`, `cpfCnpj`, `city`, `state` e `notes` são opcionais.
+
+Quando não existe uma instância WhatsApp, `instanceId` permanece nulo. A conexão somente será exigida posteriormente para abrir ou enviar uma conversa.
+
+### `PATCH /api/contacts/:id`
+
+Atualiza os dados cadastrais do cliente, sempre validando o `tenantId` autenticado.
+
 ## Configuração do domínio
 
 ### `GET /api/legal/config`

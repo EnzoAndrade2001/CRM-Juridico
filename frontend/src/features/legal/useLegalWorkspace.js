@@ -5,27 +5,57 @@ import {
   createLegalMatter,
   createLegalTask,
   getContacts,
+  getLegalLead,
   getLegalLeads,
+  getLegalMatter,
   getLegalMatters,
+  getLegalSummary,
   getLegalTasks,
+  updateContact,
   updateLegalLead,
   updateLegalMatter,
   updateLegalTask,
 } from '../../services/api';
-import {
-  createDemoWorkspace,
-  makeLocalId,
-  readDemoWorkspace,
-  writeDemoWorkspace,
-} from './legalWorkspace';
+import { createDemoWorkspace, makeLocalId, readDemoWorkspace, writeDemoWorkspace } from './legalWorkspace';
 
 function apiErrorMessage(error) {
   return error?.response?.data?.error || error?.message || 'Não foi possível concluir a operação.';
 }
 
+function activity(entityType, entityId, type, payload = {}) {
+  return {
+    id: makeLocalId('activity'), entityType, entityId, type, payload,
+    actor: { name: 'Eduarda Andrade' }, createdAt: new Date().toISOString(),
+  };
+}
+
+function buildDemoSummary(workspace) {
+  const leadsByStage = workspace.leads.reduce((result, lead) => ({
+    ...result, [lead.stage]: (result[lead.stage] || 0) + 1,
+  }), {});
+  const mattersByStatus = workspace.matters.reduce((result, matter) => ({
+    ...result, [matter.status]: (result[matter.status] || 0) + 1,
+  }), {});
+  const now = Date.now();
+  const openTasks = workspace.tasks.filter((task) => ['PENDENTE', 'EM_ANDAMENTO'].includes(task.status));
+  return {
+    leadsByStage,
+    mattersByStatus,
+    tasks: {
+      open: openTasks.length,
+      overdue: openTasks.filter((task) => task.dueAt && new Date(task.dueAt).getTime() < now).length,
+    },
+    recentActivities: [...(workspace.activities || [])]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10),
+  };
+}
+
 export default function useLegalWorkspace({ demoMode }) {
-  const [workspace, setWorkspace] = useState(() => (demoMode ? readDemoWorkspace() : { leads: [], matters: [], tasks: [] }));
-  const [contacts, setContacts] = useState([]);
+  const [workspace, setWorkspace] = useState(() => (demoMode ? readDemoWorkspace() : {
+    leads: [], contacts: [], matters: [], tasks: [], activities: [],
+  }));
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(!demoMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -43,18 +73,21 @@ export default function useLegalWorkspace({ demoMode }) {
     setLoading(true);
     setError('');
     try {
-      const [leadsResponse, mattersResponse, tasksResponse, contactsResponse] = await Promise.all([
+      const [leadsResponse, mattersResponse, tasksResponse, contactsResponse, summaryResponse] = await Promise.all([
         getLegalLeads({ limit: 100 }),
         getLegalMatters({ limit: 100 }),
         getLegalTasks({ limit: 100 }),
         getContacts('', {}),
+        getLegalSummary(),
       ]);
       setWorkspace({
         leads: leadsResponse.data.items,
+        contacts: contactsResponse.data,
         matters: mattersResponse.data.items,
         tasks: tasksResponse.data.items,
+        activities: summaryResponse.data.recentActivities || [],
       });
-      setContacts(contactsResponse.data);
+      setSummary(summaryResponse.data);
     } catch (requestError) {
       setError(apiErrorMessage(requestError));
     } finally {
@@ -80,59 +113,83 @@ export default function useLegalWorkspace({ demoMode }) {
     }
   }, []);
 
+  const addClient = useCallback((form) => runMutation(async () => {
+    if (demoMode) {
+      const contact = {
+        id: makeLocalId('contact'), name: form.name, phone: form.phone, email: form.email || null,
+        cpfCnpj: form.cpfCnpj || null, city: form.city || null, state: form.state || null,
+        notes: form.notes || null, instanceId: null, createdAt: new Date().toISOString(),
+      };
+      commitDemo((current) => ({ ...current, contacts: [contact, ...(current.contacts || [])] }));
+      return contact;
+    }
+    const response = await createContact(form);
+    await refresh();
+    return response.data;
+  }), [commitDemo, demoMode, refresh, runMutation]);
+
+  const editClient = useCallback((id, patch) => runMutation(async () => {
+    if (demoMode) {
+      commitDemo((current) => ({
+        ...current,
+        contacts: current.contacts.map((contact) => contact.id === id ? { ...contact, ...patch } : contact),
+        leads: current.leads.map((lead) => lead.contactId === id ? { ...lead, contact: { ...lead.contact, ...patch } } : lead),
+        matters: current.matters.map((matter) => matter.contactId === id ? { ...matter, contact: { ...matter.contact, ...patch } } : matter),
+      }));
+      return;
+    }
+    await updateContact(id, patch);
+    await refresh();
+  }), [commitDemo, demoMode, refresh, runMutation]);
+
   const addLead = useCallback((form) => runMutation(async () => {
     if (demoMode) {
-      const contactId = makeLocalId('contact');
+      let contact = workspace.contacts.find((item) => item.id === form.contactId);
+      if (!contact) {
+        contact = {
+          id: makeLocalId('contact'), name: form.clientName, phone: form.phone, email: form.email || null,
+          createdAt: new Date().toISOString(), instanceId: null,
+        };
+      }
       const now = new Date().toISOString();
       const lead = {
-        id: makeLocalId('lead'),
-        contactId,
-        contact: { id: contactId, name: form.clientName, phone: form.phone, email: form.email || null },
-        title: form.title,
-        area: form.area,
-        stage: form.stage || 'NOVO_CONTATO',
-        urgency: form.urgency || 'MEDIA',
-        summary: form.summary || null,
-        source: 'manual',
-        nextActionAt: form.nextActionAt || null,
-        createdAt: now,
-        updatedAt: now,
-        _count: { tasks: 0 },
+        id: makeLocalId('lead'), contactId: contact.id, contact, title: form.title, area: form.area,
+        stage: form.stage || 'NOVO_CONTATO', urgency: form.urgency || 'MEDIA', summary: form.summary || null,
+        source: 'manual', nextActionAt: form.nextActionAt || null, createdAt: now, updatedAt: now, _count: { tasks: 0 },
       };
-      commitDemo((current) => ({ ...current, leads: [lead, ...current.leads] }));
+      commitDemo((current) => ({
+        ...current,
+        contacts: current.contacts.some((item) => item.id === contact.id) ? current.contacts : [contact, ...current.contacts],
+        leads: [lead, ...current.leads],
+        activities: [activity('lead', lead.id, 'lead.created', { stage: lead.stage, area: lead.area }), ...(current.activities || [])],
+      }));
       return lead;
     }
-
     let contactId = form.contactId;
     if (!contactId) {
       const contactResponse = await createContact({ name: form.clientName, phone: form.phone, email: form.email || null });
       contactId = contactResponse.data.id;
     }
     const response = await createLegalLead({
-      contactId,
-      title: form.title,
-      area: form.area,
-      stage: form.stage,
-      urgency: form.urgency,
-      summary: form.summary || null,
-      source: 'manual',
-      nextActionAt: form.nextActionAt || null,
+      contactId, title: form.title, area: form.area, stage: form.stage, urgency: form.urgency,
+      summary: form.summary || null, source: 'manual', nextActionAt: form.nextActionAt || null,
     });
     await refresh();
     return response.data;
-  }), [commitDemo, demoMode, refresh, runMutation]);
+  }), [commitDemo, demoMode, refresh, runMutation, workspace.contacts]);
 
   const editLead = useCallback((id, patch) => runMutation(async () => {
     if (demoMode) {
       let updated;
-      commitDemo((current) => ({
-        ...current,
-        leads: current.leads.map((lead) => {
-          if (lead.id !== id) return lead;
-          updated = { ...lead, ...patch, updatedAt: new Date().toISOString() };
-          return updated;
-        }),
-      }));
+      commitDemo((current) => {
+        const existing = current.leads.find((lead) => lead.id === id);
+        updated = { ...existing, ...patch, updatedAt: new Date().toISOString() };
+        return {
+          ...current,
+          leads: current.leads.map((lead) => lead.id === id ? updated : lead),
+          activities: [activity('lead', id, 'lead.updated', { fromStage: existing.stage, toStage: updated.stage }), ...(current.activities || [])],
+        };
+      });
       return updated;
     }
     const response = await updateLegalLead(id, patch);
@@ -146,19 +203,10 @@ export default function useLegalWorkspace({ demoMode }) {
     if (demoMode) {
       const now = new Date().toISOString();
       const matter = {
-        id: makeLocalId('matter'),
-        leadId: lead.id,
-        contactId: lead.contactId,
-        contact: lead.contact,
-        lead: { id: lead.id, title: lead.title, stage: 'CONTRATADO', urgency: lead.urgency },
-        title: lead.title,
-        area: lead.area,
-        status: 'TRIAGEM',
-        description: lead.summary,
-        openedAt: now,
-        createdAt: now,
-        updatedAt: now,
-        _count: { tasks: 0 },
+        id: makeLocalId('matter'), leadId: lead.id, contactId: lead.contactId, contact: lead.contact,
+        lead: { id: lead.id, title: lead.title, stage: 'CONTRATADO', urgency: lead.urgency }, title: lead.title,
+        area: lead.area, status: 'TRIAGEM', description: lead.summary, openedAt: now, createdAt: now,
+        updatedAt: now, _count: { tasks: 0 },
       };
       commitDemo((current) => ({
         ...current,
@@ -166,15 +214,16 @@ export default function useLegalWorkspace({ demoMode }) {
         leads: current.leads.map((item) => item.id === lead.id
           ? { ...item, stage: 'CONTRATADO', matter: { id: matter.id, status: matter.status }, updatedAt: now }
           : item),
+        activities: [
+          activity('matter', matter.id, 'matter.created', { status: matter.status, area: matter.area }),
+          activity('lead', lead.id, 'lead.updated', { fromStage: lead.stage, toStage: 'CONTRATADO' }),
+          ...(current.activities || []),
+        ],
       }));
       return matter;
     }
     const response = await createLegalMatter({
-      leadId: lead.id,
-      title: lead.title,
-      area: lead.area,
-      status: 'TRIAGEM',
-      description: lead.summary || null,
+      leadId: lead.id, title: lead.title, area: lead.area, status: 'TRIAGEM', description: lead.summary || null,
     });
     await updateLegalLead(lead.id, { stage: 'CONTRATADO' });
     await refresh();
@@ -183,12 +232,15 @@ export default function useLegalWorkspace({ demoMode }) {
 
   const editMatter = useCallback((id, patch) => runMutation(async () => {
     if (demoMode) {
-      commitDemo((current) => ({
-        ...current,
-        matters: current.matters.map((matter) => matter.id === id
-          ? { ...matter, ...patch, updatedAt: new Date().toISOString() }
-          : matter),
-      }));
+      commitDemo((current) => {
+        const existing = current.matters.find((matter) => matter.id === id);
+        const updated = { ...existing, ...patch, updatedAt: new Date().toISOString() };
+        return {
+          ...current,
+          matters: current.matters.map((matter) => matter.id === id ? updated : matter),
+          activities: [activity('matter', id, 'matter.updated', { fromStatus: existing.status, toStatus: updated.status }), ...(current.activities || [])],
+        };
+      });
       return;
     }
     await updateLegalMatter(id, patch);
@@ -201,15 +253,16 @@ export default function useLegalWorkspace({ demoMode }) {
       const lead = workspace.leads.find((item) => item.id === form.leadId);
       const matter = workspace.matters.find((item) => item.id === form.matterId);
       const task = {
-        id: makeLocalId('task'),
-        ...form,
-        status: 'PENDENTE',
+        id: makeLocalId('task'), ...form, status: 'PENDENTE',
         lead: lead ? { id: lead.id, title: lead.title, stage: lead.stage } : null,
         matter: matter ? { id: matter.id, title: matter.title, status: matter.status } : null,
-        createdAt: now,
-        updatedAt: now,
+        createdAt: now, updatedAt: now,
       };
-      commitDemo((current) => ({ ...current, tasks: [task, ...current.tasks] }));
+      commitDemo((current) => ({
+        ...current,
+        tasks: [task, ...current.tasks],
+        activities: [activity('task', task.id, 'task.created', { type: task.type, priority: task.priority }), ...(current.activities || [])],
+      }));
       return task;
     }
     const response = await createLegalTask(form);
@@ -224,12 +277,39 @@ export default function useLegalWorkspace({ demoMode }) {
         tasks: current.tasks.map((task) => task.id === id
           ? { ...task, ...patch, completedAt: patch.status === 'CONCLUIDA' ? new Date().toISOString() : task.completedAt }
           : task),
+        activities: [activity('task', id, 'task.updated', { toStatus: patch.status }), ...(current.activities || [])],
       }));
       return;
     }
     await updateLegalTask(id, patch);
     await refresh();
   }), [commitDemo, demoMode, refresh, runMutation]);
+
+  const loadLeadDetail = useCallback(async (id) => {
+    if (demoMode) {
+      const lead = workspace.leads.find((item) => item.id === id);
+      return {
+        ...lead,
+        tasks: workspace.tasks.filter((task) => task.leadId === id),
+        activities: workspace.activities.filter((item) => item.entityType === 'lead' && item.entityId === id),
+      };
+    }
+    const response = await getLegalLead(id);
+    return response.data;
+  }, [demoMode, workspace.activities, workspace.leads, workspace.tasks]);
+
+  const loadMatterDetail = useCallback(async (id) => {
+    if (demoMode) {
+      const matter = workspace.matters.find((item) => item.id === id);
+      return {
+        ...matter,
+        tasks: workspace.tasks.filter((task) => task.matterId === id),
+        activities: workspace.activities.filter((item) => item.entityType === 'matter' && item.entityId === id),
+      };
+    }
+    const response = await getLegalMatter(id);
+    return response.data;
+  }, [demoMode, workspace.activities, workspace.matters, workspace.tasks]);
 
   const resetDemo = useCallback(() => {
     if (!demoMode) return;
@@ -239,25 +319,16 @@ export default function useLegalWorkspace({ demoMode }) {
     setError('');
   }, [demoMode]);
 
-  const values = useMemo(() => ({
-    ...workspace,
-    contacts,
-    loading,
-    saving,
-    error,
-    demoMode,
-  }), [contacts, demoMode, error, loading, saving, workspace]);
+  const effectiveSummary = useMemo(
+    () => (demoMode ? buildDemoSummary(workspace) : summary || buildDemoSummary(workspace)),
+    [demoMode, summary, workspace],
+  );
 
   return {
-    ...values,
-    addLead,
-    editLead,
-    addMatter,
-    editMatter,
-    addTask,
-    editTask,
-    refresh,
-    resetDemo,
+    ...workspace,
+    summary: effectiveSummary,
+    loading, saving, error, demoMode,
+    addClient, editClient, addLead, editLead, addMatter, editMatter, addTask, editTask,
+    loadLeadDetail, loadMatterDetail, refresh, resetDemo,
   };
 }
-

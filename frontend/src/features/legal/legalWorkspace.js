@@ -70,10 +70,11 @@ export function createDemoWorkspace() {
     ['lead-ana', 'Ana Beatriz Lima', '5511966229182', 'Revisão de contrato', 'CIVEL', 'ANALISE_HUMANA', 'BAIXA', 'Contrato particular enviado para revisão.'],
     ['lead-beatriz', 'Beatriz Souza', '5511955412218', 'Acordo trabalhista', 'TRABALHISTA', 'PROPOSTA_ENVIADA', 'MEDIA', 'Proposta de honorários enviada.'],
     ['lead-andre', 'André Ribeiro', '5511944819021', 'Cobrança indevida', 'CONSUMIDOR', 'NOVO_CONTATO', 'MEDIA', 'Novo contato recebido pelo WhatsApp.'],
+    ['lead-marcelo', 'Marcelo Nunes', '5511933377881', 'Ação indenizatória', 'CIVEL', 'CONTRATADO', 'ALTA', 'Contrato assinado e documentação inicial conferida.'],
   ].map(([id, name, phone, title, area, stage, urgency, summary], index) => ({
     id,
     contactId: `contact-${id}`,
-    contact: { id: `contact-${id}`, name, phone },
+    contact: { id: `contact-${id}`, name, phone, email: `${name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '.')}@email.com` },
     title,
     area,
     stage,
@@ -86,19 +87,76 @@ export function createDemoWorkspace() {
     _count: { tasks: index % 3 },
   }));
 
-  return {
-    leads,
-    matters: [],
-    tasks: [],
-  };
+  const contacts = leads.map((lead, index) => ({
+    ...lead.contact,
+    createdAt: lead.createdAt,
+    city: index % 2 ? 'Campinas' : 'São Paulo',
+    state: 'SP',
+    cpfCnpj: null,
+    instanceId: index < 5 ? 'demo-whatsapp' : null,
+  }));
+
+  const contractedLead = leads.find((lead) => lead.id === 'lead-marcelo');
+  const matters = [{
+    id: 'matter-marcelo',
+    leadId: contractedLead.id,
+    contactId: contractedLead.contactId,
+    contact: contractedLead.contact,
+    lead: { id: contractedLead.id, title: contractedLead.title, stage: contractedLead.stage, urgency: contractedLead.urgency },
+    title: contractedLead.title,
+    area: contractedLead.area,
+    status: 'ATIVO',
+    description: contractedLead.summary,
+    caseNumber: '1002458-31.2026.8.26.0100',
+    court: '3ª Vara Cível',
+    opposingParty: 'Empresa Exemplo Ltda.',
+    openedAt: isoOffset(-72),
+    createdAt: isoOffset(-72),
+    updatedAt: isoOffset(-5),
+    _count: { tasks: 2 },
+  }];
+
+  const tasks = [
+    {
+      id: 'task-documentos', leadId: contractedLead.id, matterId: 'matter-marcelo', title: 'Revisar documentos iniciais',
+      description: 'Conferir contrato e comprovantes enviados.', type: 'DOCUMENTO', priority: 'ALTA', status: 'PENDENTE',
+      dueAt: isoOffset(20), createdAt: isoOffset(-20), updatedAt: isoOffset(-20),
+      lead: { id: contractedLead.id, title: contractedLead.title, stage: contractedLead.stage },
+      matter: { id: 'matter-marcelo', title: contractedLead.title, status: 'ATIVO' },
+    },
+    {
+      id: 'task-retorno', leadId: contractedLead.id, matterId: 'matter-marcelo', title: 'Retornar ao cliente',
+      description: 'Apresentar próximos passos após a análise.', type: 'RETORNO', priority: 'MEDIA', status: 'EM_ANDAMENTO',
+      dueAt: isoOffset(30), createdAt: isoOffset(-12), updatedAt: isoOffset(-4),
+      lead: { id: contractedLead.id, title: contractedLead.title, stage: contractedLead.stage },
+      matter: { id: 'matter-marcelo', title: contractedLead.title, status: 'ATIVO' },
+    },
+  ];
+
+  const activities = [
+    { id: 'activity-matter', entityType: 'matter', entityId: 'matter-marcelo', type: 'matter.created', payload: { status: 'ATIVO', area: 'CIVEL' }, actor: { name: 'Eduarda Andrade' }, createdAt: isoOffset(-72) },
+    { id: 'activity-contracted', entityType: 'lead', entityId: contractedLead.id, type: 'lead.updated', payload: { fromStage: 'PROPOSTA_ENVIADA', toStage: 'CONTRATADO' }, actor: { name: 'Eduarda Andrade' }, createdAt: isoOffset(-73) },
+    { id: 'activity-lead', entityType: 'lead', entityId: 'lead-mariana', type: 'lead.created', payload: { stage: 'QUALIFICACAO_IA', area: 'TRABALHISTA' }, actor: { name: 'Áurea IA' }, createdAt: isoOffset(-2) },
+    { id: 'activity-task', entityType: 'task', entityId: 'task-retorno', type: 'task.created', payload: { type: 'RETORNO', priority: 'MEDIA' }, actor: { name: 'Eduarda Andrade' }, createdAt: isoOffset(-12) },
+  ];
+
+  return { leads, contacts, matters, tasks, activities };
 }
 
-export const DEMO_STORAGE_KEY = 'aurea-legal-workspace-v1';
+export const DEMO_STORAGE_KEY = 'aurea-legal-workspace-v2';
 
 export function readDemoWorkspace() {
   try {
     const saved = window.localStorage.getItem(DEMO_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : createDemoWorkspace();
+    if (!saved) return createDemoWorkspace();
+    const parsed = JSON.parse(saved);
+    return {
+      leads: parsed.leads || [],
+      contacts: parsed.contacts || [],
+      matters: parsed.matters || [],
+      tasks: parsed.tasks || [],
+      activities: parsed.activities || [],
+    };
   } catch {
     return createDemoWorkspace();
   }

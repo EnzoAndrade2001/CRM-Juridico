@@ -184,7 +184,7 @@ model MetaInstance {
 model Contact {
   id                String    @id @default(cuid())
   tenantId          String
-  instanceId        String
+  instanceId        String?
   crmCustomerId     String?
   externalSource    String?   @default("manual")
   externalId        String?
@@ -208,7 +208,7 @@ model Contact {
   zipCode               String?
   enableWhatsAppBilling Boolean @default(false)
 
-  instance          WaInstance         @relation(fields: [instanceId], references: [id])
+  instance          WaInstance?        @relation(fields: [instanceId], references: [id], onDelete: SetNull)
   tenant            Tenant             @relation(fields: [tenantId], references: [id])
   crmCustomer       CrmCustomer?       @relation(fields: [crmCustomerId], references: [id], onDelete: SetNull)
   tickets           Ticket[]

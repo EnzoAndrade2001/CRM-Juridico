@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -8,10 +8,12 @@ import {
   Clock3,
   FileCheck2,
   Filter,
+  History,
   LoaderCircle,
   Plus,
   RotateCcw,
   Search,
+  Save,
   Sparkles,
   X,
 } from 'lucide-react';
@@ -178,11 +180,51 @@ function TaskForm({ workspace, lead, matter, onClose }) {
   );
 }
 
+const ACTIVITY_TEXT = {
+  'lead.created': 'Oportunidade criada',
+  'lead.updated': 'Oportunidade atualizada',
+  'matter.created': 'Caso jurídico criado',
+  'matter.updated': 'Caso jurídico atualizado',
+  'task.created': 'Tarefa criada',
+  'task.updated': 'Tarefa atualizada',
+};
+
+function ActivityTimeline({ activities = [] }) {
+  return (
+    <section className="jd-history">
+      <h4><History size={16} /> Histórico de alterações</h4>
+      {activities.map((item) => (
+        <article key={item.id}>
+          <i />
+          <span><strong>{ACTIVITY_TEXT[item.type] || 'Registro atualizado'}</strong><small>{item.actor?.name || 'Sistema'} · {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.createdAt))}</small></span>
+        </article>
+      ))}
+      {!activities.length && <p>Nenhuma alteração registrada até o momento.</p>}
+    </section>
+  );
+}
+
 function LeadDetail({ workspace, lead, onClose, onTask }) {
+  const [detail, setDetail] = useState(lead);
+  const [detailLoading, setDetailLoading] = useState(true);
   const [stage, setStage] = useState(lead.stage);
   const [lostReason, setLostReason] = useState(lead.lostReason || '');
   const [formError, setFormError] = useState('');
-  const matter = workspace.matters.find((item) => item.leadId === lead.id) || lead.matter;
+  const matter = workspace.matters.find((item) => item.leadId === lead.id) || detail.matter;
+
+  useEffect(() => {
+    let active = true;
+    workspace.loadLeadDetail(lead.id)
+      .then((loaded) => {
+        if (!active) return;
+        setDetail(loaded);
+        setStage(loaded.stage);
+        setLostReason(loaded.lostReason || '');
+      })
+      .catch((error) => active && setFormError(error.message))
+      .finally(() => active && setDetailLoading(false));
+    return () => { active = false; };
+  }, [lead.id, workspace.loadLeadDetail]);
 
   async function save() {
     setFormError('');
@@ -205,23 +247,24 @@ function LeadDetail({ workspace, lead, onClose, onTask }) {
   }
 
   return (
-    <Modal title={lead.contact?.name || 'Oportunidade'} subtitle={lead.title} onClose={onClose} wide>
+    <Modal title={detail.contact?.name || 'Oportunidade'} subtitle={detail.title} onClose={onClose} wide>
       <div className="jd-lead-detail">
         <div className="jd-lead-detail__summary">
-          <Avatar name={lead.contact?.name} />
+          <Avatar name={detail.contact?.name} />
           <dl>
-            <div><dt>Área</dt><dd>{labelFor(LEGAL_AREAS, lead.area)}</dd></div>
-            <div><dt>Prioridade</dt><dd>{labelFor(PRIORITIES, lead.urgency)}</dd></div>
-            <div><dt>WhatsApp</dt><dd>{lead.contact?.phone || 'Não informado'}</dd></div>
-            <div><dt>Tarefas</dt><dd>{workspace.tasks.filter((task) => task.leadId === lead.id).length}</dd></div>
+            <div><dt>Área</dt><dd>{labelFor(LEGAL_AREAS, detail.area)}</dd></div>
+            <div><dt>Prioridade</dt><dd>{labelFor(PRIORITIES, detail.urgency)}</dd></div>
+            <div><dt>WhatsApp</dt><dd>{detail.contact?.phone || 'Não informado'}</dd></div>
+            <div><dt>Tarefas</dt><dd>{detail.tasks?.length ?? workspace.tasks.filter((task) => task.leadId === lead.id).length}</dd></div>
           </dl>
         </div>
-        <p className="jd-lead-detail__text">{lead.summary || 'Nenhum resumo informado.'}</p>
+        <p className="jd-lead-detail__text">{detail.summary || 'Nenhum resumo informado.'}</p>
         <div className="jd-form-grid">
           <Field label="Etapa atual" full><select value={stage} onChange={(event) => setStage(event.target.value)}>{LEAD_STAGES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
           {stage === 'NAO_CONVERTIDO' && <Field label="Motivo da não conversão" full><textarea required value={lostReason} onChange={(event) => setLostReason(event.target.value)} /></Field>}
         </div>
         {matter && <div className="jd-inline-success"><FileCheck2 size={17} /> Caso jurídico já criado: <strong>{matter.title || lead.title}</strong></div>}
+        {detailLoading ? <div className="jd-detail-loading"><LoaderCircle size={17} /> Carregando histórico...</div> : <ActivityTimeline activities={detail.activities} />}
         {formError && <div className="jd-form-error"><CircleAlert size={16} />{formError}</div>}
       </div>
       <footer className="jd-modal__actions jd-modal__actions--spread">
@@ -273,7 +316,74 @@ function Pipeline({ workspace, search, area, onCreate, onSelect }) {
   );
 }
 
-function Matters({ workspace, onTask }) {
+function MatterDetail({ workspace, matter, onClose, onTask }) {
+  const [detail, setDetail] = useState(matter);
+  const [form, setForm] = useState({
+    status: matter.status,
+    caseNumber: matter.caseNumber || '',
+    court: matter.court || '',
+    opposingParty: matter.opposingParty || '',
+    description: matter.description || '',
+  });
+  const [detailLoading, setDetailLoading] = useState(true);
+  const [formError, setFormError] = useState('');
+  const update = (field) => (event) => setForm((current) => ({ ...current, [field]: event.target.value }));
+
+  useEffect(() => {
+    let active = true;
+    workspace.loadMatterDetail(matter.id)
+      .then((loaded) => {
+        if (!active) return;
+        setDetail(loaded);
+        setForm({
+          status: loaded.status,
+          caseNumber: loaded.caseNumber || '',
+          court: loaded.court || '',
+          opposingParty: loaded.opposingParty || '',
+          description: loaded.description || '',
+        });
+      })
+      .catch((error) => active && setFormError(error.message))
+      .finally(() => active && setDetailLoading(false));
+    return () => { active = false; };
+  }, [matter.id, workspace.loadMatterDetail]);
+
+  async function save() {
+    setFormError('');
+    try {
+      await workspace.editMatter(matter.id, {
+        ...form,
+        caseNumber: form.caseNumber || null,
+        court: form.court || null,
+        opposingParty: form.opposingParty || null,
+        description: form.description || null,
+      });
+      onClose();
+    } catch (error) {
+      setFormError(error.message);
+    }
+  }
+
+  return (
+    <Modal title={detail.contact?.name || 'Caso jurídico'} subtitle={detail.title} onClose={onClose} wide>
+      <div className="jd-lead-detail jd-matter-detail">
+        <div className="jd-lead-detail__summary"><Avatar name={detail.contact?.name} /><dl><div><dt>Área</dt><dd>{labelFor(LEGAL_AREAS, detail.area)}</dd></div><div><dt>Situação</dt><dd>{labelFor(MATTER_STATUSES, detail.status)}</dd></div><div><dt>Cliente</dt><dd>{detail.contact?.name}</dd></div><div><dt>Tarefas</dt><dd>{detail.tasks?.length ?? 0}</dd></div></dl></div>
+        <div className="jd-form-grid jd-matter-form">
+          <Field label="Situação"><select value={form.status} onChange={update('status')}>{MATTER_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+          <Field label="Número do processo"><input value={form.caseNumber} onChange={update('caseNumber')} placeholder="0000000-00.0000.0.00.0000" /></Field>
+          <Field label="Vara ou tribunal"><input value={form.court} onChange={update('court')} /></Field>
+          <Field label="Parte contrária"><input value={form.opposingParty} onChange={update('opposingParty')} /></Field>
+          <Field label="Descrição" full><textarea rows="3" value={form.description} onChange={update('description')} /></Field>
+        </div>
+        {detailLoading ? <div className="jd-detail-loading"><LoaderCircle size={17} /> Carregando histórico...</div> : <ActivityTimeline activities={detail.activities} />}
+        {formError && <div className="jd-form-error"><CircleAlert size={16} />{formError}</div>}
+      </div>
+      <footer className="jd-modal__actions jd-modal__actions--spread"><button type="button" className="jd-secondary" onClick={() => onTask(null, detail)}><CalendarClock size={16} /> Nova tarefa</button><span /><button type="button" className="jd-primary" disabled={workspace.saving} onClick={save}><Save size={16} />{workspace.saving ? 'Salvando...' : 'Salvar caso'}</button></footer>
+    </Modal>
+  );
+}
+
+function Matters({ workspace, onSelect }) {
   return (
     <section className="jd-card jd-legal-list">
       <div className="jd-legal-list__head"><span>Cliente e caso</span><span>Área</span><span>Situação</span><span>Processo</span><span>Tarefas</span><span /></div>
@@ -284,7 +394,7 @@ function Matters({ workspace, onTask }) {
           <select value={matter.status} onChange={(event) => workspace.editMatter(matter.id, { status: event.target.value })}>{MATTER_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
           <span>{matter.caseNumber || 'Ainda sem número'}</span>
           <strong>{workspace.tasks.filter((task) => task.matterId === matter.id).length}</strong>
-          <button type="button" onClick={() => onTask(null, matter)}><Plus size={15} /> Tarefa</button>
+          <button type="button" onClick={() => onSelect(matter)}>Abrir</button>
         </div>
       ))}
       {!workspace.matters.length && <div className="jd-legal-empty"><BriefcaseBusiness size={25} /><strong>Nenhum caso criado</strong><span>Abra uma oportunidade e use “Converter em caso”.</span></div>}
@@ -317,10 +427,12 @@ export default function LegalCrmWorkspace({ workspace }) {
   const [area, setArea] = useState('');
   const [createStage, setCreateStage] = useState(null);
   const [selectedLead, setSelectedLead] = useState(null);
+  const [selectedMatter, setSelectedMatter] = useState(null);
   const [taskTarget, setTaskTarget] = useState(null);
 
   function openTask(lead, matter) {
     setSelectedLead(null);
+    setSelectedMatter(null);
     setTaskTarget({ lead, matter });
   }
 
@@ -348,13 +460,14 @@ export default function LegalCrmWorkspace({ workspace }) {
       {workspace.loading ? <div className="jd-workspace-loading"><LoaderCircle size={25} /> Carregando dados jurídicos...</div> : (
         <>
           {tab === 'pipeline' && <Pipeline workspace={workspace} search={search} area={area} onCreate={setCreateStage} onSelect={setSelectedLead} />}
-          {tab === 'matters' && <Matters workspace={workspace} onTask={openTask} />}
+          {tab === 'matters' && <Matters workspace={workspace} onSelect={setSelectedMatter} />}
           {tab === 'tasks' && <Tasks workspace={workspace} />}
         </>
       )}
 
       {createStage && <OpportunityForm workspace={workspace} initialStage={createStage} onClose={() => setCreateStage(null)} />}
       {selectedLead && <LeadDetail workspace={workspace} lead={selectedLead} onClose={() => setSelectedLead(null)} onTask={openTask} />}
+      {selectedMatter && <MatterDetail workspace={workspace} matter={selectedMatter} onClose={() => setSelectedMatter(null)} onTask={openTask} />}
       {taskTarget && <TaskForm workspace={workspace} lead={taskTarget.lead} matter={taskTarget.matter} onClose={() => setTaskTarget(null)} />}
     </div>
   );

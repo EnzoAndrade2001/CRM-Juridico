@@ -132,7 +132,7 @@ async function getMedia(req, res) {
 async function create(req, res) {
   const { 
     name, phone, fantasyName, email, cpfCnpj, 
-    address, city, state, zipCode, instanceId,
+    address, city, state, zipCode, notes, instanceId,
     equipment // Objeto opcional { manufacturer, model, serialNumber, type, sector }
   } = req.body;
   const { tenantId } = req.user;
@@ -157,8 +157,7 @@ async function create(req, res) {
     const inst = await prisma.waInstance.findFirst({ where: { tenantId, status: { in: ['CONNECTED', 'connected', 'open'] } } });
     if (!inst) {
       const anyInst = await prisma.waInstance.findFirst({ where: { tenantId } });
-      if (!anyInst) return res.status(400).json({ error: 'Nenhuma conexão WhatsApp encontrada' });
-      finalInstanceId = anyInst.id;
+      finalInstanceId = anyInst?.id || null;
     } else {
       finalInstanceId = inst.id;
     }
@@ -175,8 +174,9 @@ async function create(req, res) {
       city: city || null,
       state: state || null,
       zipCode: zipCode || null,
+      notes: notes || null,
       tenantId, 
-      instanceId: finalInstanceId 
+      instanceId: finalInstanceId
     }
   });
 

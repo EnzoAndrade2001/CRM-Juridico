@@ -29,6 +29,8 @@ import {
   X,
 } from 'lucide-react';
 import LegalCrmWorkspace from '../features/legal/LegalCrmWorkspace';
+import LegalClients from '../features/legal/LegalClients';
+import LegalOverviewPanel from '../features/legal/LegalOverview';
 import useLegalWorkspace from '../features/legal/useLegalWorkspace';
 import './legal-demo.css';
 
@@ -265,11 +267,12 @@ export default function LegalDemo({ demoMode = false }) {
       <Sidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} />
       <main className="jd-main">
         <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} />
-        {active === 'visao-geral' && <Overview onNavigate={setActive} />}
+        {active === 'visao-geral' && <LegalOverviewPanel workspace={legalWorkspace} onNavigate={setActive} />}
         {active === 'atendimentos' && <InboxDemo />}
+        {active === 'clientes' && <LegalClients workspace={legalWorkspace} onNavigate={setActive} />}
         {active === 'crm' && <CrmDemo workspace={legalWorkspace} />}
         {active === 'campanhas' && <CampaignsDemo />}
-        {(active === 'clientes' || active === 'conhecimento') && <PlaceholderPage type={active} />}
+        {active === 'conhecimento' && <PlaceholderPage type={active} />}
       </main>
     </div>
   );
