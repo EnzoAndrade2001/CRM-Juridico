@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from io import BytesIO
 import json
 import logging
 from logging.handlers import RotatingFileHandler
@@ -20,6 +21,19 @@ from typing import Any
 import firebirdsql
 import requests
 from dotenv import load_dotenv
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.platypus import (
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
+from xml.sax.saxutils import escape
 
 
 if getattr(sys, "frozen", False):
@@ -119,6 +133,32 @@ def json_safe(value: Any) -> Any:
     if isinstance(value, bytes):
         return value.hex()
     return value
+
+
+def format_date_br(value: Any) -> str:
+    if not value:
+        return "Nao informado"
+    if isinstance(value, datetime):
+        return value.strftime("%d/%m/%Y")
+    text = str(value).strip()
+    try:
+        return datetime.fromisoformat(text[:19]).strftime("%d/%m/%Y")
+    except ValueError:
+        return text
+
+
+def format_money_br(value: Any) -> str:
+    try:
+        amount = Decimal(str(value or 0))
+    except Exception:
+        amount = Decimal("0")
+    rendered = f"{amount:,.2f}"
+    return "R$ " + rendered.replace(",", "_").replace(".", ",").replace("_", ".")
+
+
+def safe_pdf_filename_part(value: Any, fallback: str = "CLIENTE") -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9 ._-]+", " ", str(value or "")).strip()
+    return (cleaned or fallback)[:70]
 
 
 @dataclass
@@ -374,6 +414,16 @@ class CRMClient:
                         command_result = repo.fetch_billing_pdf(payload)
                         self.report_command_result(cmd_id, success=True, result=command_result)
                         logging.info("PDF do boleto recuperado com sucesso.")
+                    elif cmd_type == "FETCH_BILLING_DOCUMENT":
+                        document_type = str(payload.get("documentType") or "").strip().lower()
+                        logging.info(
+                            "Gerando documento financeiro %s do titulo %s...",
+                            document_type,
+                            payload.get("receivableExternalId"),
+                        )
+                        command_result = repo.fetch_billing_document(payload)
+                        self.report_command_result(cmd_id, success=True, result=command_result)
+                        logging.info("Documento financeiro %s gerado com sucesso.", document_type)
                     else:
                         logging.warning("Tipo de comando desconhecido: %s", cmd_type)
                 except Exception as e:
@@ -954,7 +1004,304 @@ class FirebirdRepository:
             "pdfBase64": base64.b64encode(pdf_response.content).decode("ascii"),
             "fileName": f"BOLETO NF {safe_invoice} - {safe_customer or 'CLIENTE'}.pdf",
             "mimeType": "application/pdf",
+            "documentType": "boleto",
         }
+
+    def fetch_billing_document(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Return one document from the financial package linked to a receivable.
+
+        Keeping each document in an independent command avoids oversized callbacks and
+        lets the CRM retry only the document that failed.
+        """
+        document_type = str(payload.get("documentType") or "").strip().lower()
+        aliases = {
+            "bill": "boleto",
+            "invoice": "invoice",
+            "nf": "invoice",
+            "statement": "statement",
+            "demonstrativo": "statement",
+            "boleto": "boleto",
+        }
+        document_type = aliases.get(document_type, document_type)
+        if document_type == "boleto":
+            return self.fetch_billing_pdf(payload)
+        if document_type not in {"invoice", "statement"}:
+            raise ValueError("Tipo de documento invalido. Use invoice, statement ou boleto.")
+
+        context = self._fetch_billing_document_context(payload)
+        if document_type == "invoice":
+            if not context.get("seqincnfs"):
+                raise ValueError("Nota fiscal nao vinculada a este titulo no iLux.")
+            items = self._fetch_invoice_items(int(context["seqincnfs"]))
+            pdf = self._render_invoice_pdf(context, items)
+            prefix = "NF"
+        else:
+            if not context.get("seqdemonstrativo"):
+                raise ValueError("Demonstrativo nao vinculado a este titulo no iLux.")
+            items = self._fetch_statement_items(int(context["seqdemonstrativo"]))
+            pdf = self._render_statement_pdf(context, items)
+            prefix = "DEMONSTRATIVO"
+
+        invoice = safe_pdf_filename_part(context.get("invoice_number"), str(context["seqreceita"]))
+        customer = safe_pdf_filename_part(context.get("customer_name"))
+        return {
+            "pdfBase64": base64.b64encode(pdf).decode("ascii"),
+            "fileName": f"{prefix} {invoice} - {customer}.pdf",
+            "mimeType": "application/pdf",
+            "documentType": document_type,
+        }
+
+    def _fetch_billing_document_context(self, payload: dict[str, Any]) -> dict[str, Any]:
+        receivable_id = int(payload.get("receivableExternalId") or 0)
+        if receivable_id <= 0:
+            raise ValueError("Identificador do titulo nao informado.")
+
+        con = self.connect()
+        try:
+            cur = con.cursor()
+            cur.execute(
+                """
+                select first 1
+                    r.SEQRECEITA, r.SEQINCNFS, r.SEQDEMONSTRATIVO,
+                    coalesce(nf.NRNFSAIDA, r.NUMNF) as INVOICE_NUMBER,
+                    r.DTEMISSAOREC, r.DTVECTOREC, r.VALRECEITA,
+                    fp.NMFORMAPAGTO, r.NOSSONUMERO, r.LINHA_DIGITAVEL,
+                    cli.CDCLIENTE, cli.NMCLIENTE as CUSTOMER_NAME,
+                    cli.CNPJ as CUSTOMER_CNPJ, cli.CPF as CUSTOMER_CPF,
+                    cli.INSCEST as CUSTOMER_INSCEST, cli.ENDERECO as CUSTOMER_ADDRESS,
+                    cli.NUM as CUSTOMER_NUMBER, cli.COMPLEMENTO as CUSTOMER_COMPLEMENT,
+                    cli.BAIRRO as CUSTOMER_DISTRICT, cli.CIDADE as CUSTOMER_CITY,
+                    cli.UF as CUSTOMER_STATE, cli.CEP as CUSTOMER_ZIP,
+                    cli.EMAILNF as CUSTOMER_EMAIL,
+                    nf.DTEMISSAONFS, nf.VALTOTALNFS, nf.VALTOTPRODUTO,
+                    nf.VALTOTSERVICO, nf.VALDESCNFS, nf.OBS as INVOICE_NOTES,
+                    nf.MODELO as INVOICE_MODEL, nf.SERIENF as INVOICE_SERIES,
+                    nf.CHAVEACESSO_NFEL, nf.CHAVEACESSO_NFSE,
+                    demo.PERIODO as STATEMENT_PERIOD, demo.DTDEMONSTRATIVO,
+                    demo.DTCOBRANCA, demo.VALDEMONSTRATIVO,
+                    demo.VALDEMONSTRATIVOF, demo.VALDEMONSTRATIVOE,
+                    demo.VALDESCONTO as STATEMENT_DISCOUNT,
+                    demo.VALACRESCIMO as STATEMENT_SURCHARGE,
+                    demo.OBSERVACAO as STATEMENT_NOTES,
+                    emp.NMEMPRESA as COMPANY_NAME, emp.FANTASIA as COMPANY_TRADE_NAME,
+                    emp.CNPJ as COMPANY_CNPJ, emp.INSCEST as COMPANY_INSCEST,
+                    emp.ENDERECO as COMPANY_ADDRESS, emp.NUM as COMPANY_NUMBER,
+                    emp.COMPLEMENTO as COMPANY_COMPLEMENT, emp.BAIRRO as COMPANY_DISTRICT,
+                    emp.CIDADE as COMPANY_CITY, emp.UF as COMPANY_STATE,
+                    emp.CEP as COMPANY_ZIP, emp.DDD as COMPANY_DDD, emp.FONE1 as COMPANY_PHONE
+                from IRECEITAS r
+                join ICLIENTES cli on cli.CDCLIENTE = r.CDCLIENTE
+                left join INFSAIDA nf on nf.SEQINCNFS = r.SEQINCNFS
+                left join IXLDEMOFAT demo on demo.SEQDEMONSTRATIVO = r.SEQDEMONSTRATIVO
+                left join IEMPRESA emp on emp.CDEMPRESA = r.CDEMPRESA
+                left join IFORMAPAGTO fp on fp.CDFORMAPAGTO = r.CDFORMAPAGTO
+                where r.SEQRECEITA = ?
+                """,
+                (receivable_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise ValueError("Titulo financeiro nao encontrado no iLux.")
+            columns = [desc[0].lower() for desc in cur.description]
+            return dict(zip(columns, row))
+        finally:
+            con.close()
+
+    def _fetch_invoice_items(self, seqincnfs: int) -> list[dict[str, Any]]:
+        con = self.connect()
+        try:
+            cur = con.cursor()
+            cur.execute(
+                """
+                select
+                    it.CDPRODUTO, coalesce(it.NMPRODUTOCLI, p.NMPRODUTO) as PRODUCT_NAME,
+                    it.QUANTIDADE, it.PRECOUNITARIO, it.VALDESCRAT,
+                    it.VALIPI, it.VALICMS, it.VALISS
+                from INFSAIDAIT it
+                left join IPRODUTO p on p.CDPRODUTO = it.CDPRODUTO
+                where it.SEQINCNFS = ?
+                order by it.CDPRODUTO
+                """,
+                (seqincnfs,),
+            )
+            columns = [desc[0].lower() for desc in cur.description]
+            return [dict(zip(columns, row)) for row in cur.fetchall()]
+        finally:
+            con.close()
+
+    def _fetch_statement_items(self, seqdemonstrativo: int) -> list[dict[str, Any]]:
+        con = self.connect()
+        try:
+            cur = con.cursor()
+            cur.execute(
+                """
+                select
+                    fat.SEQCONTRATO, fat.CDEQUIPAMENTO, fat.CDMEDIDOR,
+                    fat.MEDIDORINI, fat.MEDIDORFIN, fat.MEDIDORDESC,
+                    fat.DTPERIODOFATINI, fat.DTPERIODOFATFIN,
+                    fat.QTPRODUCAO, fat.QTFRANQUIA, fat.QTEXCEDENTE,
+                    fat.VALFRANQUIA, fat.VALEXCEDENTE, fat.VALFATURA,
+                    fat.VALFRANQUIACOB, fat.VALEXCEDENTECOB,
+                    coalesce(fat.DEPARTAMENTO, eq.DEPARTAMENTO) as DEPARTMENT,
+                    coalesce(fat.LOCALINSTAL, eq.LOCALINSTAL) as INSTALLATION_LOCATION,
+                    eq.SERIE, eq.MODELO, p.NMPRODUTO as EQUIPMENT_NAME
+                from IXLCONTRATOSFAT fat
+                left join IXLEQUIPAMENTO eq on eq.CDEQUIPAMENTO = fat.CDEQUIPAMENTO
+                left join IPRODUTO p on p.CDPRODUTO = eq.CDPRODUTO
+                where fat.SEQDEMONSTRATIVO = ?
+                order by fat.SEQCONTRATO, fat.CDEQUIPAMENTO, fat.CDMEDIDOR
+                """,
+                (seqdemonstrativo,),
+            )
+            columns = [desc[0].lower() for desc in cur.description]
+            return [dict(zip(columns, row)) for row in cur.fetchall()]
+        finally:
+            con.close()
+
+    @staticmethod
+    def _pdf_styles() -> tuple[dict[str, ParagraphStyle], TableStyle]:
+        sample = getSampleStyleSheet()
+        styles = {
+            "title": ParagraphStyle(
+                "FinanceTitle", parent=sample["Title"], fontName="Helvetica-Bold",
+                fontSize=16, leading=19, alignment=TA_CENTER, textColor=colors.HexColor("#111827")
+            ),
+            "heading": ParagraphStyle(
+                "FinanceHeading", parent=sample["Heading2"], fontName="Helvetica-Bold",
+                fontSize=9, leading=11, textColor=colors.white, backColor=colors.HexColor("#C81E1E"),
+                borderPadding=4, spaceBefore=6, spaceAfter=4,
+            ),
+            "body": ParagraphStyle(
+                "FinanceBody", parent=sample["BodyText"], fontName="Helvetica",
+                fontSize=8, leading=10, textColor=colors.HexColor("#111827")
+            ),
+            "small": ParagraphStyle(
+                "FinanceSmall", parent=sample["BodyText"], fontName="Helvetica",
+                fontSize=7, leading=8, textColor=colors.HexColor("#374151")
+            ),
+            "right": ParagraphStyle(
+                "FinanceRight", parent=sample["BodyText"], fontName="Helvetica-Bold",
+                fontSize=8, leading=10, alignment=TA_RIGHT
+            ),
+        }
+        table_style = TableStyle([
+            ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#6B7280")),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E5E7EB")),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+            ("FONTSIZE", (0, 0), (-1, -1), 7),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ])
+        return styles, table_style
+
+    @staticmethod
+    def _paragraph(value: Any, style: ParagraphStyle) -> Paragraph:
+        text = escape(str(value or "Nao informado").strip()).replace("\n", "<br/>")
+        return Paragraph(text, style)
+
+    def _render_invoice_pdf(self, data: dict[str, Any], items: list[dict[str, Any]]) -> bytes:
+        styles, table_style = self._pdf_styles()
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer, pagesize=A4, rightMargin=14 * mm, leftMargin=14 * mm,
+            topMargin=12 * mm, bottomMargin=12 * mm,
+            title=f"NF {data.get('invoice_number') or ''}",
+        )
+        p = lambda value, style="body": self._paragraph(value, styles[style])
+        story: list[Any] = [p("NOTA FISCAL / DOCUMENTO DE LOCACAO", "title"), Spacer(1, 3 * mm)]
+        company_address = " ".join(filter(None, [str(data.get("company_address") or "").strip(), str(data.get("company_number") or "").strip()]))
+        customer_address = " ".join(filter(None, [str(data.get("customer_address") or "").strip(), str(data.get("customer_number") or "").strip()]))
+        story.append(Table([
+            [p(f"{data.get('company_name') or data.get('company_trade_name') or 'EMPRESA'}\nCNPJ: {data.get('company_cnpj') or 'Nao informado'}\n{company_address} - {data.get('company_city') or ''}/{data.get('company_state') or ''}"),
+             p(f"NF: {data.get('invoice_number') or ''}\nSerie: {data.get('invoice_series') or ''}\nEmissao: {format_date_br(data.get('dtemissaonfs') or data.get('dtemissaorec'))}\nVencimento: {format_date_br(data.get('dtvectorec'))}")]
+        ], colWidths=[120 * mm, 55 * mm], style=TableStyle([
+            ("BOX", (0, 0), (-1, -1), 0.7, colors.black), ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6), ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ])))
+        story.extend([p("DESTINATARIO", "heading"), Table([
+            [p(f"{data.get('customer_name') or ''}\nCodigo iLux: {data.get('cdcliente') or ''}\nCNPJ/CPF: {data.get('customer_cnpj') or data.get('customer_cpf') or 'Nao informado'}"),
+             p(f"{customer_address}\n{data.get('customer_district') or ''} - {data.get('customer_city') or ''}/{data.get('customer_state') or ''}\nCEP: {data.get('customer_zip') or 'Nao informado'}")]
+        ], colWidths=[88 * mm, 87 * mm], style=TableStyle([("BOX", (0, 0), (-1, -1), .5, colors.grey), ("VALIGN", (0, 0), (-1, -1), "TOP"), ("PADDING", (0, 0), (-1, -1), 5)])), p("ITENS", "heading")])
+        rows = [["Codigo", "Descricao", "Qtd.", "Unitario", "Desconto", "Total"]]
+        for item in items:
+            quantity = Decimal(str(item.get("quantidade") or 0))
+            unit = Decimal(str(item.get("precounitario") or 0))
+            discount = Decimal(str(item.get("valdescrat") or 0))
+            total = quantity * unit - discount
+            rows.append([
+                str(item.get("cdproduto") or ""), p(item.get("product_name") or "", "small"),
+                f"{quantity:g}", format_money_br(unit), format_money_br(discount), format_money_br(total),
+            ])
+        if len(rows) == 1:
+            rows.append(["-", "Sem itens detalhados", "-", "-", "-", format_money_br(data.get("valreceita"))])
+        item_table = Table(rows, colWidths=[22*mm, 64*mm, 13*mm, 25*mm, 24*mm, 27*mm], repeatRows=1)
+        item_table.setStyle(table_style)
+        story.extend([item_table, Spacer(1, 3 * mm), Table([
+            [p("Forma de pagamento"), p(data.get("nmformapagto") or "Nao informado"), p("VALOR TOTAL", "right"), p(format_money_br(data.get("valtotalnfs") or data.get("valreceita")), "right")]
+        ], colWidths=[32*mm, 65*mm, 38*mm, 40*mm], style=TableStyle([("BOX", (0,0), (-1,-1), .5, colors.grey), ("PADDING", (0,0), (-1,-1), 5)]))])
+        if data.get("invoice_notes"):
+            story.extend([p("OBSERVACOES", "heading"), p(data.get("invoice_notes"), "small")])
+        access_key = data.get("chaveacesso_nfel") or data.get("chaveacesso_nfse")
+        if access_key:
+            story.extend([Spacer(1, 2 * mm), p(f"Chave de acesso: {access_key}", "small")])
+        doc.build(story)
+        return buffer.getvalue()
+
+    def _render_statement_pdf(self, data: dict[str, Any], items: list[dict[str, Any]]) -> bytes:
+        styles, table_style = self._pdf_styles()
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer, pagesize=A4, rightMargin=10 * mm, leftMargin=10 * mm,
+            topMargin=10 * mm, bottomMargin=10 * mm,
+            title=f"Demonstrativo {data.get('invoice_number') or ''}",
+        )
+        p = lambda value, style="body": self._paragraph(value, styles[style])
+        story: list[Any] = [p("DEMONSTRATIVO DE FATURAMENTO", "title"), Spacer(1, 2 * mm)]
+        story.append(Table([
+            [p(f"{data.get('company_name') or data.get('company_trade_name') or 'EMPRESA'}\nCNPJ: {data.get('company_cnpj') or 'Nao informado'}"),
+             p(f"{data.get('customer_name') or ''}\nCodigo iLux: {data.get('cdcliente') or ''}\nCNPJ/CPF: {data.get('customer_cnpj') or data.get('customer_cpf') or 'Nao informado'}"),
+             p(f"NF: {data.get('invoice_number') or ''}\nPeriodo: {data.get('statement_period') or 'Nao informado'}\nVencimento: {format_date_br(data.get('dtvectorec'))}")]
+        ], colWidths=[62*mm, 78*mm, 50*mm], style=TableStyle([("BOX", (0,0), (-1,-1), .6, colors.black), ("VALIGN", (0,0), (-1,-1), "TOP"), ("PADDING", (0,0), (-1,-1), 5)])))
+        story.extend([p("EQUIPAMENTOS E MEDIDORES", "heading")])
+        rows = [["Equipamento", "Serie / Local", "Medidor", "Periodo", "Inicial", "Final", "Producao", "Franquia", "Exced.", "Valor"]]
+        for item in items:
+            equipment = item.get("equipment_name") or item.get("modelo") or f"Equip. {item.get('cdequipamento') or ''}"
+            location = first_non_empty(item.get("installation_location"), item.get("department"), "") or ""
+            period = f"{format_date_br(item.get('dtperiodofatini'))} a {format_date_br(item.get('dtperiodofatfin'))}"
+            # VALFRANQUIA/VALEXCEDENTE are contract prices. The *COB fields
+            # contain what was effectively charged in this statement.
+            fixed_charged = item.get("valfranquiacob")
+            excess_charged = item.get("valexcedentecob")
+            if fixed_charged is None and excess_charged is None:
+                line_value = Decimal(str(item.get("valfatura") or 0))
+            else:
+                line_value = Decimal(str(fixed_charged or 0)) + Decimal(str(excess_charged or 0))
+            rows.append([
+                p(f"{equipment}\n#{item.get('cdequipamento') or ''}", "small"),
+                p(f"{item.get('serie') or ''}\n{location}", "small"),
+                str(item.get("cdmedidor") or ""), p(period, "small"),
+                str(item.get("medidorini") or 0), str(item.get("medidorfin") or 0),
+                str(item.get("qtproducao") or 0), str(item.get("qtfranquia") or 0),
+                str(item.get("qtexcedente") or 0), format_money_br(line_value),
+            ])
+        if len(rows) == 1:
+            rows.append(["-", "Sem equipamentos detalhados", "-", "-", "-", "-", "-", "-", "-", format_money_br(data.get("valdemonstrativo") or data.get("valreceita"))])
+        table = Table(rows, colWidths=[31*mm, 28*mm, 14*mm, 30*mm, 15*mm, 15*mm, 16*mm, 15*mm, 14*mm, 22*mm], repeatRows=1)
+        table.setStyle(table_style)
+        story.extend([table, Spacer(1, 3*mm), Table([
+            [p("Valor fixo", "right"), p(format_money_br(data.get("valdemonstrativof")), "right"),
+             p("Excedentes", "right"), p(format_money_br(data.get("valdemonstrativoe")), "right"),
+             p("TOTAL", "right"), p(format_money_br(data.get("valdemonstrativo") or data.get("valreceita")), "right")]
+        ], colWidths=[28*mm, 32*mm, 28*mm, 32*mm, 28*mm, 42*mm], style=TableStyle([("BOX", (0,0), (-1,-1), .5, colors.grey), ("PADDING", (0,0), (-1,-1), 5)]))])
+        if data.get("statement_notes"):
+            story.extend([p("OBSERVACOES", "heading"), p(data.get("statement_notes"), "small")])
+        doc.build(story)
+        return buffer.getvalue()
 
     def fetch_equipment_meters(self, equipment_cursor: int) -> Iterator[dict[str, Any]]:
         sql = """

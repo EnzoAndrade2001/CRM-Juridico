@@ -12,7 +12,9 @@ import {
   CreditCard,
   Database,
   Download,
+  Eye,
   FileText,
+  Files,
   Gauge,
   Hash,
   Mail,
@@ -38,9 +40,11 @@ import {
   getCrmCustomerContracts,
   getCrmCustomerServiceOrders,
   getCrmCustomer360,
-  getCrmReceivableBoleto,
+  getCrmReceivableDocuments,
   getCrmCustomers,
   getCrmSummary,
+  prepareCrmReceivableDocument,
+  sendCrmReceivableDocuments,
   sendOSManagerCopy,
 } from '../services/api';
 import { toast } from '../utils/toast';
@@ -362,7 +366,7 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
           {!loading && activeTab === 'contacts' ? <ContactsTab contacts={arrayOf(customer360.contacts)} /> : null}
           {!loading && activeTab === 'equipments' ? <EquipmentsTab equipments={equipments} evolution={arrayOf(customer360.equipmentEvolution)} /> : null}
           {!loading && activeTab === 'contracts' ? <ContractsTab contracts={contracts} /> : null}
-          {!loading && activeTab === 'financial' ? <FinancialTab financial={customer360.financial} customerId={customer.id} /> : null}
+          {!loading && activeTab === 'financial' ? <FinancialTab financial={customer360.financial} customerId={customer.id} ticketId={customer360.quickActions?.ticketId} /> : null}
           {!loading && activeTab === 'os' ? <OsTab serviceOrders={serviceOrders} onRefresh={onRetry} /> : null}
           {!loading && activeTab === 'raw' ? <RawFieldsTab title="Campos originais do cliente no ILUX" raw={customer.raw} /> : null}
         </div>
@@ -535,33 +539,95 @@ function ContactsTab({ contacts }) {
   );
 }
 
-function FinancialTab({ financial, customerId }) {
+function FinancialTab({ financial, customerId, ticketId }) {
   const [selected, setSelected] = useState(null);
-  const [boletoLoading, setBoletoLoading] = useState(false);
+  const [documentsData, setDocumentsData] = useState(null);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [documentsError, setDocumentsError] = useState('');
+  const [documentAction, setDocumentAction] = useState('');
+  const [checkedDocuments, setCheckedDocuments] = useState([]);
+  const [showSendConfirmation, setShowSendConfirmation] = useState(false);
+  const [sendLoading, setSendLoading] = useState(false);
+
+  const selectedReceivableId = selected?.externalId;
+
+  useEffect(() => {
+    if (!selectedReceivableId) {
+      setDocumentsData(null);
+      setDocumentsError('');
+      setCheckedDocuments([]);
+      setShowSendConfirmation(false);
+      return;
+    }
+    let active = true;
+    setDocumentsLoading(true);
+    setDocumentsError('');
+    getCrmReceivableDocuments(customerId, selectedReceivableId, ticketId)
+      .then((response) => {
+        if (!active) return;
+        const payload = response.data || {};
+        setDocumentsData(payload);
+        setCheckedDocuments(normalizeBillingDocuments(payload.documents, selected).filter((document) => document.available !== false).map((document) => document.type));
+      })
+      .catch((error) => {
+        if (!active) return;
+        setDocumentsData(null);
+        setDocumentsError(error.response?.data?.error || 'Não foi possível consultar os documentos desta cobrança.');
+      })
+      .finally(() => { if (active) setDocumentsLoading(false); });
+    return () => { active = false; };
+  }, [customerId, selectedReceivableId, ticketId]);
 
   if (!financial?.allowed) return <Empty icon={<CreditCard size={28} />} title="Acesso financeiro restrito" text={financial?.reason || 'Esta área está disponível apenas para administradores.'} />;
   if (!financial.synchronized) return <Empty icon={<RefreshCw size={28} />} title="Aguardando sincronização financeira" text="Atualize o agente Firebird para carregar os títulos recentes do iLux." />;
   const items = arrayOf(financial.items);
 
-  async function accessBoleto(mode) {
-    if (!selected?.hasBoleto || boletoLoading) return;
+  const documents = normalizeBillingDocuments(documentsData?.documents, selected);
+  const delivery = documentsData?.delivery || {};
+
+  async function reloadDocuments() {
+    if (!selectedReceivableId) return;
+    setDocumentsLoading(true);
+    setDocumentsError('');
+    try {
+      const response = await getCrmReceivableDocuments(customerId, selectedReceivableId, ticketId);
+      setDocumentsData(response.data || {});
+    } catch (error) {
+      setDocumentsError(error.response?.data?.error || 'Não foi possível consultar os documentos desta cobrança.');
+    } finally {
+      setDocumentsLoading(false);
+    }
+  }
+
+  async function accessDocument(billingDocument, mode) {
+    if (!billingDocument?.type || billingDocument.available === false || documentAction) return;
     const preview = mode === 'open' ? window.open('about:blank', '_blank') : null;
     if (preview) preview.opener = null;
-    setBoletoLoading(true);
+    setDocumentAction(`${billingDocument.type}:${mode}`);
     try {
-      const response = await getCrmReceivableBoleto(customerId, selected.externalId);
-      const mediaUrl = getMediaUrl(response.data?.mediaUrl);
-      if (!mediaUrl) throw new Error('O servidor não devolveu o endereço do boleto.');
+      let prepared = billingDocument;
+      if (!billingDocument.mediaUrl || billingDocument.status !== 'ready') {
+        const response = await prepareCrmReceivableDocument(customerId, selectedReceivableId, billingDocument.type);
+        prepared = { ...billingDocument, ...(response.data || {}) };
+        setDocumentsData((current) => ({
+          ...(current || {}),
+          documents: normalizeBillingDocuments(current?.documents, selected).map((item) => item.type === billingDocument.type ? prepared : item),
+        }));
+      }
+      const mediaUrl = getMediaUrl(prepared.mediaUrl);
+      if (!mediaUrl) throw new Error(prepared.status === 'pending'
+        ? 'O documento está sendo preparado pelo agente iLux. Tente novamente em instantes.'
+        : 'O servidor não devolveu o arquivo solicitado.');
       if (mode === 'open') {
         if (preview) preview.location.replace(mediaUrl);
         else window.open(mediaUrl, '_blank', 'noopener,noreferrer');
       } else {
         const fileResponse = await fetch(mediaUrl);
-        if (!fileResponse.ok) throw new Error('O arquivo do boleto não pôde ser baixado.');
+        if (!fileResponse.ok) throw new Error('O documento não pôde ser baixado.');
         const objectUrl = URL.createObjectURL(await fileResponse.blob());
         const link = document.createElement('a');
         link.href = objectUrl;
-        link.download = response.data?.fileName || `BOLETO NF ${selected.invoiceNumber || selected.externalId}.pdf`;
+        link.download = prepared.fileName || `${billingDocument.label} NF ${selected.invoiceNumber || selected.externalId}.pdf`;
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -569,9 +635,39 @@ function FinancialTab({ financial, customerId }) {
       }
     } catch (error) {
       if (preview) preview.close();
-      toast.error(error.response?.data?.error || error.message || 'Não foi possível recuperar o boleto.');
+      toast.error(error.response?.data?.error || error.message || 'Não foi possível recuperar o documento.');
     } finally {
-      setBoletoLoading(false);
+      setDocumentAction('');
+    }
+  }
+
+  function requestSend(documentType) {
+    setCheckedDocuments(documentType ? [documentType] : documents.filter((document) => document.available !== false).map((document) => document.type));
+    setShowSendConfirmation(true);
+  }
+
+  function toggleDocument(documentType) {
+    setCheckedDocuments((current) => current.includes(documentType)
+      ? current.filter((type) => type !== documentType)
+      : [...current, documentType]);
+  }
+
+  async function confirmSend() {
+    if (!checkedDocuments.length || !delivery.available || sendLoading) return;
+    setSendLoading(true);
+    try {
+      const response = await sendCrmReceivableDocuments(customerId, selectedReceivableId, {
+        documentTypes: checkedDocuments,
+        ...(delivery.ticketId ? { ticketId: delivery.ticketId } : {}),
+      });
+      const sentCount = response.data?.documents?.length || checkedDocuments.length;
+      toast.success(`${sentCount} documento(s) enviado(s) pelo WhatsApp e registrado(s) na conversa.`);
+      setShowSendConfirmation(false);
+      await reloadDocuments();
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Não foi possível reenviar os documentos pelo WhatsApp.');
+    } finally {
+      setSendLoading(false);
     }
   }
 
@@ -631,20 +727,81 @@ function FinancialTab({ financial, customerId }) {
               {selected.invoiceNotes ? (
                 <div style={s.invoiceNotes}><span>Observações da NF</span><p>{selected.invoiceNotes}</p></div>
               ) : null}
+
+              <section style={s.billingDocumentsSection} aria-labelledby="billing-documents-title">
+                <div style={s.billingDocumentsHeader}>
+                  <div>
+                    <span style={s.detailKicker}>Pacote financeiro</span>
+                    <h4 id="billing-documents-title" style={s.billingDocumentsTitle}><Files size={18} /> Documentos da cobrança</h4>
+                  </div>
+                  <button type="button" style={s.smallSecondaryBtn} onClick={reloadDocuments} disabled={documentsLoading}>
+                    <RefreshCw size={14} className={documentsLoading ? 'spin' : ''} /> Atualizar
+                  </button>
+                </div>
+
+                {documentsError ? <div style={s.documentError}><AlertCircle size={16} /><span>{documentsError}</span></div> : null}
+                {documentsLoading && !documentsData ? <div style={s.documentsLoading}><RefreshCw size={16} className="spin" /> Consultando NF, demonstrativo e boleto no iLux...</div> : null}
+
+                <div style={s.documentList}>
+                  {documents.map((document) => {
+                    const busy = documentAction.startsWith(`${document.type}:`);
+                    return (
+                      <article className="crm-document-card" key={document.type} style={{ ...s.documentCard, ...(document.available === false ? s.documentUnavailable : {}) }}>
+                        <label style={s.documentSelect}>
+                          <input
+                            type="checkbox"
+                            checked={checkedDocuments.includes(document.type)}
+                            onChange={() => toggleDocument(document.type)}
+                            disabled={document.available === false}
+                            aria-label={`Selecionar ${document.label}`}
+                          />
+                          <span style={s.documentIcon}>{billingDocumentIcon(document.type)}</span>
+                          <span style={s.documentIdentity}>
+                            <strong>{document.label}</strong>
+                            <small>{billingDocumentStatus(document)}</small>
+                            {document.fileName ? <span title={document.fileName}>{document.fileName}</span> : null}
+                          </span>
+                        </label>
+                        <div className="crm-document-actions" style={s.documentActions}>
+                          <button type="button" title={`Visualizar ${document.label}`} style={s.iconActionBtn} disabled={document.available === false || busy} onClick={() => accessDocument(document, 'open')}>
+                            {busy ? <RefreshCw size={15} className="spin" /> : <Eye size={15} />}
+                          </button>
+                          <button type="button" title={`Baixar ${document.label}`} style={s.iconActionBtn} disabled={document.available === false || busy} onClick={() => accessDocument(document, 'download')}><Download size={15} /></button>
+                          <button type="button" style={s.documentSendBtn} disabled={document.available === false || busy} onClick={() => requestSend(document.type)}><Send size={14} /> Reenviar</button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                <button type="button" style={s.packageSendBtn} disabled={!documents.some((document) => document.available !== false)} onClick={() => requestSend()}>
+                  <Send size={16} /> Reenviar pacote pelo WhatsApp
+                </button>
+              </section>
+
+              {showSendConfirmation ? (
+                <section style={s.deliveryConfirmation} aria-label="Confirmar reenvio pelo WhatsApp">
+                  <div style={s.deliveryTitle}><ShieldCheck size={17} /><strong>Confirme o destino antes de enviar</strong></div>
+                  <div style={s.deliveryGrid}>
+                    <Info label="Telefone" value={delivery.phone} />
+                    <Info label="Instância" value={delivery.instanceName || delivery.instanceId} />
+                    <Info label="Conversa" value={delivery.ticketId ? `#${delivery.ticketId}` : 'Nenhuma conversa ativa'} />
+                    <Info label="Documentos" value={`${checkedDocuments.length} selecionado(s)`} />
+                  </div>
+                  {!delivery.available ? <div style={s.deliveryWarning}><AlertCircle size={15} /> {delivery.unavailableReason || 'Abra uma conversa com este cliente em uma instância conectada antes de reenviar.'}</div> : null}
+                  <div style={s.deliveryActions}>
+                    <button type="button" style={s.secondaryBtn} onClick={() => setShowSendConfirmation(false)} disabled={sendLoading}>Cancelar</button>
+                    <button type="button" style={s.primaryBtn} onClick={confirmSend} disabled={!delivery.available || !checkedDocuments.length || sendLoading}>
+                      {sendLoading ? <RefreshCw size={16} className="spin" /> : <Send size={16} />} {sendLoading ? 'Enviando...' : `Enviar ${checkedDocuments.length} documento(s)`}
+                    </button>
+                  </div>
+                </section>
+              ) : null}
             </div>
 
             <footer style={s.financeDetailFooter}>
               <button type="button" style={s.secondaryBtn} onClick={() => setSelected(null)}>Fechar</button>
-              {selected.hasBoleto ? (
-                <>
-                  <button type="button" style={s.secondaryBtn} onClick={() => accessBoleto('download')} disabled={boletoLoading}>
-                    <Download size={16} /> Baixar boleto
-                  </button>
-                  <button type="button" style={s.primaryBtn} onClick={() => accessBoleto('open')} disabled={boletoLoading}>
-                    {boletoLoading ? <RefreshCw size={16} className="spin" /> : <CreditCard size={16} />} {boletoLoading ? 'Buscando no iLux...' : 'Abrir boleto'}
-                  </button>
-                </>
-              ) : <span style={s.noBoletoLabel}>Sem boleto vinculado</span>}
+              <span style={s.noBoletoLabel}>Os envios ficam registrados no histórico da conversa.</span>
             </footer>
           </section>
         </div>
@@ -973,6 +1130,45 @@ function formatBillingPeriod(value) {
 }
 function formatRawValue(value) { if (!hasValue(value)) return 'Não informado'; return typeof value === 'object' ? JSON.stringify(value) : String(value); }
 
+const BILLING_DOCUMENTS = [
+  { type: 'invoice', label: 'Nota Fiscal' },
+  { type: 'statement', label: 'Demonstrativo' },
+  { type: 'boleto', label: 'Boleto' },
+];
+
+function normalizeBillingDocuments(documents, receivable) {
+  const received = new Map(arrayOf(documents).map((item) => [item.type, item]));
+  const fallbackAvailability = {
+    invoice: Boolean(receivable?.invoiceNumber),
+    statement: Boolean(pick(receivable || {}, 'statementExternalId', 'demonstrativeExternalId', 'demonstrativoExternalId', 'billingPeriod')),
+    boleto: Boolean(receivable?.hasBoleto),
+  };
+  return BILLING_DOCUMENTS.map((definition) => {
+    const item = received.get(definition.type);
+    return {
+      ...definition,
+      ...(item || {}),
+      available: item?.available ?? fallbackAvailability[definition.type],
+      status: item?.status || (fallbackAvailability[definition.type] ? 'available' : 'unavailable'),
+    };
+  });
+}
+
+function billingDocumentStatus(document) {
+  if (document.error) return document.error;
+  if (document.available === false || document.status === 'unavailable') return 'Não vinculado a esta cobrança';
+  if (document.status === 'pending') return 'Aguardando o agente iLux';
+  if (document.status === 'failed') return 'Falha ao gerar — tente novamente';
+  if (document.status === 'ready') return 'Pronto para visualizar e enviar';
+  return 'Disponível para gerar';
+}
+
+function billingDocumentIcon(type) {
+  if (type === 'boleto') return <CreditCard size={17} />;
+  if (type === 'statement') return <ClipboardList size={17} />;
+  return <FileText size={17} />;
+}
+
 const crmResponsiveCss = `
   .crm-customer-card { transition: border-color .16s ease, transform .16s ease, background .16s ease; }
   .crm-customer-card:hover { border-color: var(--accent-border) !important; transform: translateY(-1px); }
@@ -1002,6 +1198,8 @@ const crmResponsiveCss = `
     .crm-profile-header > div { min-width: 0; }
     .crm-profile-header h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .crm-finance-detail { width: calc(100vw - 1.5rem) !important; max-height: calc(100vh - 1.5rem) !important; }
+    .crm-document-card { align-items: stretch !important; flex-direction: column !important; }
+    .crm-document-actions { justify-content: flex-end !important; }
   }
 `;
 
@@ -1123,6 +1321,27 @@ const s = {
   financeDetailGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: '0.9rem 1.2rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 14, background: 'var(--bg-base)' },
   digitableLineBox: { display: 'grid', gap: '0.35rem', padding: '0.85rem 1rem', borderRadius: 12, background: 'var(--accent-light)', border: '1px solid var(--accent-border)', overflowWrap: 'anywhere' },
   invoiceNotes: { display: 'grid', gap: '0.35rem', color: 'var(--text-muted)', fontSize: '0.8rem' },
+  billingDocumentsSection: { display: 'grid', gap: '0.8rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 15, background: 'rgba(8,12,22,.3)' },
+  billingDocumentsHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' },
+  billingDocumentsTitle: { display: 'flex', alignItems: 'center', gap: '0.45rem', margin: '0.2rem 0 0', color: 'var(--text-main)', fontSize: '0.95rem' },
+  smallSecondaryBtn: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', padding: '0.48rem 0.65rem', border: '1px solid var(--border-color)', borderRadius: 9, background: 'var(--bg-surface)', color: 'var(--text-main)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 800 },
+  documentsLoading: { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem', color: 'var(--text-muted)', border: '1px dashed var(--border-color)', borderRadius: 10, fontSize: '0.78rem' },
+  documentError: { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 0.8rem', color: '#fca5a5', border: '1px solid rgba(239,68,68,.25)', borderRadius: 10, background: 'rgba(239,68,68,.07)', fontSize: '0.76rem' },
+  documentList: { display: 'grid', gap: '0.55rem' },
+  documentCard: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', padding: '0.7rem', border: '1px solid var(--border-color)', borderRadius: 12, background: 'var(--bg-base)' },
+  documentUnavailable: { opacity: 0.58 },
+  documentSelect: { display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, cursor: 'pointer' },
+  documentIcon: { width: 34, height: 34, flex: '0 0 auto', display: 'grid', placeItems: 'center', color: 'var(--accent)', background: 'var(--accent-light)', borderRadius: 9 },
+  documentIdentity: { display: 'grid', gap: 2, minWidth: 0 },
+  documentActions: { display: 'flex', alignItems: 'center', gap: '0.4rem', flex: '0 0 auto' },
+  iconActionBtn: { width: 34, height: 34, display: 'grid', placeItems: 'center', border: '1px solid var(--border-color)', borderRadius: 9, background: 'var(--bg-surface)', color: 'var(--text-main)', cursor: 'pointer' },
+  documentSendBtn: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', padding: '0.55rem 0.65rem', border: '1px solid var(--accent-border)', borderRadius: 9, background: 'var(--accent-light)', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 900 },
+  packageSendBtn: { width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', padding: '0.72rem 1rem', border: 0, borderRadius: 10, background: 'var(--accent)', color: 'var(--text-inverse)', cursor: 'pointer', fontWeight: 900 },
+  deliveryConfirmation: { display: 'grid', gap: '0.8rem', padding: '1rem', border: '1px solid var(--accent-border)', borderRadius: 14, background: 'var(--accent-light)' },
+  deliveryTitle: { display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' },
+  deliveryGrid: { display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: '0.75rem 1rem' },
+  deliveryWarning: { display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.65rem', borderRadius: 9, color: 'var(--warning-text)', background: 'var(--warning-light)', fontSize: '0.76rem' },
+  deliveryActions: { display: 'flex', justifyContent: 'flex-end', gap: '0.55rem', flexWrap: 'wrap' },
   financeDetailFooter: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', padding: '0.9rem 1.25rem', borderTop: '1px solid var(--border-color)', background: 'var(--bg-base)' },
   noBoletoLabel: { color: 'var(--text-dim)', fontSize: '0.8rem', fontWeight: 700 },
   meterGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(145px,1fr))', gap: '0.55rem' },

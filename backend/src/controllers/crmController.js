@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const billingDocuments = require('../services/billingDocumentService');
 
 const HISTORY_DEFAULT_LIMIT = 25;
 const HISTORY_MAX_LIMIT = 100;
@@ -145,6 +146,7 @@ function normalizeReceivable(record) {
     invoiceValue: asNumber(rawValue(payload, 'invoiceValue', 'valtotalnfs')) || value,
     invoiceCancelled: Boolean(rawValue(payload, 'invoiceCancelled')),
     invoiceNotes: first(rawValue(payload, 'invoiceNotes', 'nf_obs')),
+    statementExternalId: first(rawValue(payload, 'statementExternalId', 'seqdemonstrativo')),
     billingType: first(rawValue(payload, 'billingType', 'faturamento_tipo')),
     billingPeriod: first(rawValue(payload, 'billingPeriod', 'faturamento_periodo')),
     contractExternalId: first(rawValue(payload, 'contractExternalId', 'seqixlcontratos', 'seqcontrato')),
@@ -1010,6 +1012,126 @@ async function getReceivableBoleto(req, res) {
   });
 }
 
+function canViewFinancial(user) {
+  return ['admin', 'superadmin'].includes(String(user?.role || '').toLowerCase());
+}
+
+async function resolveCustomerReceivable(req) {
+  const tenantId = req.user.tenantId;
+  if (!canViewFinancial(req.user)) {
+    const error = new Error('Informacoes financeiras disponiveis apenas para administradores.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const customer = await prisma.crmCustomer.findFirst({
+    where: { id: req.params.id, tenantId },
+    select: { id: true, externalId: true, name: true, fantasyName: true, cpfCnpj: true },
+  });
+  if (!customer) {
+    const error = new Error('Cliente CRM nao encontrado.');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const record = await prisma.externalSyncRecord.findFirst({
+    where: {
+      tenantId,
+      source: 'firebird',
+      entity: 'receivables',
+      externalId: String(req.params.receivableId),
+    },
+    select: { externalId: true, payload: true },
+  });
+  if (!record) {
+    const error = new Error('Titulo financeiro nao encontrado.');
+    error.statusCode = 404;
+    throw error;
+  }
+  const receivable = normalizeReceivable(record);
+  if (text(receivable.clientExternalId) !== text(customer.externalId)) {
+    const error = new Error('Titulo financeiro nao pertence a este cliente.');
+    error.statusCode = 404;
+    throw error;
+  }
+  return { tenantId, customer, receivable };
+}
+
+function sendFinancialError(res, error) {
+  const status = error.statusCode || error.response?.status || 500;
+  if (status >= 500) console.error('[crm-financial-documents] erro:', error.message);
+  return res.status(status).json({ error: error.message || 'Erro ao processar documentos financeiros.' });
+}
+
+async function getReceivableDocuments(req, res) {
+  try {
+    const context = await resolveCustomerReceivable(req);
+    const customerName = context.customer.fantasyName || context.customer.name;
+    const [documents, delivery] = await Promise.all([
+      billingDocuments.listDocumentStates({
+        tenantId: context.tenantId,
+        receivable: context.receivable,
+        customerName,
+      }),
+      billingDocuments.resolveDelivery({
+        tenantId: context.tenantId,
+        customerId: context.customer.id,
+        ticketId: req.query.ticketId || null,
+      }),
+    ]);
+    return res.json({
+      receivable: {
+        externalId: context.receivable.externalId,
+        invoiceNumber: context.receivable.invoiceNumber,
+        invoiceExternalId: context.receivable.invoiceExternalId,
+        statementExternalId: context.receivable.statementExternalId,
+        issuedAt: context.receivable.issuedAt,
+        billingPeriod: context.receivable.billingPeriod,
+        billingType: context.receivable.billingType,
+        paymentMethod: context.receivable.paymentMethod,
+        dueAt: context.receivable.dueAt,
+        value: context.receivable.value,
+        openValue: context.receivable.openValue,
+        status: context.receivable.status,
+      },
+      documents,
+      delivery: delivery || { available: false },
+    });
+  } catch (error) {
+    return sendFinancialError(res, error);
+  }
+}
+
+async function getReceivableDocument(req, res) {
+  try {
+    const context = await resolveCustomerReceivable(req);
+    const document = await billingDocuments.getOrRequestDocument({
+      tenantId: context.tenantId,
+      receivable: context.receivable,
+      customerName: context.customer.fantasyName || context.customer.name,
+      documentType: String(req.params.documentType || '').toLowerCase(),
+    });
+    return res.json(document);
+  } catch (error) {
+    return sendFinancialError(res, error);
+  }
+}
+
+async function sendReceivableDocuments(req, res) {
+  try {
+    const context = await resolveCustomerReceivable(req);
+    const result = await billingDocuments.sendDocuments({
+      ...context,
+      userId: req.user.userId || req.user.id || null,
+      documentTypes: req.body?.documentTypes,
+      ticketId: req.body?.ticketId || null,
+    });
+    return res.json(result);
+  } catch (error) {
+    return sendFinancialError(res, error);
+  }
+}
+
 function isOrderClosedForAnalytics(order) {
   return order.status === 'FINALIZADA' || Boolean(order.closedAt);
 }
@@ -1059,5 +1181,8 @@ module.exports = {
   getCustomerServiceOrders,
   getCustomer360,
   getReceivableBoleto,
+  getReceivableDocuments,
+  getReceivableDocument,
+  sendReceivableDocuments,
   listEquipments,
 };

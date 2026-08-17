@@ -184,6 +184,20 @@ export const getCrmReceivableBoleto = (customerId, receivableId) => api.post(
   {},
   { timeout: 60000 },
 );
+export const getCrmReceivableDocuments = (customerId, receivableId, ticketId = null) => api.get(
+  `/crm/customers/${customerId}/receivables/${receivableId}/documents`,
+  { params: ticketId ? { ticketId } : {}, timeout: 20000 },
+);
+export const prepareCrmReceivableDocument = (customerId, receivableId, documentType) => api.post(
+  `/crm/customers/${customerId}/receivables/${receivableId}/documents/${documentType}`,
+  {},
+  { timeout: 120000 },
+);
+export const sendCrmReceivableDocuments = (customerId, receivableId, data) => api.post(
+  `/crm/customers/${customerId}/receivables/${receivableId}/documents/send`,
+  data,
+  { timeout: 300000 },
+);
 export const getCrmEquipments = (params = {}) => api.get('/crm/equipments', { params });
 
 // Billing Integration (Automação de Cobranças)

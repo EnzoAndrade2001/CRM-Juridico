@@ -9,6 +9,9 @@ const {
   getCustomerServiceOrders,
   getCustomer360,
   getReceivableBoleto,
+  getReceivableDocuments,
+  getReceivableDocument,
+  sendReceivableDocuments,
   listEquipments,
 } = require('../controllers/crmController');
 
@@ -21,6 +24,9 @@ router.get('/customers/:id/contracts', asyncRoute(getCustomerContracts));
 router.get('/customers/:id/service-orders', asyncRoute(getCustomerServiceOrders));
 router.get('/customers/:id/360', asyncRoute(getCustomer360));
 router.post('/customers/:id/receivables/:receivableId/boleto', asyncRoute(getReceivableBoleto));
+router.get('/customers/:id/receivables/:receivableId/documents', asyncRoute(getReceivableDocuments));
+router.post('/customers/:id/receivables/:receivableId/documents/send', asyncRoute(sendReceivableDocuments));
+router.post('/customers/:id/receivables/:receivableId/documents/:documentType', asyncRoute(getReceivableDocument));
 router.get('/equipments', asyncRoute(listEquipments));
 
 module.exports = router;

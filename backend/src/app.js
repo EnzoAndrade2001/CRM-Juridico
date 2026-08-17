@@ -26,6 +26,7 @@ const campaignRoutes = require('./routes/campaignRoutes');
 const { setIo: setIoCampaign } = require('./controllers/campaignController');
 const { setIo: setIoBilling } = require('./controllers/billingController');
 const { setIo: setIoManagerCopy } = require('./services/serviceOrderManagerCopyService');
+const { setIo: setIoBillingDocuments } = require('./services/billingDocumentService');
 const tagRoutes = require('./routes/tagRoutes');
 const uploadRoutes = require('./routes/upload');
 const osRoutes = require('./routes/osRoutes');
@@ -59,6 +60,7 @@ setIoInternal(io);
 setIoCampaign(io);
 setIoBilling(io);
 setIoManagerCopy(io);
+setIoBillingDocuments(io);
 
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5174', credentials: true }));
 app.use(express.json({ limit: '100mb' }));

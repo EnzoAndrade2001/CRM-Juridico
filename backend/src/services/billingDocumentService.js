@@ -1,0 +1,436 @@
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const prisma = require('../lib/prisma');
+const evolutionService = require('./evolutionService');
+const { mediaPath } = require('../utils/uploads');
+
+const DOCUMENT_TYPES = Object.freeze(['invoice', 'statement', 'boleto']);
+const DOCUMENT_LABELS = Object.freeze({
+  invoice: 'Nota Fiscal',
+  statement: 'Demonstrativo',
+  boleto: 'Boleto',
+});
+const REQUEST_ENTITY = 'billingDocumentRequest';
+const REQUEST_TIMEOUT_MS = 90_000;
+const MAX_PDF_SIZE = 20 * 1024 * 1024;
+
+let io = null;
+
+function setIo(socketIo) {
+  io = socketIo;
+}
+
+function cleanText(value) {
+  const normalized = value == null ? '' : String(value).trim();
+  return normalized || null;
+}
+
+function safePart(value, fallback) {
+  return String(value || fallback || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9 ._-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase()
+    .slice(0, 90) || fallback;
+}
+
+function requestExternalId(receivableExternalId, documentType) {
+  return `${receivableExternalId}:${documentType}`;
+}
+
+function assertDocumentType(documentType) {
+  if (!DOCUMENT_TYPES.includes(documentType)) {
+    const error = new Error('Tipo de documento financeiro invalido.');
+    error.statusCode = 400;
+    throw error;
+  }
+}
+
+function documentAvailability(receivable, type) {
+  if (type === 'invoice') return Boolean(receivable.invoiceExternalId || receivable.invoiceNumber);
+  if (type === 'statement') return Boolean(receivable.statementExternalId || receivable.invoiceExternalId);
+  return Boolean(receivable.hasBoleto);
+}
+
+function defaultFileName(type, receivable, customerName) {
+  const customer = safePart(customerName, 'CLIENTE');
+  const invoice = safePart(receivable.invoiceNumber || receivable.externalId, 'SEM NUMERO');
+  if (type === 'invoice') return `NF ${invoice} - ${customer}.pdf`;
+  if (type === 'statement') {
+    const period = safePart(receivable.billingPeriod, invoice);
+    return `DEMONSTRATIVO ${period} - ${customer}.pdf`;
+  }
+  return `BOLETO NF ${invoice} - ${customer}.pdf`;
+}
+
+function storedFileName(displayName) {
+  const safe = String(displayName || 'documento.pdf')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9._-]+/g, '_')
+    .replace(/_+/g, '_');
+  return `${Date.now()}-${crypto.randomBytes(6).toString('hex')}-${safe}`;
+}
+
+function publicFileExists(mediaUrl) {
+  if (!cleanText(mediaUrl)) return false;
+  const filename = path.basename(String(mediaUrl));
+  return Boolean(filename && fs.existsSync(path.join(mediaPath, filename)));
+}
+
+function documentState(type, receivable, request, customerName) {
+  const available = documentAvailability(receivable, type);
+  const payload = request?.payload || {};
+  const ready = payload.status === 'success' && publicFileExists(payload.mediaUrl);
+  let status = available ? 'available' : 'unavailable';
+  if (['pending', 'processing'].includes(payload.status)) status = payload.status;
+  if (payload.status === 'failed') status = 'failed';
+  if (ready) status = 'ready';
+  return {
+    type,
+    label: DOCUMENT_LABELS[type],
+    externalId: type === 'invoice'
+      ? receivable.invoiceExternalId
+      : type === 'statement'
+        ? receivable.statementExternalId
+        : receivable.boletoId,
+    available,
+    status,
+    mediaUrl: ready ? payload.mediaUrl : null,
+    fileName: ready ? payload.fileName : defaultFileName(type, receivable, customerName),
+    error: status === 'failed' ? cleanText(payload.error) : null,
+  };
+}
+
+async function listDocumentStates({ tenantId, receivable, customerName }) {
+  const ids = DOCUMENT_TYPES.map((type) => requestExternalId(receivable.externalId, type));
+  const requests = await prisma.externalSyncRecord.findMany({
+    where: { tenantId, source: 'crm', entity: REQUEST_ENTITY, externalId: { in: ids } },
+    select: { externalId: true, payload: true },
+  });
+  const byId = new Map(requests.map((item) => [item.externalId, item]));
+  return DOCUMENT_TYPES.map((type) => documentState(
+    type,
+    receivable,
+    byId.get(requestExternalId(receivable.externalId, type)),
+    customerName,
+  ));
+}
+
+async function queueDocumentRequest({ tenantId, receivable, customerName, documentType }) {
+  assertDocumentType(documentType);
+  if (!documentAvailability(receivable, documentType)) {
+    const error = new Error(`${DOCUMENT_LABELS[documentType]} nao esta vinculado a este titulo no iLux.`);
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const externalId = requestExternalId(receivable.externalId, documentType);
+  const existing = await prisma.externalSyncRecord.findFirst({
+    where: { tenantId, source: 'crm', entity: REQUEST_ENTITY, externalId },
+    select: { id: true, payload: true },
+  });
+  if (existing?.payload?.status === 'success' && publicFileExists(existing.payload.mediaUrl)) return existing;
+
+  return prisma.externalSyncRecord.upsert({
+    where: {
+      tenantId_source_entity_externalId: { tenantId, source: 'crm', entity: REQUEST_ENTITY, externalId },
+    },
+    update: {
+      payload: {
+        status: 'pending',
+        requestedAt: new Date().toISOString(),
+        receivableExternalId: String(receivable.externalId),
+        documentType,
+        invoiceNumber: receivable.invoiceNumber,
+        invoiceExternalId: receivable.invoiceExternalId,
+        statementExternalId: receivable.statementExternalId,
+        customerName,
+        fileName: defaultFileName(documentType, receivable, customerName),
+      },
+    },
+    create: {
+      tenantId,
+      source: 'crm',
+      entity: REQUEST_ENTITY,
+      externalId,
+      payload: {
+        status: 'pending',
+        requestedAt: new Date().toISOString(),
+        receivableExternalId: String(receivable.externalId),
+        documentType,
+        invoiceNumber: receivable.invoiceNumber,
+        invoiceExternalId: receivable.invoiceExternalId,
+        statementExternalId: receivable.statementExternalId,
+        customerName,
+        fileName: defaultFileName(documentType, receivable, customerName),
+      },
+    },
+    select: { id: true, externalId: true, payload: true },
+  });
+}
+
+async function waitForDocument(requestId, timeoutMs = REQUEST_TIMEOUT_MS) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const current = await prisma.externalSyncRecord.findUnique({
+      where: { id: requestId },
+      select: { payload: true },
+    });
+    if (current?.payload?.status === 'success' && publicFileExists(current.payload.mediaUrl)) {
+      return current.payload;
+    }
+    if (current?.payload?.status === 'failed') {
+      const error = new Error(current.payload.error || 'Nao foi possivel recuperar o documento no iLux.');
+      error.statusCode = 502;
+      throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+  const error = new Error('O agente do iLux nao devolveu o documento no tempo esperado. Confirme se ele esta atualizado e em execucao.');
+  error.statusCode = 504;
+  throw error;
+}
+
+async function getOrRequestDocument(params) {
+  const request = await queueDocumentRequest(params);
+  const payload = request.payload?.status === 'success' && publicFileExists(request.payload.mediaUrl)
+    ? request.payload
+    : await waitForDocument(request.id);
+  return {
+    type: params.documentType,
+    status: 'ready',
+    mediaUrl: payload.mediaUrl,
+    fileName: payload.fileName || defaultFileName(params.documentType, params.receivable, params.customerName),
+    mimeType: payload.mimeType || 'application/pdf',
+  };
+}
+
+function validatePdfResult(result) {
+  if (!result?.pdfBase64) throw new Error('O agente nao devolveu o PDF solicitado.');
+  const pdf = Buffer.from(String(result.pdfBase64), 'base64');
+  if (!pdf.subarray(0, 4).equals(Buffer.from('%PDF'))) throw new Error('O agente devolveu um arquivo PDF invalido.');
+  if (pdf.length > MAX_PDF_SIZE) throw new Error('O PDF excedeu o limite de 20 MB.');
+  return pdf;
+}
+
+async function completeDocumentRequest({ request, success, result, error }) {
+  // O agente repete callbacks quando a confirmacao HTTP se perde. Depois que
+  // um PDF valido foi persistido, a repeticao nao pode substituir o sucesso
+  // por falha nem deixar arquivos duplicados no servidor.
+  if (request.payload?.status === 'success' && publicFileExists(request.payload.mediaUrl)) return;
+  if (!success) {
+    await prisma.externalSyncRecord.update({
+      where: { id: request.id },
+      data: { payload: { ...request.payload, status: 'failed', completedAt: new Date().toISOString(), error: String(error || 'Nao foi possivel recuperar o documento.') } },
+    });
+    return;
+  }
+
+  if (result?.documentType && result.documentType !== request.payload.documentType) {
+    throw new Error('O agente devolveu um tipo de documento diferente do solicitado.');
+  }
+  const pdf = validatePdfResult(result);
+  const displayName = path.basename(String(result.fileName || request.payload.fileName || 'documento.pdf'));
+  const filename = storedFileName(displayName);
+  await fs.promises.writeFile(path.join(mediaPath, filename), pdf);
+  await prisma.externalSyncRecord.update({
+    where: { id: request.id },
+    data: {
+      payload: {
+        ...request.payload,
+        status: 'success',
+        completedAt: new Date().toISOString(),
+        mediaUrl: `/uploads/media/${filename}`,
+        fileName: displayName,
+        mimeType: result.mimeType || 'application/pdf',
+      },
+    },
+  });
+}
+
+function evolutionMessageId(result) {
+  return result?.key?.id || result?.message?.key?.id || result?.data?.key?.id || result?.id || null;
+}
+
+async function resolveDelivery({ tenantId, customerId, ticketId }) {
+  const where = {
+    tenantId,
+    contact: { crmCustomerId: customerId },
+    instanceId: { not: null },
+  };
+  if (ticketId) where.id = ticketId;
+  const ticket = await prisma.ticket.findFirst({
+    where,
+    orderBy: [{ lastMessageAt: 'desc' }, { updatedAt: 'desc' }],
+    include: { contact: true, instance: true },
+  });
+  if (!ticket) return null;
+  const phone = evolutionService.normalizePhoneNumber(ticket.contact.whatsapp || ticket.contact.phone || '');
+  const instanceConnected = ['connected', 'open'].includes(String(ticket.instance?.status || '').toLowerCase());
+  return {
+    available: Boolean(phone && ticket.instance?.instanceName && instanceConnected),
+    ticketId: ticket.id,
+    contactId: ticket.contactId,
+    contactName: ticket.contact.name,
+    phone,
+    instanceId: ticket.instanceId,
+    instanceName: ticket.instance?.instanceName || null,
+    instanceStatus: ticket.instance?.status || null,
+    unavailableReason: !phone
+      ? 'Telefone WhatsApp invalido.'
+      : !ticket.instance?.instanceName
+        ? 'Conversa sem instancia de saida.'
+        : !instanceConnected
+          ? 'A instancia desta conversa esta desconectada.'
+          : null,
+  };
+}
+
+function billingCaption(receivable, customerName) {
+  return `Documentos da cobranca - NF ${receivable.invoiceNumber || receivable.externalId} - ${customerName}`;
+}
+
+async function sendDocuments({ tenantId, userId, customer, receivable, documentTypes, ticketId }) {
+  const uniqueTypes = [...new Set(documentTypes || [])];
+  if (!uniqueTypes.length) {
+    const error = new Error('Selecione ao menos um documento para reenviar.');
+    error.statusCode = 400;
+    throw error;
+  }
+  uniqueTypes.forEach(assertDocumentType);
+
+  const delivery = await resolveDelivery({ tenantId, customerId: customer.id, ticketId });
+  if (!delivery?.available) {
+    const error = new Error('Este cliente nao possui uma conversa WhatsApp com instancia valida.');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const settings = await prisma.tenantSettings.findUnique({ where: { tenantId } });
+  const evolutionUrl = settings?.evolutionUrl || process.env.DEFAULT_EVOLUTION_URL;
+  const evolutionKey = settings?.evolutionKey || process.env.DEFAULT_EVOLUTION_KEY;
+  if (!evolutionUrl || !evolutionKey) throw new Error('Evolution API nao configurada para o tenant.');
+
+  const customerName = customer.fantasyName || customer.name;
+  const documents = await Promise.all(uniqueTypes.map((documentType) => getOrRequestDocument({
+    tenantId,
+    receivable,
+    customerName,
+    documentType,
+  })));
+  const sent = [];
+  const caption = billingCaption(receivable, customerName);
+  let updatedTicket = null;
+
+  try {
+    for (const document of documents) {
+      const filePath = path.join(mediaPath, path.basename(document.mediaUrl));
+      const base64 = (await fs.promises.readFile(filePath)).toString('base64');
+      const result = await evolutionService.sendMedia(
+        evolutionUrl,
+        evolutionKey,
+        delivery.instanceName,
+        delivery.phone,
+        {
+          mediatype: 'document',
+          media: base64,
+          mimetype: document.mimeType,
+          filename: document.fileName,
+          caption,
+          filePath,
+        },
+      );
+      const message = await prisma.message.create({
+        data: {
+          ticketId: delivery.ticketId,
+          agentId: userId || null,
+          body: caption,
+          fromMe: true,
+          mediaUrl: document.mediaUrl,
+          mediaType: 'document',
+          mediaStatus: 'ok',
+          fileName: document.fileName,
+          externalId: evolutionMessageId(result),
+        },
+      });
+      sent.push({ ...document, messageId: message.id });
+      updatedTicket = await prisma.ticket.update({
+        where: { id: delivery.ticketId },
+        data: { lastMessageAt: new Date() },
+        include: {
+          contact: { include: { crmCustomer: true } },
+          agent: { select: { id: true, name: true } },
+          team: true,
+          instance: true,
+        },
+      });
+      if (io) {
+        io.to(tenantId).emit('new_message', {
+          ticket: updatedTicket,
+          message,
+          contact: updatedTicket.contact,
+          fromMe: true,
+        });
+        io.to(tenantId).emit('ticket_updated', { ticketId: updatedTicket.id, ticket: updatedTicket });
+      }
+    }
+
+    await prisma.$transaction([
+      prisma.ticketEvent.create({
+        data: {
+          ticketId: delivery.ticketId,
+          tenantId,
+          userId: userId || null,
+          type: 'billing_documents_resent',
+          payload: JSON.stringify({ receivableExternalId: receivable.externalId, invoiceNumber: receivable.invoiceNumber, documentTypes: uniqueTypes, phone: delivery.phone, instanceId: delivery.instanceId }),
+        },
+      }),
+      prisma.billingLog.create({
+        data: { tenantId, cpfCnpj: customer.cpfCnpj, clientName: customerName, fileName: sent.map((item) => item.fileName).join(', '), status: 'SUCCESS' },
+      }),
+    ]);
+
+    return { success: true, ...delivery, documents: sent };
+  } catch (error) {
+    const partialDetail = sent.length
+      ? `${sent.length} de ${documents.length} documento(s) foram enviados antes da falha. Nao repita o pacote completo; reenvie apenas os documentos restantes.`
+      : null;
+    await prisma.billingLog.create({
+      data: {
+        tenantId,
+        cpfCnpj: customer.cpfCnpj,
+        clientName: customerName,
+        fileName: documents.map((item) => item.fileName).join(', '),
+        status: 'FAILED',
+        errorMessage: `${error.message}${partialDetail ? ` ${partialDetail}` : ''}`,
+      },
+    }).catch(() => {});
+    if (partialDetail) {
+      const partialError = new Error(`${error.message} ${partialDetail}`);
+      partialError.statusCode = error.statusCode || error.response?.status || 502;
+      throw partialError;
+    }
+    throw error;
+  }
+}
+
+module.exports = {
+  DOCUMENT_TYPES,
+  REQUEST_ENTITY,
+  setIo,
+  listDocumentStates,
+  getOrRequestDocument,
+  completeDocumentRequest,
+  resolveDelivery,
+  sendDocuments,
+  _private: {
+    assertDocumentType,
+    documentAvailability,
+    defaultFileName,
+    requestExternalId,
+  },
+};

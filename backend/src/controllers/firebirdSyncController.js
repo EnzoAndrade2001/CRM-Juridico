@@ -6,6 +6,7 @@ const evolutionService = require('../services/evolutionService');
 const { sendServiceOrderManagerCopy } = require('../services/serviceOrderManagerCopyService');
 const { mapEquipmentType } = require('../utils/equipmentMapper');
 const { mediaPath } = require('../utils/uploads');
+const billingDocumentService = require('../services/billingDocumentService');
 
 function pick(...values) {
   for (const value of values) {
@@ -550,6 +551,7 @@ async function getPendingCommands(req, res) {
     const deadline = Date.now() + (waitSeconds * 1000);
     let pendingOS = [];
     let pendingBillingPdf = null;
+    let pendingBillingDocument = null;
 
     do {
       const leaseExpiredAt = new Date(Date.now() - 45_000);
@@ -617,7 +619,31 @@ async function getPendingCommands(req, res) {
         });
       }
 
-      if (pendingOS.length > 0 || pendingBillingPdf || tenant.settings?.firebirdQueueBillingProcess || Date.now() >= deadline) break;
+      const documentCandidate = await prisma.externalSyncRecord.findFirst({
+        where: {
+          tenantId: tenant.id,
+          source: 'crm',
+          entity: billingDocumentService.REQUEST_ENTITY,
+          payload: { path: ['status'], equals: 'pending' },
+        },
+        orderBy: { receivedAt: 'asc' },
+        select: { id: true, payload: true },
+      });
+      if (documentCandidate) {
+        pendingBillingDocument = await prisma.externalSyncRecord.update({
+          where: { id: documentCandidate.id },
+          data: {
+            payload: {
+              ...documentCandidate.payload,
+              status: 'processing',
+              processingAt: new Date().toISOString(),
+            },
+          },
+          select: { id: true, payload: true },
+        });
+      }
+
+      if (pendingOS.length > 0 || pendingBillingPdf || pendingBillingDocument || tenant.settings?.firebirdQueueBillingProcess || Date.now() >= deadline) break;
       await new Promise((resolve) => setTimeout(resolve, 350));
     } while (true);
 
@@ -676,6 +702,15 @@ async function getPendingCommands(req, res) {
         id: pendingBillingPdf.id,
         type: 'FETCH_BILLING_PDF',
         payload: pendingBillingPdf.payload,
+      });
+    }
+
+
+    if (pendingBillingDocument) {
+      commands.push({
+        id: pendingBillingDocument.id,
+        type: 'FETCH_BILLING_DOCUMENT',
+        payload: pendingBillingDocument.payload,
       });
     }
 
@@ -744,6 +779,29 @@ async function commandCallback(req, res) {
               error: String(error || 'Nao foi possivel recuperar o boleto.'),
             },
           },
+        });
+      }
+      return res.json({ ok: true });
+    }
+
+    const billingDocumentRequest = await prisma.externalSyncRecord.findFirst({
+      where: { id, tenantId: tenant.id, source: 'crm', entity: billingDocumentService.REQUEST_ENTITY },
+      select: { id: true, externalId: true, payload: true },
+    });
+    if (billingDocumentRequest) {
+      try {
+        await billingDocumentService.completeDocumentRequest({
+          request: billingDocumentRequest,
+          success,
+          result,
+          error,
+        });
+      } catch (documentError) {
+        await billingDocumentService.completeDocumentRequest({
+          request: billingDocumentRequest,
+          success: false,
+          result: null,
+          error: documentError.message,
         });
       }
       return res.json({ ok: true });
