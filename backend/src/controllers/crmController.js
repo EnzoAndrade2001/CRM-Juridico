@@ -57,6 +57,28 @@ function asDate(value, timeValue) {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
+function asCalendarDate(value) {
+  if (!value) return null;
+  const input = String(value).trim();
+  const iso = input.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const brazilian = input.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (brazilian) return `${brazilian[3]}-${brazilian[2]}-${brazilian[1]}`;
+  const parsed = new Date(input);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
+}
+
+function brazilCalendarToday() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 function contractIsActive(status, endsAt) {
   const normalized = String(status || '').trim().toUpperCase();
   if (['C', 'I', 'N', 'CANCELADO', 'INATIVO', 'ENCERRADO', 'FINALIZADO'].includes(normalized)) return false;
@@ -98,25 +120,46 @@ function normalizeContract(record) {
 
 function normalizeReceivable(record) {
   const payload = record?.payload || record || {};
-  const dueAt = asDate(rawValue(payload, 'dueAt', 'dtvectorec'));
-  const paidAt = asDate(rawValue(payload, 'paidAt', 'dtpagtorec'));
+  const dueAt = asCalendarDate(rawValue(payload, 'dueAt', 'dtvectorec'));
+  const paidAt = asCalendarDate(rawValue(payload, 'paidAt', 'dtpagtorec'));
   const value = asNumber(rawValue(payload, 'value', 'valreceita')) || 0;
   const paidValue = asNumber(rawValue(payload, 'paidValue', 'valreceitapaga')) || 0;
   const openValue = Math.max(0, asNumber(rawValue(payload, 'openValue')) ?? (value - paidValue));
   const isPaid = Boolean(paidAt) || (value > 0 && openValue <= 0);
-  const isOverdue = !isPaid && dueAt && new Date(dueAt).getTime() < Date.now();
+  const isOverdue = !isPaid && dueAt && dueAt < brazilCalendarToday();
   return {
     id: record?.id || null,
     externalId: first(record?.externalId, rawValue(payload, 'externalId', 'seqreceita')),
     clientExternalId: first(rawValue(payload, 'clientExternalId', 'cdcliente')),
-    issuedAt: asDate(rawValue(payload, 'issuedAt', 'dtemissaorec')),
+    issuedAt: asCalendarDate(first(
+      rawValue(payload, 'invoiceIssuedAt', 'dtemissaonfs'),
+      rawValue(payload, 'issuedAt', 'dtemissaorec'),
+    )),
     dueAt,
     paidAt,
     value,
     paidValue,
     openValue,
     invoiceNumber: first(rawValue(payload, 'invoiceNumber', 'numnf')),
+    invoiceExternalId: first(rawValue(payload, 'invoiceExternalId', 'seqincnfs')),
+    invoiceValue: asNumber(rawValue(payload, 'invoiceValue', 'valtotalnfs')) || value,
+    invoiceCancelled: Boolean(rawValue(payload, 'invoiceCancelled')),
+    invoiceNotes: first(rawValue(payload, 'invoiceNotes', 'nf_obs')),
+    billingType: first(rawValue(payload, 'billingType', 'faturamento_tipo')),
+    billingPeriod: first(rawValue(payload, 'billingPeriod', 'faturamento_periodo')),
+    contractExternalId: first(rawValue(payload, 'contractExternalId', 'seqixlcontratos', 'seqcontrato')),
     paymentMethod: first(rawValue(payload, 'paymentMethod', 'nmformapagto')),
+    boletoId: first(rawValue(payload, 'boletoId', 'id_boleto')),
+    boletoStatus: first(rawValue(payload, 'boletoStatus', 'boleto_situacao')),
+    boletoUrl: first(rawValue(payload, 'boletoUrl', 'urlboleto')),
+    boletoPdfProtocol: first(rawValue(payload, 'boletoPdfProtocol', 'pdf_protocolo')),
+    ourNumber: first(rawValue(payload, 'ourNumber', 'titulonossonumero', 'nossonumero')),
+    digitableLine: first(rawValue(payload, 'digitableLine', 'titulolinhadigitavel', 'linha_digitavel')),
+    barcode: first(rawValue(payload, 'barcode', 'titulocodigobarras')),
+    hasBoleto: Boolean(
+      first(rawValue(payload, 'boletoId', 'id_boleto'), rawValue(payload, 'boletoPdfProtocol', 'pdf_protocolo'))
+      || String(first(rawValue(payload, 'paymentMethod', 'nmformapagto')) || '').toUpperCase().includes('BOLETO')
+    ),
     statusLabel: first(rawValue(payload, 'statusLabel', 'ds_receita_status')),
     status: isPaid ? 'paid' : isOverdue ? 'overdue' : 'open',
   };
@@ -735,11 +778,11 @@ async function getCustomer360(req, res) {
   const overdueReceivables = receivables.filter((item) => item.status === 'overdue');
   const paidReceivables = receivables.filter((item) => item.status === 'paid');
   const nextReceivable = openReceivables
-    .filter((item) => item.dueAt && new Date(item.dueAt).getTime() >= now)
-    .sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt))[0] || null;
+    .filter((item) => item.dueAt && item.dueAt >= brazilCalendarToday())
+    .sort((a, b) => a.dueAt.localeCompare(b.dueAt))[0] || null;
   const lastPayment = paidReceivables
     .filter((item) => item.paidAt)
-    .sort((a, b) => new Date(b.paidAt) - new Date(a.paidAt))[0] || null;
+    .sort((a, b) => b.paidAt.localeCompare(a.paidAt))[0] || null;
 
   const relationshipContacts = [];
   const contactKeys = new Set();
@@ -872,6 +915,96 @@ async function getCustomer360(req, res) {
   });
 }
 
+async function getReceivableBoleto(req, res) {
+  const tenantId = req.user.tenantId;
+  if (!['admin', 'superadmin'].includes(String(req.user.role || '').toLowerCase())) {
+    return res.status(403).json({ error: 'Informacoes financeiras disponiveis apenas para administradores.' });
+  }
+
+  const customer = await prisma.crmCustomer.findFirst({
+    where: { id: req.params.id, tenantId },
+    select: { externalId: true, name: true, fantasyName: true },
+  });
+  if (!customer) return res.status(404).json({ error: 'Cliente CRM nao encontrado.' });
+
+  const receivable = await prisma.externalSyncRecord.findFirst({
+    where: {
+      tenantId,
+      source: 'firebird',
+      entity: 'receivables',
+      externalId: String(req.params.receivableId),
+    },
+    select: { externalId: true, payload: true },
+  });
+  if (!receivable) return res.status(404).json({ error: 'Titulo financeiro nao encontrado.' });
+
+  const normalized = normalizeReceivable(receivable);
+  if (text(normalized.clientExternalId) !== text(customer.externalId)) {
+    return res.status(404).json({ error: 'Titulo financeiro nao pertence a este cliente.' });
+  }
+  if (!normalized.hasBoleto) {
+    return res.status(409).json({ error: 'Este titulo nao possui boleto vinculado no iLux.' });
+  }
+
+  const requestExternalId = String(receivable.externalId);
+  const request = await prisma.externalSyncRecord.upsert({
+    where: {
+      tenantId_source_entity_externalId: {
+        tenantId,
+        source: 'crm',
+        entity: 'billingPdfRequest',
+        externalId: requestExternalId,
+      },
+    },
+    update: {
+      payload: {
+        status: 'pending',
+        requestedAt: new Date().toISOString(),
+        receivableExternalId: requestExternalId,
+        invoiceNumber: normalized.invoiceNumber,
+        customerName: customer.fantasyName || customer.name,
+      },
+    },
+    create: {
+      tenantId,
+      source: 'crm',
+      entity: 'billingPdfRequest',
+      externalId: requestExternalId,
+      payload: {
+        status: 'pending',
+        requestedAt: new Date().toISOString(),
+        receivableExternalId: requestExternalId,
+        invoiceNumber: normalized.invoiceNumber,
+        customerName: customer.fantasyName || customer.name,
+      },
+    },
+    select: { id: true },
+  });
+
+  const deadline = Date.now() + 45_000;
+  while (Date.now() < deadline) {
+    const current = await prisma.externalSyncRecord.findUnique({
+      where: { id: request.id },
+      select: { payload: true },
+    });
+    const status = current?.payload?.status;
+    if (status === 'success') {
+      return res.json({
+        mediaUrl: current.payload.mediaUrl,
+        fileName: current.payload.fileName,
+      });
+    }
+    if (status === 'failed') {
+      return res.status(502).json({ error: current.payload.error || 'Nao foi possivel recuperar o boleto.' });
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+
+  return res.status(504).json({
+    error: 'O agente do iLux nao devolveu o boleto no tempo esperado. Confirme se ele esta atualizado e em execucao.',
+  });
+}
+
 function isOrderClosedForAnalytics(order) {
   return order.status === 'FINALIZADA' || Boolean(order.closedAt);
 }
@@ -920,5 +1053,6 @@ module.exports = {
   getCustomerContracts,
   getCustomerServiceOrders,
   getCustomer360,
+  getReceivableBoleto,
   listEquipments,
 };

@@ -11,6 +11,7 @@ import {
   Clock3,
   CreditCard,
   Database,
+  Download,
   FileText,
   Gauge,
   Hash,
@@ -32,10 +33,12 @@ import {
 } from 'lucide-react';
 import {
   BACKEND_URL,
+  getMediaUrl,
   getCrmCustomer,
   getCrmCustomerContracts,
   getCrmCustomerServiceOrders,
   getCrmCustomer360,
+  getCrmReceivableBoleto,
   getCrmCustomers,
   getCrmSummary,
   sendOSManagerCopy,
@@ -359,7 +362,7 @@ function CustomerModal({ customer, activeTab, setActiveTab, loading, relatedLoad
           {!loading && activeTab === 'contacts' ? <ContactsTab contacts={arrayOf(customer360.contacts)} /> : null}
           {!loading && activeTab === 'equipments' ? <EquipmentsTab equipments={equipments} evolution={arrayOf(customer360.equipmentEvolution)} /> : null}
           {!loading && activeTab === 'contracts' ? <ContractsTab contracts={contracts} /> : null}
-          {!loading && activeTab === 'financial' ? <FinancialTab financial={customer360.financial} /> : null}
+          {!loading && activeTab === 'financial' ? <FinancialTab financial={customer360.financial} customerId={customer.id} /> : null}
           {!loading && activeTab === 'os' ? <OsTab serviceOrders={serviceOrders} onRefresh={onRetry} /> : null}
           {!loading && activeTab === 'raw' ? <RawFieldsTab title="Campos originais do cliente no ILUX" raw={customer.raw} /> : null}
         </div>
@@ -532,10 +535,46 @@ function ContactsTab({ contacts }) {
   );
 }
 
-function FinancialTab({ financial }) {
+function FinancialTab({ financial, customerId }) {
+  const [selected, setSelected] = useState(null);
+  const [boletoLoading, setBoletoLoading] = useState(false);
+
   if (!financial?.allowed) return <Empty icon={<CreditCard size={28} />} title="Acesso financeiro restrito" text={financial?.reason || 'Esta área está disponível apenas para administradores.'} />;
   if (!financial.synchronized) return <Empty icon={<RefreshCw size={28} />} title="Aguardando sincronização financeira" text="Atualize o agente Firebird para carregar os títulos recentes do iLux." />;
   const items = arrayOf(financial.items);
+
+  async function accessBoleto(mode) {
+    if (!selected?.hasBoleto || boletoLoading) return;
+    const preview = mode === 'open' ? window.open('about:blank', '_blank') : null;
+    if (preview) preview.opener = null;
+    setBoletoLoading(true);
+    try {
+      const response = await getCrmReceivableBoleto(customerId, selected.externalId);
+      const mediaUrl = getMediaUrl(response.data?.mediaUrl);
+      if (!mediaUrl) throw new Error('O servidor não devolveu o endereço do boleto.');
+      if (mode === 'open') {
+        if (preview) preview.location.replace(mediaUrl);
+        else window.open(mediaUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        const fileResponse = await fetch(mediaUrl);
+        if (!fileResponse.ok) throw new Error('O arquivo do boleto não pôde ser baixado.');
+        const objectUrl = URL.createObjectURL(await fileResponse.blob());
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = response.data?.fileName || `BOLETO NF ${selected.invoiceNumber || selected.externalId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      }
+    } catch (error) {
+      if (preview) preview.close();
+      toast.error(error.response?.data?.error || error.message || 'Não foi possível recuperar o boleto.');
+    } finally {
+      setBoletoLoading(false);
+    }
+  }
+
   return (
     <div style={s.sectionStack}>
       <div style={s.financialStats}>
@@ -546,17 +585,70 @@ function FinancialTab({ financial }) {
       </div>
       <div style={s.financeList}>
         {items.map((item) => (
-          <article key={item.externalId} style={s.financeItem}>
+          <button key={item.externalId} type="button" style={s.financeItem} onClick={() => setSelected(item)} aria-label={`Ver detalhes da NF ${item.invoiceNumber || item.externalId}`}>
             <div style={s.financeIcon}><CreditCard size={17} /></div>
             <div style={s.financeMain}>
               <strong>{item.invoiceNumber ? `NF ${item.invoiceNumber}` : `Título #${item.externalId}`}</strong>
               <span>Emissão: {formatShortDate(item.issuedAt) || '—'} · Vencimento: {formatShortDate(item.dueAt) || '—'}</span>
-              {item.paymentMethod ? <small>{item.paymentMethod}</small> : null}
+              <small>{[item.billingType, item.paymentMethod].filter(Boolean).join(' · ') || 'Detalhes financeiros'}</small>
             </div>
-            <div style={s.financeValue}><strong>{formatCurrency(item.value)}</strong><span style={financeStatusStyle(item.status)}>{financeStatus(item.status)}</span></div>
-          </article>
+            <div style={s.financeValue}>
+              <div style={s.financeValueDetails}><strong>{formatCurrency(item.value)}</strong><span style={financeStatusStyle(item.status)}>{financeStatus(item.status)}</span></div>
+              <ChevronRight size={16} />
+            </div>
+          </button>
         ))}
       </div>
+      {selected ? (
+        <div style={s.financeDetailBackdrop} onMouseDown={() => setSelected(null)}>
+          <section className="crm-finance-detail" style={s.financeDetailModal} onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="finance-detail-title">
+            <header style={s.financeDetailHeader}>
+              <div>
+                <p style={s.detailKicker}>Título #{selected.externalId}</p>
+                <h3 id="finance-detail-title" style={s.financeDetailTitle}>{selected.invoiceNumber ? `Nota fiscal ${selected.invoiceNumber}` : 'Detalhes do título'}</h3>
+              </div>
+              <button type="button" style={s.closeBtn} onClick={() => setSelected(null)} aria-label="Fechar detalhes"><X size={18} /></button>
+            </header>
+
+            <div style={s.financeDetailBody}>
+              <div style={s.financeDetailSummary}>
+                <div><span>Valor</span><strong>{formatCurrency(selected.invoiceValue || selected.value)}</strong></div>
+                <div><span>Situação</span><strong style={financeStatusStyle(selected.status)}>{financeStatus(selected.status)}</strong></div>
+              </div>
+              <div style={s.financeDetailGrid}>
+                <Info label="Emissão" value={formatShortDate(selected.issuedAt)} />
+                <Info label="Vencimento" value={formatShortDate(selected.dueAt)} />
+                <Info label="Tipo de faturamento" value={selected.billingType} />
+                <Info label="Período faturado" value={formatBillingPeriod(selected.billingPeriod)} />
+                <Info label="Forma de pagamento" value={selected.paymentMethod} />
+                <Info label="Situação do boleto" value={selected.boletoStatus} />
+                <Info label="Nosso número" value={selected.ourNumber} />
+                <Info label="Contrato ILUX" value={selected.contractExternalId} />
+              </div>
+              {selected.digitableLine ? (
+                <div style={s.digitableLineBox}><span>Linha digitável</span><strong>{selected.digitableLine}</strong></div>
+              ) : null}
+              {selected.invoiceNotes ? (
+                <div style={s.invoiceNotes}><span>Observações da NF</span><p>{selected.invoiceNotes}</p></div>
+              ) : null}
+            </div>
+
+            <footer style={s.financeDetailFooter}>
+              <button type="button" style={s.secondaryBtn} onClick={() => setSelected(null)}>Fechar</button>
+              {selected.hasBoleto ? (
+                <>
+                  <button type="button" style={s.secondaryBtn} onClick={() => accessBoleto('download')} disabled={boletoLoading}>
+                    <Download size={16} /> Baixar boleto
+                  </button>
+                  <button type="button" style={s.primaryBtn} onClick={() => accessBoleto('open')} disabled={boletoLoading}>
+                    {boletoLoading ? <RefreshCw size={16} className="spin" /> : <CreditCard size={16} />} {boletoLoading ? 'Buscando no iLux...' : 'Abrir boleto'}
+                  </button>
+                </>
+              ) : <span style={s.noBoletoLabel}>Sem boleto vinculado</span>}
+            </footer>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -867,7 +959,18 @@ function formatHours(value) {
 }
 function formatPeriod(start, end) { const a = formatShortDate(start); const b = formatShortDate(end); return a || b ? `${a || 'Início não informado'} até ${b || 'vigente'}` : 'Não informada'; }
 function formatDate(value) { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('pt-BR'); }
-function formatShortDate(value) { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('pt-BR'); }
+function formatShortDate(value) {
+  if (!value) return '';
+  const calendarDate = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (calendarDate) return `${calendarDate[3]}/${calendarDate[2]}/${calendarDate[1]}`;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('pt-BR');
+}
+function formatBillingPeriod(value) {
+  if (!value) return '';
+  const period = String(value).match(/^(\d{4})[/-](\d{2})$/);
+  return period ? `${period[2]}/${period[1]}` : String(value);
+}
 function formatRawValue(value) { if (!hasValue(value)) return 'Não informado'; return typeof value === 'object' ? JSON.stringify(value) : String(value); }
 
 const crmResponsiveCss = `
@@ -898,6 +1001,7 @@ const crmResponsiveCss = `
     .crm-customer-grid { grid-template-columns: 1fr !important; }
     .crm-profile-header > div { min-width: 0; }
     .crm-profile-header h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .crm-finance-detail { width: calc(100vw - 1.5rem) !important; max-height: calc(100vh - 1.5rem) !important; }
   }
 `;
 
@@ -952,7 +1056,8 @@ const s = {
   activeTab: { color: 'var(--accent)', borderBottom: '2px solid var(--accent)' },
   modalBody: { flex: 1, minHeight: 0, padding: '1.25rem 1.4rem', overflowY: 'auto' },
   modalFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1.4rem', borderTop: '1px solid var(--border-color)', background: 'rgba(8,12,22,.35)', color: 'var(--text-dim)', fontSize: '0.74rem' },
-  secondaryBtn: { minWidth: 130, background: 'var(--bg-surface)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: 11, padding: '0.7rem 1rem', fontWeight: 900, cursor: 'pointer' },
+  secondaryBtn: { minWidth: 130, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', background: 'var(--bg-surface)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: 11, padding: '0.7rem 1rem', fontWeight: 900, cursor: 'pointer' },
+  primaryBtn: { minWidth: 150, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', background: 'var(--accent)', color: 'var(--text-inverse)', border: 0, borderRadius: 11, padding: '0.72rem 1rem', fontWeight: 900, cursor: 'pointer' },
   loadingBox: { display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '1rem', borderRadius: 12, color: 'var(--text-muted)', border: '1px solid var(--border-color)' },
   loadingInline: { display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.85rem', padding: '0.7rem 0.85rem', borderRadius: 10, color: 'var(--text-muted)', background: 'var(--bg-base)', border: '1px solid var(--border-color)', fontSize: '0.78rem' },
   errorBox: { display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.85rem', padding: '0.75rem 0.85rem', borderRadius: 10, color: '#fca5a5', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.28)', fontSize: '0.78rem' },
@@ -1004,10 +1109,22 @@ const s = {
   contactChannels: { display: 'flex', flexWrap: 'wrap', gap: '0.4rem 0.8rem', color: 'var(--text-muted)', fontSize: '0.74rem' },
   financialStats: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '0.65rem' },
   financeList: { display: 'grid', gap: '0.55rem' },
-  financeItem: { display: 'grid', gridTemplateColumns: '38px minmax(0,1fr) auto', alignItems: 'center', gap: '0.7rem', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: 12, background: 'rgba(8,12,22,.3)' },
+  financeItem: { width: '100%', display: 'grid', gridTemplateColumns: '38px minmax(0,1fr) auto', alignItems: 'center', gap: '0.7rem', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: 12, background: 'rgba(8,12,22,.3)', color: 'var(--text-main)', textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer' },
   financeIcon: { width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: 10, color: 'var(--accent)', background: 'var(--accent-light)' },
   financeMain: { display: 'grid', gap: 2, minWidth: 0 },
-  financeValue: { display: 'grid', gap: 3, textAlign: 'right' },
+  financeValue: { display: 'flex', alignItems: 'center', gap: '0.55rem', textAlign: 'right' },
+  financeValueDetails: { display: 'grid', gap: 3 },
+  financeDetailBackdrop: { position: 'fixed', inset: 0, zIndex: 3700, display: 'grid', placeItems: 'center', padding: '1rem', background: 'rgba(0,0,0,.72)', backdropFilter: 'blur(3px)' },
+  financeDetailModal: { width: 'min(720px, 94vw)', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 20, boxShadow: '0 28px 80px rgba(0,0,0,.55)' },
+  financeDetailHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', padding: '1.15rem 1.25rem', borderBottom: '1px solid var(--border-color)' },
+  financeDetailTitle: { margin: '0.25rem 0 0', fontSize: '1.2rem' },
+  financeDetailBody: { display: 'grid', gap: '1rem', padding: '1.2rem 1.25rem', overflowY: 'auto' },
+  financeDetailSummary: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: '0.7rem' },
+  financeDetailGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: '0.9rem 1.2rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 14, background: 'var(--bg-base)' },
+  digitableLineBox: { display: 'grid', gap: '0.35rem', padding: '0.85rem 1rem', borderRadius: 12, background: 'var(--accent-light)', border: '1px solid var(--accent-border)', overflowWrap: 'anywhere' },
+  invoiceNotes: { display: 'grid', gap: '0.35rem', color: 'var(--text-muted)', fontSize: '0.8rem' },
+  financeDetailFooter: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', padding: '0.9rem 1.25rem', borderTop: '1px solid var(--border-color)', background: 'var(--bg-base)' },
+  noBoletoLabel: { color: 'var(--text-dim)', fontSize: '0.8rem', fontWeight: 700 },
   meterGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(145px,1fr))', gap: '0.55rem' },
   meterCard: { display: 'grid', gap: 2, padding: '0.7rem', border: '1px solid var(--border-color)', borderRadius: 10, background: 'var(--bg-base)' },
   maintenanceSummary: { display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: '0.55rem', marginTop: '0.65rem' },

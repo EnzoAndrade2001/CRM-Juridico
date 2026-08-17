@@ -1,8 +1,11 @@
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const prisma = require('../lib/prisma');
 const evolutionService = require('../services/evolutionService');
 const { sendServiceOrderManagerCopy } = require('../services/serviceOrderManagerCopyService');
 const { mapEquipmentType } = require('../utils/equipmentMapper');
+const { mediaPath } = require('../utils/uploads');
 
 function pick(...values) {
   for (const value of values) {
@@ -546,6 +549,7 @@ async function getPendingCommands(req, res) {
 
     const deadline = Date.now() + (waitSeconds * 1000);
     let pendingOS = [];
+    let pendingBillingPdf = null;
 
     do {
       const leaseExpiredAt = new Date(Date.now() - 45_000);
@@ -589,7 +593,31 @@ async function getPendingCommands(req, res) {
         }
       }
 
-      if (pendingOS.length > 0 || tenant.settings?.firebirdQueueBillingProcess || Date.now() >= deadline) break;
+      const pdfCandidate = await prisma.externalSyncRecord.findFirst({
+        where: {
+          tenantId: tenant.id,
+          source: 'crm',
+          entity: 'billingPdfRequest',
+          payload: { path: ['status'], equals: 'pending' },
+        },
+        orderBy: { receivedAt: 'asc' },
+        select: { id: true, payload: true },
+      });
+      if (pdfCandidate) {
+        pendingBillingPdf = await prisma.externalSyncRecord.update({
+          where: { id: pdfCandidate.id },
+          data: {
+            payload: {
+              ...pdfCandidate.payload,
+              status: 'processing',
+              processingAt: new Date().toISOString(),
+            },
+          },
+          select: { id: true, payload: true },
+        });
+      }
+
+      if (pendingOS.length > 0 || pendingBillingPdf || tenant.settings?.firebirdQueueBillingProcess || Date.now() >= deadline) break;
       await new Promise((resolve) => setTimeout(resolve, 350));
     } while (true);
 
@@ -643,6 +671,14 @@ async function getPendingCommands(req, res) {
       });
     }
 
+    if (pendingBillingPdf) {
+      commands.push({
+        id: pendingBillingPdf.id,
+        type: 'FETCH_BILLING_PDF',
+        payload: pendingBillingPdf.payload,
+      });
+    }
+
     res.json(commands);
   } catch (err) {
     console.error('[pending-commands] erro:', err.message);
@@ -667,6 +703,49 @@ async function commandCallback(req, res) {
         data: { firebirdQueueBillingProcess: false }
       });
       console.log(`[pending-commands] Comando PROCESS_BILLING concluído.`);
+      return res.json({ ok: true });
+    }
+
+    const billingPdfRequest = await prisma.externalSyncRecord.findFirst({
+      where: { id, tenantId: tenant.id, source: 'crm', entity: 'billingPdfRequest' },
+      select: { id: true, externalId: true, payload: true },
+    });
+    if (billingPdfRequest) {
+      if (success && result?.pdfBase64) {
+        const pdfBuffer = Buffer.from(String(result.pdfBase64), 'base64');
+        if (!pdfBuffer.subarray(0, 4).equals(Buffer.from('%PDF'))) {
+          throw new Error('O agente devolveu um arquivo de boleto invalido.');
+        }
+        if (pdfBuffer.length > 20 * 1024 * 1024) {
+          throw new Error('O PDF do boleto excedeu o limite de 20 MB.');
+        }
+        const storedFilename = `boleto-${billingPdfRequest.externalId}-${Date.now()}.pdf`;
+        await fs.promises.writeFile(path.join(mediaPath, storedFilename), pdfBuffer);
+        await prisma.externalSyncRecord.update({
+          where: { id: billingPdfRequest.id },
+          data: {
+            payload: {
+              ...billingPdfRequest.payload,
+              status: 'success',
+              completedAt: new Date().toISOString(),
+              mediaUrl: `/uploads/media/${storedFilename}`,
+              fileName: path.basename(String(result.fileName || `BOLETO ${billingPdfRequest.externalId}.pdf`)),
+            },
+          },
+        });
+      } else {
+        await prisma.externalSyncRecord.update({
+          where: { id: billingPdfRequest.id },
+          data: {
+            payload: {
+              ...billingPdfRequest.payload,
+              status: 'failed',
+              completedAt: new Date().toISOString(),
+              error: String(error || 'Nao foi possivel recuperar o boleto.'),
+            },
+          },
+        });
+      }
       return res.json({ ok: true });
     }
 

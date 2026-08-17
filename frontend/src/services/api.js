@@ -179,6 +179,11 @@ export const getCrmCustomer = (id) => api.get(`/crm/customers/${id}`, { timeout:
 export const getCrmCustomerContracts = (id) => api.get(`/crm/customers/${id}/contracts`, { timeout: 15000 });
 export const getCrmCustomerServiceOrders = (id, limit = 25) => api.get(`/crm/customers/${id}/service-orders`, { params: { limit }, timeout: 15000 });
 export const getCrmCustomer360 = (id) => api.get(`/crm/customers/${id}/360`, { timeout: 20000 });
+export const getCrmReceivableBoleto = (customerId, receivableId) => api.post(
+  `/crm/customers/${customerId}/receivables/${receivableId}/boleto`,
+  {},
+  { timeout: 60000 },
+);
 export const getCrmEquipments = (params = {}) => api.get('/crm/equipments', { params });
 
 // Billing Integration (Automação de Cobranças)

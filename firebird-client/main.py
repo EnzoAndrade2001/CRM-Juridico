@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import logging
 from logging.handlers import RotatingFileHandler
@@ -368,6 +369,11 @@ class CRMClient:
                         self.process_billing_folder()
                         self.report_command_result(cmd_id, success=True)
                         logging.info("Comando PROCESS_BILLING processado com sucesso.")
+                    elif cmd_type == "FETCH_BILLING_PDF":
+                        logging.info("Buscando PDF do boleto %s sob demanda...", payload.get("receivableExternalId"))
+                        command_result = repo.fetch_billing_pdf(payload)
+                        self.report_command_result(cmd_id, success=True, result=command_result)
+                        logging.info("PDF do boleto recuperado com sucesso.")
                     else:
                         logging.warning("Tipo de comando desconhecido: %s", cmd_type)
                 except Exception as e:
@@ -776,10 +782,20 @@ class FirebirdRepository:
                 r.DTPAGTOREC, r.VALRECEITA, r.VALRECEITAPAGA, r.NUMNF,
                 r.CDFORMAPAGTO, fp.NMFORMAPAGTO, r.CD_RECEITA_STATUS,
                 rs.DS_RECEITA_STATUS, r.SEQCONTRATO, r.SEQIXLCONTRATOS,
-                r.SEQIXLCONTRATOSGRP, r.SEQDEMONSTRATIVO
+                r.SEQIXLCONTRATOSGRP, r.SEQDEMONSTRATIVO, r.SEQINCNFS,
+                r.NOSSONUMERO, r.LINHA_DIGITAVEL,
+                b.ID_BOLETO, b.CHAVE_INTEGRACAO, b.SITUACAO as BOLETO_SITUACAO,
+                b.URLBOLETO, b.TITULONOSSONUMERO, b.TITULONOSSONUMEROIMPRESSAO,
+                b.TITULOLINHADIGITAVEL, b.TITULOCODIGOBARRAS, b.PDF_PROTOCOLO,
+                nf.NRNFSAIDA, nf.NRNFSAIDASERV, nf.DTEMISSAONFS,
+                nf.VALTOTALNFS, nf.TFNFSCANCELADA, nf.OBS as NF_OBS,
+                demo.CDPRODUTO as FATURAMENTO_TIPO, demo.PERIODO as FATURAMENTO_PERIODO
             from IRECEITAS r
             left join IFORMAPAGTO fp on fp.CDFORMAPAGTO = r.CDFORMAPAGTO
             left join IRECEITAS_STATUS rs on rs.ID_RECEITA_STATUS = r.CD_RECEITA_STATUS
+            left join CE_BOLETO b on b.SEQRECEITA = r.SEQRECEITA
+            left join INFSAIDA nf on nf.SEQINCNFS = r.SEQINCNFS
+            left join IXLDEMOFAT demo on demo.SEQDEMONSTRATIVO = r.SEQDEMONSTRATIVO
             where r.SEQRECEITA > ?
             order by r.SEQRECEITA
         """
@@ -792,10 +808,20 @@ class FirebirdRepository:
                 r.DTPAGTOREC, r.VALRECEITA, r.VALRECEITAPAGA, r.NUMNF,
                 r.CDFORMAPAGTO, fp.NMFORMAPAGTO, r.CD_RECEITA_STATUS,
                 rs.DS_RECEITA_STATUS, r.SEQCONTRATO, r.SEQIXLCONTRATOS,
-                r.SEQIXLCONTRATOSGRP, r.SEQDEMONSTRATIVO
+                r.SEQIXLCONTRATOSGRP, r.SEQDEMONSTRATIVO, r.SEQINCNFS,
+                r.NOSSONUMERO, r.LINHA_DIGITAVEL,
+                b.ID_BOLETO, b.CHAVE_INTEGRACAO, b.SITUACAO as BOLETO_SITUACAO,
+                b.URLBOLETO, b.TITULONOSSONUMERO, b.TITULONOSSONUMEROIMPRESSAO,
+                b.TITULOLINHADIGITAVEL, b.TITULOCODIGOBARRAS, b.PDF_PROTOCOLO,
+                nf.NRNFSAIDA, nf.NRNFSAIDASERV, nf.DTEMISSAONFS,
+                nf.VALTOTALNFS, nf.TFNFSCANCELADA, nf.OBS as NF_OBS,
+                demo.CDPRODUTO as FATURAMENTO_TIPO, demo.PERIODO as FATURAMENTO_PERIODO
             from IRECEITAS r
             left join IFORMAPAGTO fp on fp.CDFORMAPAGTO = r.CDFORMAPAGTO
             left join IRECEITAS_STATUS rs on rs.ID_RECEITA_STATUS = r.CD_RECEITA_STATUS
+            left join CE_BOLETO b on b.SEQRECEITA = r.SEQRECEITA
+            left join INFSAIDA nf on nf.SEQINCNFS = r.SEQINCNFS
+            left join IXLDEMOFAT demo on demo.SEQDEMONSTRATIVO = r.SEQDEMONSTRATIVO
             order by r.SEQRECEITA desc
         """
         yield from self._rows(sql, ())
@@ -807,15 +833,128 @@ class FirebirdRepository:
                 r.DTPAGTOREC, r.VALRECEITA, r.VALRECEITAPAGA, r.NUMNF,
                 r.CDFORMAPAGTO, fp.NMFORMAPAGTO, r.CD_RECEITA_STATUS,
                 rs.DS_RECEITA_STATUS, r.SEQCONTRATO, r.SEQIXLCONTRATOS,
-                r.SEQIXLCONTRATOSGRP, r.SEQDEMONSTRATIVO
+                r.SEQIXLCONTRATOSGRP, r.SEQDEMONSTRATIVO, r.SEQINCNFS,
+                r.NOSSONUMERO, r.LINHA_DIGITAVEL,
+                b.ID_BOLETO, b.CHAVE_INTEGRACAO, b.SITUACAO as BOLETO_SITUACAO,
+                b.URLBOLETO, b.TITULONOSSONUMERO, b.TITULONOSSONUMEROIMPRESSAO,
+                b.TITULOLINHADIGITAVEL, b.TITULOCODIGOBARRAS, b.PDF_PROTOCOLO,
+                nf.NRNFSAIDA, nf.NRNFSAIDASERV, nf.DTEMISSAONFS,
+                nf.VALTOTALNFS, nf.TFNFSCANCELADA, nf.OBS as NF_OBS,
+                demo.CDPRODUTO as FATURAMENTO_TIPO, demo.PERIODO as FATURAMENTO_PERIODO
             from IRECEITAS r
             left join IFORMAPAGTO fp on fp.CDFORMAPAGTO = r.CDFORMAPAGTO
             left join IRECEITAS_STATUS rs on rs.ID_RECEITA_STATUS = r.CD_RECEITA_STATUS
+            left join CE_BOLETO b on b.SEQRECEITA = r.SEQRECEITA
+            left join INFSAIDA nf on nf.SEQINCNFS = r.SEQINCNFS
+            left join IXLDEMOFAT demo on demo.SEQDEMONSTRATIVO = r.SEQDEMONSTRATIVO
             where r.DTPAGTOREC is null
               and coalesce(r.VALRECEITAPAGA, 0) < coalesce(r.VALRECEITA, 0)
             order by r.DTVECTOREC, r.SEQRECEITA
         """
         yield from self._rows(sql, ())
+
+    def fetch_billing_pdf(self, payload: dict[str, Any]) -> dict[str, Any]:
+        receivable_id = int(payload.get("receivableExternalId") or 0)
+        if receivable_id <= 0:
+            raise ValueError("Identificador do titulo nao informado.")
+
+        con = self.connect()
+        try:
+            cur = con.cursor()
+            cur.execute(
+                """
+                select first 1
+                    r.NUMNF, cli.NMCLIENTE,
+                    b.CHAVE_INTEGRACAO, b.PDF_PROTOCOLO, b.SITUACAO,
+                    ced.CEDENTECPFCNPJ, ced.TOKEN_CEDENTE,
+                    cfg.URL_BASE, cfg.PATH_BOLETO_IMPRESSAO
+                from IRECEITAS r
+                join CE_BOLETO b on b.SEQRECEITA = r.SEQRECEITA
+                join CE_CONVENIO conv on conv.ID_CONVENIO = b.CD_CONVENIO
+                join CE_CONTA conta on conta.ID_CONTA = conv.CD_CONTA
+                join CE_CEDENTE ced on ced.ID_CEDENTE = conta.CD_CEDENTE
+                join CE_PARAM_CONFIG cfg
+                  on cfg.CD_EMPRESA = r.CDEMPRESA
+                 and cfg.TP_AMBIENTE = conv.TP_AMBIENTE
+                left join ICLIENTES cli on cli.CDCLIENTE = r.CDCLIENTE
+                where r.SEQRECEITA = ?
+                """,
+                (receivable_id,),
+            )
+            row = cur.fetchone()
+        finally:
+            con.close()
+
+        if not row:
+            raise ValueError("Boleto vinculado ao titulo nao encontrado no iLux.")
+
+        (
+            invoice_number,
+            customer_name,
+            integration_id,
+            pdf_protocol,
+            boleto_status,
+            cedente_cnpj,
+            cedente_token,
+            base_url,
+            print_path,
+        ) = row
+        if str(boleto_status or "").strip().upper() not in {"EMITIDO", "REGISTRADO", "LIQUIDADO"}:
+            raise ValueError(f"Boleto ainda nao pode ser impresso. Situacao: {boleto_status or 'nao informada'}.")
+        if not cedente_cnpj or not cedente_token:
+            raise ValueError("Credenciais do cedente nao encontradas no iLux.")
+
+        headers = {
+            "Content-Type": "application/json",
+            "cnpj-cedente": str(cedente_cnpj).strip(),
+            "token-cedente": str(cedente_token).strip(),
+        }
+        endpoint = f"{str(base_url).rstrip('/')}{str(print_path).rstrip('/')}"
+
+        if not pdf_protocol:
+            if not integration_id:
+                raise ValueError("Boleto sem chave de integracao para gerar o PDF.")
+            requested = requests.post(
+                endpoint,
+                headers=headers,
+                json={"TipoImpressao": "0", "Boletos": [str(integration_id).strip()]},
+                timeout=30,
+            )
+            requested.raise_for_status()
+            requested_data = requested.json()
+            pdf_protocol = (requested_data.get("_dados") or {}).get("protocolo")
+            if not pdf_protocol:
+                raise ValueError(requested_data.get("_mensagem") or "A geracao do PDF nao retornou protocolo.")
+
+        pdf_response = None
+        for attempt in range(1, 6):
+            pdf_response = requests.get(
+                f"{endpoint}/{str(pdf_protocol).strip()}",
+                headers=headers,
+                timeout=30,
+            )
+            pdf_response.raise_for_status()
+            if pdf_response.content.startswith(b"%PDF"):
+                break
+            try:
+                response_data = pdf_response.json()
+            except ValueError as exc:
+                raise ValueError("O servico bancario nao devolveu um PDF valido.") from exc
+            situation = str((response_data.get("_dados") or {}).get("situacao") or "").upper()
+            if situation != "PROCESSANDO" or attempt == 5:
+                raise ValueError(response_data.get("_mensagem") or "Nao foi possivel recuperar o PDF do boleto.")
+            time.sleep(5)
+
+        if pdf_response is None or not pdf_response.content.startswith(b"%PDF"):
+            raise ValueError("O PDF do boleto nao ficou pronto no tempo esperado.")
+
+        safe_customer = re.sub(r"[^A-Za-z0-9 ._-]+", " ", str(customer_name or "CLIENTE")).strip()[:70]
+        safe_invoice = re.sub(r"[^A-Za-z0-9_-]+", "", str(invoice_number or receivable_id))
+        return {
+            "pdfBase64": base64.b64encode(pdf_response.content).decode("ascii"),
+            "fileName": f"BOLETO NF {safe_invoice} - {safe_customer or 'CLIENTE'}.pdf",
+            "mimeType": "application/pdf",
+        }
 
     def fetch_equipment_meters(self, equipment_cursor: int) -> Iterator[dict[str, Any]]:
         sql = """
@@ -1312,6 +1451,25 @@ def normalize_receivable(record: dict[str, Any]) -> dict[str, Any]:
         "contractExternalId": first_non_empty(record.get("seqixlcontratos"), record.get("seqcontrato")),
         "contractGroupExternalId": first_non_empty(record.get("seqixlcontratosgrp")),
         "statementExternalId": first_non_empty(record.get("seqdemonstrativo")),
+        "invoiceExternalId": first_non_empty(record.get("seqincnfs")),
+        "invoiceIssuedAt": parse_firebird_timestamp(record.get("dtemissaonfs")),
+        "invoiceValue": float(record.get("valtotalnfs") or 0),
+        "invoiceCancelled": str(record.get("tfnfscancelada") or "N").strip().upper() == "S",
+        "invoiceNotes": first_non_empty(record.get("nf_obs")),
+        "billingType": first_non_empty(record.get("faturamento_tipo")),
+        "billingPeriod": first_non_empty(record.get("faturamento_periodo")),
+        "boletoId": first_non_empty(record.get("id_boleto")),
+        "boletoIntegrationId": first_non_empty(record.get("chave_integracao")),
+        "boletoStatus": first_non_empty(record.get("boleto_situacao")),
+        "boletoUrl": first_non_empty(record.get("urlboleto")),
+        "boletoPdfProtocol": first_non_empty(record.get("pdf_protocolo")),
+        "ourNumber": first_non_empty(
+            record.get("titulonossonumeroimpressao"),
+            record.get("titulonossonumero"),
+            record.get("nossonumero"),
+        ),
+        "digitableLine": first_non_empty(record.get("titulolinhadigitavel"), record.get("linha_digitavel")),
+        "barcode": first_non_empty(record.get("titulocodigobarras")),
         "raw": {k: json_safe(v) for k, v in record.items()},
     }
 
@@ -1626,7 +1784,9 @@ def run_cycle(
     repo = FirebirdRepository(config)
     crm = CRMClient(config)
     contract_details_version = 2
+    receivable_details_version = 2
     refresh_contract_details = int(state.data.get("contract_details_version", 0) or 0) < contract_details_version
+    refresh_receivable_details = int(state.data.get("receivable_details_version", 0) or 0) < receivable_details_version
 
     if full:
         state.data["cursors"] = {
@@ -1646,6 +1806,12 @@ def run_cycle(
         state.set_cursor("equipments", 0)
         state.set_cursor("contracts", 0)
         state.set_cursor("equipmentMeters", 0)
+        state.save()
+
+    if refresh_receivable_details:
+        # A nova versao inclui NF, tipo de faturamento e vinculo do boleto.
+        # Forca apenas a janela financeira recente/aberta, sem refazer o historico inteiro.
+        state.data["crm360_recent_refresh_at"] = None
         state.save()
 
     state.data["batch_size"] = config.batch_size
@@ -1676,6 +1842,10 @@ def run_cycle(
         config.batch_size,
         force_meter_bootstrap=refresh_contract_details or full,
     )
+    if refresh_receivable_details:
+        state.data["receivable_details_version"] = receivable_details_version
+        state.save()
+        logging.info("Detalhes de notas fiscais e boletos atualizados")
 
     if full:
         # A carga completa ja enviou o estado atual de todas as O.S. Portanto,
