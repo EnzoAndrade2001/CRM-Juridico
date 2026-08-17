@@ -43,7 +43,10 @@ jobs:
 
       - name: Preparar fallback das rotas
         shell: bash
-        run: cp frontend/dist/index.html frontend/dist/404.html
+        run: |
+          cp frontend/dist/index.html frontend/dist/404.html
+          mkdir -p frontend/dist/demo-juridico
+          cp frontend/dist/index.html frontend/dist/demo-juridico/index.html
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
