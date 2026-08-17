@@ -18,7 +18,7 @@ import {
   Gauge,
   Hash,
   Mail,
-  Map,
+  Map as MapIcon,
   MapPin,
   MapPinned,
   PackageSearch,
@@ -444,7 +444,7 @@ function QuickActions({ actions, onOpenConversation, onOpenServiceOrder }) {
       <div style={s.quickActionsTitle}><strong>Ações rápidas</strong><span>Atalhos para o atendimento</span></div>
       <button type="button" style={s.quickActionBtn} disabled={!actions.canOpenConversation} onClick={() => openInbox(false)}><Send size={16} /> Abrir WhatsApp</button>
       <button type="button" style={s.quickActionPrimary} disabled={!actions.canOpenServiceOrder} onClick={() => openInbox(true)}><ClipboardList size={16} /> Abrir O.S.</button>
-      <button type="button" style={s.quickActionBtn} disabled={!actions.address} onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(actions.address)}`, '_blank', 'noopener,noreferrer')}><Map size={16} /> Ver no mapa</button>
+      <button type="button" style={s.quickActionBtn} disabled={!actions.address} onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(actions.address)}`, '_blank', 'noopener,noreferrer')}><MapIcon size={16} /> Ver no mapa</button>
       <button type="button" style={s.quickActionBtn} onClick={() => window.print()}><Printer size={16} /> Imprimir ficha</button>
     </div>
   );
