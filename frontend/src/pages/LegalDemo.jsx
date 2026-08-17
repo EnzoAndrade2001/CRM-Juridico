@@ -28,6 +28,8 @@ import {
   UsersRound,
   X,
 } from 'lucide-react';
+import LegalCrmWorkspace from '../features/legal/LegalCrmWorkspace';
+import useLegalWorkspace from '../features/legal/useLegalWorkspace';
 import './legal-demo.css';
 
 const navigation = [
@@ -45,38 +47,6 @@ const conversations = [
   { name: 'Carlos Henrique', initials: 'CH', subject: 'Benefício negado pelo INSS', time: '21 min', tag: 'Previdenciário' },
   { name: 'Ana Beatriz Lima', initials: 'AL', subject: 'Revisão de contrato', time: '34 min', tag: 'Cível' },
   { name: 'João Ferreira', initials: 'JF', subject: 'Dúvida sobre inventário', time: '1 h', tag: 'Sucessões' },
-];
-
-const kanban = [
-  {
-    title: 'Novo contato', count: 12, color: '#4f7cff',
-    cards: [
-      { name: 'André Ribeiro', area: 'Cível', detail: 'Cobrança indevida', time: 'há 12 min', initials: 'AR' },
-      { name: 'Lívia Martins', area: 'Família', detail: 'Pensão alimentícia', time: 'há 25 min', initials: 'LM' },
-      { name: 'Paulo César', area: 'Trabalhista', detail: 'Horas extras', time: 'há 41 min', initials: 'PC' },
-    ],
-  },
-  {
-    title: 'Qualificação IA', count: 8, color: '#9b6bff',
-    cards: [
-      { name: 'Mariana Costa', area: 'Trabalhista', detail: 'Rescisão trabalhista', time: 'agora', initials: 'MC', ai: true },
-      { name: 'Carlos Henrique', area: 'Previdenciário', detail: 'Benefício negado', time: 'há 21 min', initials: 'CH', ai: true },
-    ],
-  },
-  {
-    title: 'Análise humana', count: 5, color: '#ef9f35',
-    cards: [
-      { name: 'Rafael Mendes', area: 'Família', detail: 'Guarda compartilhada', time: 'há 8 min', initials: 'RM' },
-      { name: 'Ana Beatriz Lima', area: 'Cível', detail: 'Revisão de contrato', time: 'há 34 min', initials: 'AL' },
-    ],
-  },
-  {
-    title: 'Proposta enviada', count: 4, color: '#20a67a',
-    cards: [
-      { name: 'Beatriz Souza', area: 'Trabalhista', detail: 'Acordo trabalhista', time: 'ontem', initials: 'BS' },
-      { name: 'Marcelo Nunes', area: 'Cível', detail: 'Ação indenizatória', time: 'ontem', initials: 'MN' },
-    ],
-  },
 ];
 
 const activity = [
@@ -244,8 +214,8 @@ function InboxDemo() {
   );
 }
 
-function CrmDemo() {
-  return <div className="jd-page jd-crm"><div className="jd-section-intro"><div><h2>Pipeline de oportunidades</h2><p>Acompanhe cada contato desde a triagem até a contratação.</p></div><div><button type="button" className="jd-secondary"><Search size={17} /> Filtrar</button><button type="button" className="jd-primary"><Plus size={17} /> Nova oportunidade</button></div></div><div className="jd-kanban">{kanban.map((column) => <section className="jd-kanban__column" key={column.title}><header><i style={{ background: column.color }} /><strong>{column.title}</strong><span>{column.count}</span><MoreHorizontal size={17} /></header><div>{column.cards.map((card) => <article key={card.name}><div className="jd-kanban__tag"><span>{card.area}</span>{card.ai && <b><Sparkles size={12} /> IA ativa</b>}</div><h3>{card.name}</h3><p>{card.detail}</p><footer><Avatar initials={card.initials} size="xs" /><time><Clock3 size={13} /> {card.time}</time><MessageCircleMore size={15} /></footer></article>)}</div><button type="button" className="jd-add-card"><Plus size={15} /> Adicionar oportunidade</button></section>)}</div></div>;
+function CrmDemo({ workspace }) {
+  return <LegalCrmWorkspace workspace={workspace} />;
 }
 
 function CampaignsDemo() {
@@ -267,12 +237,13 @@ function PlaceholderPage({ type }) {
   return <div className="jd-page"><div className="jd-section-intro"><div><h2>{title}</h2><p>{description}</p></div><button type="button" className="jd-primary"><Plus size={17} /> Adicionar</button></div><section className="jd-placeholder-hero"><span><Icon size={30} /></span><p>AMBIENTE DE DEMONSTRAÇÃO</p><h3>{stat}</h3><small>Esta tela representa o módulo que será detalhado após a validação do fluxo principal.</small><button type="button">Visualizar exemplo <ArrowUpRight size={16} /></button></section></div>;
 }
 
-export default function LegalDemo() {
+export default function LegalDemo({ demoMode = false }) {
   const [active, setActive] = useState(() => {
     const requestedScreen = new URLSearchParams(window.location.search).get('tela');
     return navigation.some(({ id }) => id === requestedScreen) ? requestedScreen : 'visao-geral';
   });
   const [menuOpen, setMenuOpen] = useState(false);
+  const legalWorkspace = useLegalWorkspace({ demoMode });
   useEffect(() => {
     document.title = 'Áurea — CRM Jurídico com IA';
     const url = new URL(window.location.href);
@@ -290,13 +261,13 @@ export default function LegalDemo() {
   }[active]), [active]);
   return (
     <div className="legal-demo">
-      <div className="jd-demo-ribbon"><span><Sparkles size={14} /> DEMONSTRAÇÃO INTERATIVA</span><p>Dados fictícios · nenhum envio será realizado</p></div>
+      <div className="jd-demo-ribbon"><span><Sparkles size={14} /> {demoMode ? 'DEMONSTRAÇÃO INTERATIVA' : 'AMBIENTE DO ESCRITÓRIO'}</span><p>{demoMode ? 'Dados fictícios · alterações salvas neste navegador' : 'Dados protegidos do escritório'}</p></div>
       <Sidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} />
       <main className="jd-main">
         <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} />
         {active === 'visao-geral' && <Overview onNavigate={setActive} />}
         {active === 'atendimentos' && <InboxDemo />}
-        {active === 'crm' && <CrmDemo />}
+        {active === 'crm' && <CrmDemo workspace={legalWorkspace} />}
         {active === 'campanhas' && <CampaignsDemo />}
         {(active === 'clientes' || active === 'conhecimento') && <PlaceholderPage type={active} />}
       </main>
