@@ -81,7 +81,7 @@ const kanban = [
 
 const activity = [
   { icon: Bot, tone: 'violet', title: 'IA qualificou Mariana Costa', meta: 'Trabalhista · há 2 minutos' },
-  { icon: UsersRound, tone: 'blue', title: 'Rafael foi atribuído à Dra. Camila', meta: 'Família · há 8 minutos' },
+  { icon: UsersRound, tone: 'blue', title: 'Rafael foi atribuído à Dra. Eduarda', meta: 'Família · há 8 minutos' },
   { icon: FileText, tone: 'amber', title: 'Documento recebido de Carlos', meta: 'Previdenciário · há 21 minutos' },
   { icon: Check, tone: 'green', title: 'Proposta aceita por Beatriz Souza', meta: 'Trabalhista · há 42 minutos' },
 ];
@@ -123,8 +123,8 @@ function Sidebar({ active, setActive, open, setOpen }) {
           <span className="jd-live-dot" />
         </div>
         <div className="jd-user-card">
-          <Avatar initials="CA" size="sm" />
-          <span><strong>Camila Andrade</strong><small>Administradora</small></span>
+          <Avatar initials="EA" size="sm" />
+          <span><strong>Eduarda Andrade</strong><small>Administradora</small></span>
           <MoreHorizontal size={18} />
         </div>
       </aside>
@@ -139,7 +139,7 @@ function Header({ title, subtitle, setMenuOpen }) {
       <div className="jd-header__title"><h1>{title}</h1><p>{subtitle}</p></div>
       <label className="jd-search"><Search size={17} /><input placeholder="Buscar cliente, atendimento..." /></label>
       <button className="jd-icon-button" type="button" aria-label="Notificações"><Bell size={19} /><span /></button>
-      <button className="jd-profile" type="button"><Avatar initials="CA" size="xs" /><span>Dra. Camila</span><ChevronDown size={15} /></button>
+      <button className="jd-profile" type="button"><Avatar initials="EA" size="xs" /><span>Dra. Eduarda</span><ChevronDown size={15} /></button>
     </header>
   );
 }
@@ -154,7 +154,7 @@ function Overview({ onNavigate }) {
   return (
     <div className="jd-page jd-page--overview">
       <section className="jd-welcome">
-        <div><p>SEGUNDA-FEIRA, 17 DE AGOSTO</p><h2>Bom dia, Dra. Camila.</h2><span>A IA já realizou 23 atendimentos hoje. Existem 4 casos aguardando sua análise.</span></div>
+        <div><p>SEGUNDA-FEIRA, 17 DE AGOSTO</p><h2>Bom dia, Dra. Eduarda.</h2><span>A IA já realizou 23 atendimentos hoje. Existem 4 casos aguardando sua análise.</span></div>
         <button type="button" onClick={() => onNavigate('atendimentos')}><Inbox size={18} /> Ver atendimentos <ArrowUpRight size={16} /></button>
       </section>
       <section className="jd-metrics">
@@ -229,14 +229,14 @@ function InboxDemo() {
           <div className="jd-message-row"><span className="jd-bot-avatar"><Bot size={17} /></span><div className="jd-message jd-message--ai"><div><b><Sparkles size={13} /> Áurea IA</b>Entendi. Para que a advogada possa conferir os valores, você consegue enviar uma foto ou PDF do termo de rescisão?</div><time>09:44 <Check size={12} /></time></div></div>
           <div className="jd-document"><span><FileText size={21} /></span><div><strong>termo_rescisao.pdf</strong><small>PDF · 1,8 MB</small></div><Check size={17} /></div>
           <div className="jd-system-message"><ShieldCheck size={15} /> Documento recebido e vinculado ao atendimento</div>
-          {sent && <div className="jd-message jd-message--human"><div><b>Dra. Camila</b>Olá, Mariana. Recebi o resumo e o documento. Vou analisar os valores e já retorno para você.</div><time>agora <Check size={12} /></time></div>}
+          {sent && <div className="jd-message jd-message--human"><div><b>Dra. Eduarda</b>Olá, Mariana. Recebi o resumo e o documento. Vou analisar os valores e já retorno para você.</div><time>agora <Check size={12} /></time></div>}
         </div>
         <footer className="jd-composer"><button type="button"><Paperclip size={19} /></button><input placeholder={mode === 'IA ativa' ? 'Assuma a conversa para responder...' : 'Digite sua mensagem...'} disabled={mode === 'IA ativa'} /><button type="button" className="jd-send" disabled={mode === 'IA ativa'} onClick={() => setSent(true)}><Send size={18} /></button></footer>
       </section>
       <aside className="jd-client-panel">
         <div className="jd-client-profile"><Avatar initials="MC" size="lg" violet /><h3>Mariana Costa</h3><p>+55 11 99872-1140</p><div><StatusPill tone="blue">Trabalhista</StatusPill><StatusPill tone="green">Qualificado</StatusPill></div></div>
         <div className="jd-panel-section"><h4>QUALIFICAÇÃO DA IA <Sparkles size={14} /></h4><dl><div><dt>Motivo</dt><dd>Verbas rescisórias</dd></div><div><dt>Urgência</dt><dd><StatusPill tone="amber">Média</StatusPill></dd></div><div><dt>Demissão</dt><dd>05/08/2026</dd></div><div><dt>Tempo na empresa</dt><dd>3 anos</dd></div><div><dt>Documentos</dt><dd>1 recebido</dd></div></dl></div>
-        <div className="jd-panel-section"><h4>RESPONSÁVEL</h4><div className="jd-responsible"><Avatar initials="CA" size="xs" /><span><strong>Dra. Camila Andrade</strong><small>Equipe Trabalhista</small></span><ChevronDown size={15} /></div></div>
+        <div className="jd-panel-section"><h4>RESPONSÁVEL</h4><div className="jd-responsible"><Avatar initials="EA" size="xs" /><span><strong>Dra. Eduarda Andrade</strong><small>Equipe Trabalhista</small></span><ChevronDown size={15} /></div></div>
         <div className="jd-panel-section"><h4>PRÓXIMA AÇÃO</h4><button type="button" className="jd-next-action"><CalendarDays size={17} /><span><strong>Analisar documentação</strong><small>Hoje, até 14:00</small></span></button></div>
         <button type="button" className="jd-open-client"><CircleUserRound size={17} /> Abrir perfil completo</button>
       </aside>
@@ -255,7 +255,7 @@ function CampaignsDemo() {
     ['Documentos para revisão de benefício', 'Previdenciário · Qualificados', '386', 'Agendada · 19/08', '—', 'violet'],
     ['Pesquisa pós-consulta', 'Consultas realizadas', '214', 'Concluída', '89%', 'green'],
   ];
-  return <div className="jd-page"><div className="jd-section-intro"><div><h2>Campanhas</h2><p>Comunicação segmentada com revisão, limites e controle de descadastro.</p></div><button className="jd-primary" type="button" onClick={() => setCreated(true)}><Plus size={17} /> Nova campanha</button></div>{created && <div className="jd-demo-toast"><Check size={17} /> Rascunho criado. Nenhuma mensagem real será enviada neste ambiente.</div>}<section className="jd-campaign-stats"><article><Megaphone size={20} /><span><strong>3</strong> campanhas neste mês</span></article><article><Send size={20} /><span><strong>1.848</strong> mensagens entregues</span></article><article><MessageCircleMore size={20} /><span><strong>412</strong> respostas recebidas</span></article><article><ShieldCheck size={20} /><span><strong>99,2%</strong> entrega válida</span></article></section><section className="jd-card jd-campaign-table"><div className="jd-card__heading"><div><h3>Campanhas recentes</h3><p>Dados fictícios para demonstração</p></div><label className="jd-small-search"><Search size={15} /><input placeholder="Buscar campanha" /></label></div><div className="jd-table-head"><span>Campanha</span><span>Público</span><span>Contatos</span><span>Status</span><span>Entrega</span><span /></div>{campaigns.map(([name, audience, contacts, status, delivery, tone]) => <div className="jd-table-row" key={name}><span><b>{name}</b><small>Criada por Camila Andrade</small></span><span>{audience}</span><strong>{contacts}</strong><span><StatusPill tone={tone}>{status}</StatusPill></span><strong>{delivery}</strong><button type="button"><MoreHorizontal size={18} /></button></div>)}</section></div>;
+  return <div className="jd-page"><div className="jd-section-intro"><div><h2>Campanhas</h2><p>Comunicação segmentada com revisão, limites e controle de descadastro.</p></div><button className="jd-primary" type="button" onClick={() => setCreated(true)}><Plus size={17} /> Nova campanha</button></div>{created && <div className="jd-demo-toast"><Check size={17} /> Rascunho criado. Nenhuma mensagem real será enviada neste ambiente.</div>}<section className="jd-campaign-stats"><article><Megaphone size={20} /><span><strong>3</strong> campanhas neste mês</span></article><article><Send size={20} /><span><strong>1.848</strong> mensagens entregues</span></article><article><MessageCircleMore size={20} /><span><strong>412</strong> respostas recebidas</span></article><article><ShieldCheck size={20} /><span><strong>99,2%</strong> entrega válida</span></article></section><section className="jd-card jd-campaign-table"><div className="jd-card__heading"><div><h3>Campanhas recentes</h3><p>Dados fictícios para demonstração</p></div><label className="jd-small-search"><Search size={15} /><input placeholder="Buscar campanha" /></label></div><div className="jd-table-head"><span>Campanha</span><span>Público</span><span>Contatos</span><span>Status</span><span>Entrega</span><span /></div>{campaigns.map(([name, audience, contacts, status, delivery, tone]) => <div className="jd-table-row" key={name}><span><b>{name}</b><small>Criada por Eduarda Andrade</small></span><span>{audience}</span><strong>{contacts}</strong><span><StatusPill tone={tone}>{status}</StatusPill></span><strong>{delivery}</strong><button type="button"><MoreHorizontal size={18} /></button></div>)}</section></div>;
 }
 
 function PlaceholderPage({ type }) {
