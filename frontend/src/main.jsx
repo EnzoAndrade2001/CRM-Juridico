@@ -22,6 +22,7 @@ const QuickResponses = lazy(() => import('./pages/QuickResponses'));
 const SuperAdmin = lazy(() => import('./pages/SuperAdmin'));
 const LeadScraper = lazy(() => import('./pages/LeadScraper'));
 const RevGuard = lazy(() => import('./pages/RevGuard'));
+const LegalDemo = lazy(() => import('./pages/LegalDemo'));
 
 // Interceptor global para tratar erros de autenticacao (401)
 api.interceptors.response.use(
@@ -139,7 +140,7 @@ class AppErrorBoundary extends React.Component {
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <BrowserRouter>
+  <BrowserRouter basename={import.meta.env.BASE_URL}>
     <AppErrorBoundary>
       <Suspense fallback={<RouteFallback />}>
         <Routes>
@@ -147,6 +148,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/login" element={<Login />} />
           <Route path="/:slug/login" element={<Login />} />
           <Route path="/validation/auth-spec" element={<AuthSpecPage />} />
+          <Route path="/demo-juridico" element={<LegalDemo />} />
 
           <Route
             element={(
