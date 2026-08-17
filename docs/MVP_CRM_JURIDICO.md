@@ -6,6 +6,14 @@ Transformar o Multiatendimento em um CRM jurídico enxuto, centrado no atendimen
 
 O primeiro marco será um teste visual navegável. Ele deverá permitir que o escritório valide telas, linguagem, informações e fluxo de trabalho antes das integrações reais e da implantação na VPS.
 
+### Estado atual do MVP
+
+- Demonstração visual aprovada pelo escritório.
+- API inicial de oportunidades, casos e tarefas implementada.
+- Pipeline interativo com cadastro, mudança de etapa, filtros e persistência local na demonstração.
+- Conversão de oportunidade em caso e criação/conclusão de tarefas disponíveis no fluxo visual.
+- Rota autenticada `/juridico` preparada para utilizar a API real; a rota pública `/demo-juridico` continua usando somente dados fictícios do navegador.
+
 ## 2. Princípios do MVP
 
 - Preservar o núcleo já funcional de autenticação, contatos, tickets, mensagens, usuários, equipes, etiquetas, respostas rápidas, campanhas e Evolution API.
@@ -205,11 +213,12 @@ O projeto não dependerá da interface web das assinaturas Claude Pro ou ChatGPT
 3. Construir o teste visual com dados jurídicos simulados.
 4. Validar o protótipo com o contratante e registrar alterações.
 5. Criar migrações e APIs do domínio jurídico.
-6. Conectar IA em ambiente de homologação.
-7. Conectar um WhatsApp de teste e validar atendimento híbrido.
-8. Validar campanhas com uma lista controlada.
-9. Preparar VPS e publicar homologação.
-10. Executar piloto, corrigir falhas e somente depois liberar produção.
+6. Conectar o frontend à API e validar oportunidades, casos, tarefas e histórico.
+7. Conectar IA em ambiente local ou de homologação.
+8. Conectar um WhatsApp de teste e validar atendimento híbrido.
+9. Validar campanhas com uma lista controlada.
+10. Preparar VPS e publicar homologação.
+11. Executar piloto, corrigir falhas e somente depois liberar produção.
 
 ## 11. Decisões necessárias antes da integração real
 
@@ -222,4 +231,3 @@ O projeto não dependerá da interface web das assinaturas Claude Pro ou ChatGPT
 - Provedor de IA escolhido para a primeira homologação.
 - Número de WhatsApp destinado aos testes.
 - Forma atual de hospedagem da Evolution API.
-

@@ -200,6 +200,21 @@ export const sendCrmReceivableDocuments = (customerId, receivableId, data) => ap
 );
 export const getCrmEquipments = (params = {}) => api.get('/crm/equipments', { params });
 
+// CRM Jurídico
+export const getLegalConfig = () => api.get('/legal/config');
+export const getLegalSummary = () => api.get('/legal/summary');
+export const getLegalLeads = (params = {}) => api.get('/legal/leads', { params });
+export const getLegalLead = (id) => api.get(`/legal/leads/${id}`);
+export const createLegalLead = (data) => api.post('/legal/leads', data);
+export const updateLegalLead = (id, data) => api.patch(`/legal/leads/${id}`, data);
+export const getLegalMatters = (params = {}) => api.get('/legal/matters', { params });
+export const getLegalMatter = (id) => api.get(`/legal/matters/${id}`);
+export const createLegalMatter = (data) => api.post('/legal/matters', data);
+export const updateLegalMatter = (id, data) => api.patch(`/legal/matters/${id}`, data);
+export const getLegalTasks = (params = {}) => api.get('/legal/tasks', { params });
+export const createLegalTask = (data) => api.post('/legal/tasks', data);
+export const updateLegalTask = (id, data) => api.patch(`/legal/tasks/${id}`, data);
+
 // Billing Integration (Automação de Cobranças)
 export const triggerBillingProcess = () => api.post('/integrations/firebird/trigger-billing-process');
 export const getBillingLogs = () => api.get('/integrations/firebird/billing-logs');

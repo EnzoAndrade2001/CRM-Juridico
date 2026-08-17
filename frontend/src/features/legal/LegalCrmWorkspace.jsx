@@ -1,0 +1,361 @@
+import { useMemo, useState } from 'react';
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  CalendarClock,
+  Check,
+  CircleAlert,
+  Clock3,
+  FileCheck2,
+  Filter,
+  LoaderCircle,
+  Plus,
+  RotateCcw,
+  Search,
+  Sparkles,
+  X,
+} from 'lucide-react';
+import {
+  initialsFor,
+  labelFor,
+  LEAD_STAGES,
+  LEGAL_AREAS,
+  MATTER_STATUSES,
+  PRIORITIES,
+  TASK_TYPES,
+} from './legalWorkspace';
+
+const PIPELINE_COLUMNS = [
+  { id: 'NOVO_CONTATO', title: 'Novo contato', color: '#4f7cff', stages: ['NOVO_CONTATO'] },
+  { id: 'QUALIFICACAO_IA', title: 'Triagem da IA', color: '#9b6bff', stages: ['QUALIFICACAO_IA', 'AGUARDANDO_DOCUMENTOS'] },
+  { id: 'ANALISE_HUMANA', title: 'Análise humana', color: '#ef9f35', stages: ['ANALISE_HUMANA', 'CONSULTA_AGENDADA'] },
+  { id: 'PROPOSTA_ENVIADA', title: 'Proposta enviada', color: '#20a67a', stages: ['PROPOSTA_ENVIADA'] },
+  { id: 'CONTRATADO', title: 'Contratado', color: '#087c5c', stages: ['CONTRATADO'] },
+  { id: 'NAO_CONVERTIDO', title: 'Não convertido', color: '#8a93a2', stages: ['NAO_CONVERTIDO'] },
+];
+
+const NEXT_STAGE = {
+  NOVO_CONTATO: 'QUALIFICACAO_IA',
+  QUALIFICACAO_IA: 'ANALISE_HUMANA',
+  AGUARDANDO_DOCUMENTOS: 'ANALISE_HUMANA',
+  ANALISE_HUMANA: 'PROPOSTA_ENVIADA',
+  CONSULTA_AGENDADA: 'PROPOSTA_ENVIADA',
+};
+
+const EMPTY_LEAD = {
+  contactId: '',
+  clientName: '',
+  phone: '',
+  email: '',
+  title: '',
+  area: 'CIVEL',
+  stage: 'NOVO_CONTATO',
+  urgency: 'MEDIA',
+  summary: '',
+  nextActionAt: '',
+};
+
+const EMPTY_TASK = {
+  title: '',
+  type: 'PROXIMA_ACAO',
+  priority: 'MEDIA',
+  dueAt: '',
+  description: '',
+};
+
+function Avatar({ name }) {
+  return <span className="jd-avatar jd-avatar--xs">{initialsFor(name)}</span>;
+}
+
+function Pill({ children, tone = 'neutral' }) {
+  return <span className={`jd-pill jd-pill--${tone}`}>{children}</span>;
+}
+
+function Modal({ title, subtitle, children, onClose, wide = false }) {
+  return (
+    <div className="jd-modal-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section className={`jd-modal ${wide ? 'jd-modal--wide' : ''}`} role="dialog" aria-modal="true" aria-label={title}>
+        <header>
+          <div><h3>{title}</h3>{subtitle && <p>{subtitle}</p>}</div>
+          <button type="button" onClick={onClose} aria-label="Fechar"><X size={19} /></button>
+        </header>
+        {children}
+      </section>
+    </div>
+  );
+}
+
+function Field({ label, children, full = false }) {
+  return <label className={full ? 'jd-form-field jd-form-field--full' : 'jd-form-field'}><span>{label}</span>{children}</label>;
+}
+
+function OpportunityForm({ workspace, initialStage, onClose }) {
+  const [form, setForm] = useState({ ...EMPTY_LEAD, stage: initialStage || EMPTY_LEAD.stage });
+  const [formError, setFormError] = useState('');
+  const usesExistingContact = !workspace.demoMode && Boolean(form.contactId);
+  const update = (field) => (event) => setForm((current) => ({ ...current, [field]: event.target.value }));
+
+  async function submit(event) {
+    event.preventDefault();
+    setFormError('');
+    try {
+      await workspace.addLead({
+        ...form,
+        nextActionAt: form.nextActionAt ? new Date(form.nextActionAt).toISOString() : null,
+      });
+      onClose();
+    } catch (error) {
+      setFormError(error.message);
+    }
+  }
+
+  return (
+    <Modal title="Nova oportunidade" subtitle="Cadastre o contato e a demanda jurídica inicial." onClose={onClose} wide>
+      <form onSubmit={submit}>
+        <div className="jd-form-grid">
+          {!workspace.demoMode && (
+            <Field label="Cliente já cadastrado" full>
+              <select value={form.contactId} onChange={update('contactId')}>
+                <option value="">Cadastrar novo cliente</option>
+                {workspace.contacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name || contact.phone} · {contact.phone}</option>)}
+              </select>
+            </Field>
+          )}
+          {!usesExistingContact && <Field label="Nome do cliente"><input required value={form.clientName} onChange={update('clientName')} placeholder="Nome completo" /></Field>}
+          {!usesExistingContact && <Field label="WhatsApp"><input required value={form.phone} onChange={update('phone')} placeholder="(11) 99999-9999" /></Field>}
+          {!usesExistingContact && <Field label="E-mail"><input type="email" value={form.email} onChange={update('email')} placeholder="cliente@email.com" /></Field>}
+          <Field label="Área jurídica">
+            <select value={form.area} onChange={update('area')}>{LEGAL_AREAS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+          </Field>
+          <Field label="Assunto" full><input required value={form.title} onChange={update('title')} placeholder="Ex.: Revisão de verbas rescisórias" /></Field>
+          <Field label="Etapa"><select value={form.stage} onChange={update('stage')}>{LEAD_STAGES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+          <Field label="Prioridade"><select value={form.urgency} onChange={update('urgency')}>{PRIORITIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+          <Field label="Próxima ação"><input type="datetime-local" value={form.nextActionAt} onChange={update('nextActionAt')} /></Field>
+          <Field label="Resumo" full><textarea rows="4" value={form.summary} onChange={update('summary')} placeholder="Registre os principais fatos informados pelo cliente." /></Field>
+        </div>
+        {formError && <div className="jd-form-error"><CircleAlert size={16} />{formError}</div>}
+        <footer className="jd-modal__actions"><button type="button" className="jd-secondary" onClick={onClose}>Cancelar</button><button className="jd-primary" disabled={workspace.saving}><Plus size={16} />{workspace.saving ? 'Salvando...' : 'Criar oportunidade'}</button></footer>
+      </form>
+    </Modal>
+  );
+}
+
+function TaskForm({ workspace, lead, matter, onClose }) {
+  const [form, setForm] = useState(EMPTY_TASK);
+  const [formError, setFormError] = useState('');
+  const update = (field) => (event) => setForm((current) => ({ ...current, [field]: event.target.value }));
+
+  async function submit(event) {
+    event.preventDefault();
+    setFormError('');
+    try {
+      await workspace.addTask({
+        ...form,
+        leadId: lead?.id || matter?.leadId || null,
+        matterId: matter?.id || null,
+        dueAt: form.dueAt ? new Date(form.dueAt).toISOString() : null,
+      });
+      onClose();
+    } catch (error) {
+      setFormError(error.message);
+    }
+  }
+
+  return (
+    <Modal title="Nova tarefa" subtitle={`Vinculada a ${matter?.title || lead?.title || 'o fluxo jurídico'}.`} onClose={onClose}>
+      <form onSubmit={submit}>
+        <div className="jd-form-grid">
+          <Field label="Tarefa" full><input required value={form.title} onChange={update('title')} placeholder="Ex.: Revisar documentos recebidos" /></Field>
+          <Field label="Tipo"><select value={form.type} onChange={update('type')}>{TASK_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+          <Field label="Prioridade"><select value={form.priority} onChange={update('priority')}>{PRIORITIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+          <Field label="Prazo" full><input type="datetime-local" value={form.dueAt} onChange={update('dueAt')} /></Field>
+          <Field label="Observações" full><textarea rows="3" value={form.description} onChange={update('description')} /></Field>
+        </div>
+        {formError && <div className="jd-form-error"><CircleAlert size={16} />{formError}</div>}
+        <footer className="jd-modal__actions"><button type="button" className="jd-secondary" onClick={onClose}>Cancelar</button><button className="jd-primary" disabled={workspace.saving}><CalendarClock size={16} />{workspace.saving ? 'Salvando...' : 'Criar tarefa'}</button></footer>
+      </form>
+    </Modal>
+  );
+}
+
+function LeadDetail({ workspace, lead, onClose, onTask }) {
+  const [stage, setStage] = useState(lead.stage);
+  const [lostReason, setLostReason] = useState(lead.lostReason || '');
+  const [formError, setFormError] = useState('');
+  const matter = workspace.matters.find((item) => item.leadId === lead.id) || lead.matter;
+
+  async function save() {
+    setFormError('');
+    try {
+      await workspace.editLead(lead.id, { stage, ...(stage === 'NAO_CONVERTIDO' ? { lostReason } : {}) });
+      onClose();
+    } catch (error) {
+      setFormError(error.message);
+    }
+  }
+
+  async function convert() {
+    setFormError('');
+    try {
+      await workspace.addMatter(lead);
+      onClose();
+    } catch (error) {
+      setFormError(error.message);
+    }
+  }
+
+  return (
+    <Modal title={lead.contact?.name || 'Oportunidade'} subtitle={lead.title} onClose={onClose} wide>
+      <div className="jd-lead-detail">
+        <div className="jd-lead-detail__summary">
+          <Avatar name={lead.contact?.name} />
+          <dl>
+            <div><dt>Área</dt><dd>{labelFor(LEGAL_AREAS, lead.area)}</dd></div>
+            <div><dt>Prioridade</dt><dd>{labelFor(PRIORITIES, lead.urgency)}</dd></div>
+            <div><dt>WhatsApp</dt><dd>{lead.contact?.phone || 'Não informado'}</dd></div>
+            <div><dt>Tarefas</dt><dd>{workspace.tasks.filter((task) => task.leadId === lead.id).length}</dd></div>
+          </dl>
+        </div>
+        <p className="jd-lead-detail__text">{lead.summary || 'Nenhum resumo informado.'}</p>
+        <div className="jd-form-grid">
+          <Field label="Etapa atual" full><select value={stage} onChange={(event) => setStage(event.target.value)}>{LEAD_STAGES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
+          {stage === 'NAO_CONVERTIDO' && <Field label="Motivo da não conversão" full><textarea required value={lostReason} onChange={(event) => setLostReason(event.target.value)} /></Field>}
+        </div>
+        {matter && <div className="jd-inline-success"><FileCheck2 size={17} /> Caso jurídico já criado: <strong>{matter.title || lead.title}</strong></div>}
+        {formError && <div className="jd-form-error"><CircleAlert size={16} />{formError}</div>}
+      </div>
+      <footer className="jd-modal__actions jd-modal__actions--spread">
+        <button type="button" className="jd-secondary" onClick={() => onTask(lead, matter)}><CalendarClock size={16} /> Nova tarefa</button>
+        <span />
+        {!matter && <button type="button" className="jd-secondary jd-secondary--green" disabled={workspace.saving} onClick={convert}><BriefcaseBusiness size={16} /> Converter em caso</button>}
+        <button type="button" className="jd-primary" disabled={workspace.saving} onClick={save}>{workspace.saving ? 'Salvando...' : 'Salvar etapa'}</button>
+      </footer>
+    </Modal>
+  );
+}
+
+function Pipeline({ workspace, search, area, onCreate, onSelect }) {
+  const visibleLeads = useMemo(() => workspace.leads.filter((lead) => {
+    const term = search.trim().toLocaleLowerCase('pt-BR');
+    const matchesSearch = !term || `${lead.contact?.name || ''} ${lead.title} ${lead.summary || ''}`.toLocaleLowerCase('pt-BR').includes(term);
+    return matchesSearch && (!area || lead.area === area);
+  }), [area, search, workspace.leads]);
+
+  async function advance(event, lead) {
+    event.stopPropagation();
+    const next = NEXT_STAGE[lead.stage];
+    if (next) await workspace.editLead(lead.id, { stage: next });
+  }
+
+  return (
+    <div className="jd-kanban jd-kanban--functional">
+      {PIPELINE_COLUMNS.map((column) => {
+        const cards = visibleLeads.filter((lead) => column.stages.includes(lead.stage));
+        return (
+          <section className="jd-kanban__column" key={column.id}>
+            <header><i style={{ background: column.color }} /><strong>{column.title}</strong><span>{cards.length}</span></header>
+            <div>
+              {cards.map((lead) => (
+                <article key={lead.id} role="button" tabIndex="0" onClick={() => onSelect(lead)} onKeyDown={(event) => event.key === 'Enter' && onSelect(lead)}>
+                  <div className="jd-kanban__tag"><span>{labelFor(LEGAL_AREAS, lead.area)}</span>{lead.stage === 'QUALIFICACAO_IA' && <b><Sparkles size={12} /> IA ativa</b>}</div>
+                  <h3>{lead.contact?.name || 'Cliente sem nome'}</h3>
+                  <p>{lead.title}</p>
+                  <footer><Avatar name={lead.contact?.name} /><time><Clock3 size={13} /> {labelFor(PRIORITIES, lead.urgency)}</time>{NEXT_STAGE[lead.stage] && <button type="button" title="Avançar etapa" onClick={(event) => advance(event, lead)}><ArrowRight size={15} /></button>}</footer>
+                </article>
+              ))}
+              {!cards.length && <div className="jd-column-empty">Nenhuma oportunidade</div>}
+            </div>
+            <button type="button" className="jd-add-card" onClick={() => onCreate(column.id)}><Plus size={15} /> Adicionar oportunidade</button>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function Matters({ workspace, onTask }) {
+  return (
+    <section className="jd-card jd-legal-list">
+      <div className="jd-legal-list__head"><span>Cliente e caso</span><span>Área</span><span>Situação</span><span>Processo</span><span>Tarefas</span><span /></div>
+      {workspace.matters.map((matter) => (
+        <div className="jd-legal-list__row" key={matter.id}>
+          <span className="jd-person-cell"><Avatar name={matter.contact?.name} /><span><strong>{matter.contact?.name}</strong><small>{matter.title}</small></span></span>
+          <span>{labelFor(LEGAL_AREAS, matter.area)}</span>
+          <select value={matter.status} onChange={(event) => workspace.editMatter(matter.id, { status: event.target.value })}>{MATTER_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+          <span>{matter.caseNumber || 'Ainda sem número'}</span>
+          <strong>{workspace.tasks.filter((task) => task.matterId === matter.id).length}</strong>
+          <button type="button" onClick={() => onTask(null, matter)}><Plus size={15} /> Tarefa</button>
+        </div>
+      ))}
+      {!workspace.matters.length && <div className="jd-legal-empty"><BriefcaseBusiness size={25} /><strong>Nenhum caso criado</strong><span>Abra uma oportunidade e use “Converter em caso”.</span></div>}
+    </section>
+  );
+}
+
+function Tasks({ workspace }) {
+  return (
+    <section className="jd-card jd-legal-list jd-task-list">
+      <div className="jd-legal-list__head"><span>Tarefa</span><span>Vínculo</span><span>Tipo</span><span>Prazo</span><span>Prioridade</span><span>Status</span></div>
+      {workspace.tasks.map((task) => (
+        <div className={`jd-legal-list__row ${task.status === 'CONCLUIDA' ? 'is-complete' : ''}`} key={task.id}>
+          <span><strong>{task.title}</strong><small>{task.description}</small></span>
+          <span>{task.matter?.title || task.lead?.title || 'Oportunidade'}</span>
+          <span>{labelFor(TASK_TYPES, task.type)}</span>
+          <span>{task.dueAt ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(task.dueAt)) : 'Sem prazo'}</span>
+          <span>{labelFor(PRIORITIES, task.priority)}</span>
+          <button type="button" disabled={task.status === 'CONCLUIDA'} onClick={() => workspace.editTask(task.id, { status: 'CONCLUIDA' })}>{task.status === 'CONCLUIDA' ? <><Check size={15} /> Concluída</> : 'Concluir'}</button>
+        </div>
+      ))}
+      {!workspace.tasks.length && <div className="jd-legal-empty"><CalendarClock size={25} /><strong>Nenhuma tarefa registrada</strong><span>Crie uma tarefa a partir de uma oportunidade ou caso.</span></div>}
+    </section>
+  );
+}
+
+export default function LegalCrmWorkspace({ workspace }) {
+  const [tab, setTab] = useState('pipeline');
+  const [search, setSearch] = useState('');
+  const [area, setArea] = useState('');
+  const [createStage, setCreateStage] = useState(null);
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [taskTarget, setTaskTarget] = useState(null);
+
+  function openTask(lead, matter) {
+    setSelectedLead(null);
+    setTaskTarget({ lead, matter });
+  }
+
+  return (
+    <div className="jd-page jd-crm">
+      <div className="jd-section-intro">
+        <div><h2>Gestão jurídica</h2><p>Do primeiro atendimento até as tarefas do caso.</p></div>
+        <div>
+          {workspace.demoMode && <button type="button" className="jd-secondary" onClick={workspace.resetDemo}><RotateCcw size={16} /> Restaurar dados</button>}
+          <button type="button" className="jd-primary" onClick={() => setCreateStage('NOVO_CONTATO')}><Plus size={17} /> Nova oportunidade</button>
+        </div>
+      </div>
+
+      {workspace.error && <div className="jd-workspace-error"><CircleAlert size={17} /><span>{workspace.error}</span><button type="button" onClick={workspace.refresh}>Tentar novamente</button></div>}
+
+      <div className="jd-workspace-toolbar">
+        <nav>
+          <button type="button" className={tab === 'pipeline' ? 'active' : ''} onClick={() => setTab('pipeline')}>Pipeline <b>{workspace.leads.length}</b></button>
+          <button type="button" className={tab === 'matters' ? 'active' : ''} onClick={() => setTab('matters')}>Casos <b>{workspace.matters.length}</b></button>
+          <button type="button" className={tab === 'tasks' ? 'active' : ''} onClick={() => setTab('tasks')}>Tarefas <b>{workspace.tasks.filter((task) => !['CONCLUIDA', 'CANCELADA'].includes(task.status)).length}</b></button>
+        </nav>
+        {tab === 'pipeline' && <div className="jd-workspace-filters"><label><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar cliente ou assunto" /></label><label><Filter size={14} /><select value={area} onChange={(event) => setArea(event.target.value)}><option value="">Todas as áreas</option>{LEGAL_AREAS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div>}
+      </div>
+
+      {workspace.loading ? <div className="jd-workspace-loading"><LoaderCircle size={25} /> Carregando dados jurídicos...</div> : (
+        <>
+          {tab === 'pipeline' && <Pipeline workspace={workspace} search={search} area={area} onCreate={setCreateStage} onSelect={setSelectedLead} />}
+          {tab === 'matters' && <Matters workspace={workspace} onTask={openTask} />}
+          {tab === 'tasks' && <Tasks workspace={workspace} />}
+        </>
+      )}
+
+      {createStage && <OpportunityForm workspace={workspace} initialStage={createStage} onClose={() => setCreateStage(null)} />}
+      {selectedLead && <LeadDetail workspace={workspace} lead={selectedLead} onClose={() => setSelectedLead(null)} onTask={openTask} />}
+      {taskTarget && <TaskForm workspace={workspace} lead={taskTarget.lead} matter={taskTarget.matter} onClose={() => setTaskTarget(null)} />}
+    </div>
+  );
+}

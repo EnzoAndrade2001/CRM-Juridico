@@ -148,7 +148,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/login" element={<Login />} />
           <Route path="/:slug/login" element={<Login />} />
           <Route path="/validation/auth-spec" element={<AuthSpecPage />} />
-          <Route path="/demo-juridico" element={<LegalDemo />} />
+          <Route path="/demo-juridico" element={<LegalDemo demoMode />} />
+          <Route path="/juridico" element={<PrivateRoute><LegalDemo /></PrivateRoute>} />
 
           <Route
             element={(
