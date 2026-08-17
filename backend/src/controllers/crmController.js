@@ -720,7 +720,12 @@ async function getCustomer360(req, res) {
   ]);
 
   const receivables = receivableRecords.map(normalizeReceivable)
-    .sort((a, b) => new Date(b.dueAt || b.issuedAt || 0) - new Date(a.dueAt || a.issuedAt || 0));
+    .sort((a, b) => {
+      const issuedComparison = String(b.issuedAt || '').localeCompare(String(a.issuedAt || ''));
+      if (issuedComparison !== 0) return issuedComparison;
+      return (asNumber(b.invoiceNumber) || asNumber(b.externalId) || 0)
+        - (asNumber(a.invoiceNumber) || asNumber(a.externalId) || 0);
+    });
   const meters = meterRecords.map(normalizeEquipmentMeter);
 
   const slaTargetHours = Math.max(1, Number(settings?.kpiSlaLimitHours || 24));
