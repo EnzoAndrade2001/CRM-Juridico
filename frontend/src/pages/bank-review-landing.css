@@ -73,7 +73,7 @@
 .bank-intro { padding: 98px 0; background: #fff; }
 .bank-intro__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 86px; align-items: start; }
 .bank-intro h2, .bank-section-heading h2, .bank-about h2, .bank-final-cta h2 { margin-bottom: 0; color: var(--bank-ink); font-size: clamp(36px, 4vw, 52px); line-height: 1.12; letter-spacing: -.025em; }
-.bank-intro__text > p:first-child { margin-bottom: 25px; color: var(--bank-copy); font-size: 17px; line-height: 1.8; }
+.bank-intro__text > p:first-child { margin-bottom: 25px; color: var(--bank-copy); font-family: Georgia, "Times New Roman", serif; font-size: 20px; line-height: 1.65; }
 .bank-note { display: flex; gap: 12px; margin-bottom: 0; border-left: 2px solid var(--bank-gold); padding: 15px 18px; background: var(--bank-cream); color: #3e4b5d; font-size: 13px; line-height: 1.55; }
 .bank-note svg { flex: 0 0 auto; color: var(--bank-gold); }
 
