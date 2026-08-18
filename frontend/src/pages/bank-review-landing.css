@@ -77,7 +77,7 @@
 .bank-note { display: flex; gap: 12px; margin-bottom: 0; border-left: 2px solid var(--bank-gold); padding: 15px 18px; background: var(--bank-cream); color: #3e4b5d; font-size: 13px; line-height: 1.55; }
 .bank-note svg { flex: 0 0 auto; color: var(--bank-gold); }
 
-.bank-calculator { position: relative; overflow: hidden; padding: 96px 0; background: var(--bank-cream); }
+.bank-calculator { position: relative; overflow: hidden; border-top: 1px solid #e7e0d5; border-bottom: 1px solid #e7e0d5; padding: 96px 0; background: #f0ede6; }
 .bank-calculator::after { position: absolute; right: -140px; bottom: -210px; width: 430px; height: 430px; border: 1px solid rgba(189,147,69,.26); border-radius: 50%; content: ''; pointer-events: none; }
 .bank-calculator__grid { position: relative; z-index: 1; display: grid; grid-template-columns: .82fr 1.18fr; gap: 80px; align-items: start; }
 .bank-calculator__copy { padding-top: 28px; }
@@ -121,10 +121,10 @@
 .bank-calculator__submission--success { color: #397455 !important; }
 .bank-calculator__result .bank-button { min-height: 47px; font-size: 12px; }
 
-.bank-review { padding: 94px 0 106px; background: var(--bank-cream); }
+.bank-review { border-bottom: 1px solid #e7eaf0; padding: 94px 0 106px; background: #fff; }
 .bank-section-heading { max-width: 650px; margin-bottom: 48px; }
 .bank-review__cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-.bank-review-card { position: relative; min-height: 285px; overflow: hidden; border: 1px solid #e3ddd3; padding: 34px 31px; background: #fff; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.bank-review-card { position: relative; min-height: 285px; overflow: hidden; border: 1px solid #e3ddd3; padding: 34px 31px; background: #fbfaf7; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
 .bank-review-card:hover { border-color: #c9aa6b; box-shadow: 0 20px 45px rgba(31,42,57,.08); transform: translateY(-4px); }
 .bank-review-card__number { position: absolute; top: 22px; right: 24px; color: #d9d3c9; font-family: Georgia, "Times New Roman", serif; font-size: 38px; }
 .bank-review-card__icon { display: grid; width: 50px; height: 50px; margin-bottom: 37px; place-items: center; background: var(--bank-navy); color: var(--bank-gold-light); }
