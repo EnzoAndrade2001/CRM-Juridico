@@ -47,6 +47,7 @@ const NEXT_STAGE = {
 
 const EMPTY_LEAD = {
   contactId: '',
+  ticketId: '',
   clientName: '',
   phone: '',
   email: '',
@@ -92,8 +93,8 @@ function Field({ label, children, full = false }) {
   return <label className={full ? 'jd-form-field jd-form-field--full' : 'jd-form-field'}><span>{label}</span>{children}</label>;
 }
 
-function OpportunityForm({ workspace, initialStage, onClose }) {
-  const [form, setForm] = useState({ ...EMPTY_LEAD, stage: initialStage || EMPTY_LEAD.stage });
+function OpportunityForm({ workspace, initialStage, initialContactId = '', initialTicketId = '', onClose }) {
+  const [form, setForm] = useState({ ...EMPTY_LEAD, stage: initialStage || EMPTY_LEAD.stage, contactId: initialContactId, ticketId: initialTicketId, source: initialTicketId ? 'whatsapp' : 'manual' });
   const [formError, setFormError] = useState('');
   const usesExistingContact = !workspace.demoMode && Boolean(form.contactId);
   const update = (field) => (event) => setForm((current) => ({ ...current, [field]: event.target.value }));
@@ -136,6 +137,7 @@ function OpportunityForm({ workspace, initialStage, onClose }) {
           <Field label="Próxima ação"><input type="datetime-local" value={form.nextActionAt} onChange={update('nextActionAt')} /></Field>
           <Field label="Resumo" full><textarea rows="4" value={form.summary} onChange={update('summary')} placeholder="Registre os principais fatos informados pelo cliente." /></Field>
         </div>
+        {form.ticketId && <div className="jd-inline-success"><FileCheck2 size={17} /> Esta oportunidade ficará vinculada ao atendimento selecionado no Inbox.</div>}
         {formError && <div className="jd-form-error"><CircleAlert size={16} />{formError}</div>}
         <footer className="jd-modal__actions"><button type="button" className="jd-secondary" onClick={onClose}>Cancelar</button><button className="jd-primary" disabled={workspace.saving}><Plus size={16} />{workspace.saving ? 'Salvando...' : 'Criar oportunidade'}</button></footer>
       </form>
@@ -259,6 +261,7 @@ function LeadDetail({ workspace, lead, onClose, onTask }) {
             <div><dt>Tarefas</dt><dd>{detail.tasks?.length ?? workspace.tasks.filter((task) => task.leadId === lead.id).length}</dd></div>
           </dl>
         </div>
+        {detail.ticket && <div className="jd-inline-success"><FileCheck2 size={17} /> Atendimento do Inbox vinculado a esta oportunidade.</div>}
         <p className="jd-lead-detail__text">{detail.summary || 'Nenhum resumo informado.'}</p>
         <div className="jd-form-grid">
           <Field label="Etapa atual" full><select value={stage} onChange={(event) => setStage(event.target.value)}>{LEAD_STAGES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
@@ -428,9 +431,22 @@ export default function LegalCrmWorkspace({ workspace }) {
   const [search, setSearch] = useState('');
   const [area, setArea] = useState('');
   const [createStage, setCreateStage] = useState(null);
+  const [createContext, setCreateContext] = useState({ contactId: '', ticketId: '' });
   const [selectedLead, setSelectedLead] = useState(null);
   const [selectedMatter, setSelectedMatter] = useState(null);
   const [taskTarget, setTaskTarget] = useState(null);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const contactId = url.searchParams.get('contactId') || '';
+    const ticketId = url.searchParams.get('ticketId') || '';
+    if (!contactId && !ticketId) return;
+    setCreateContext({ contactId, ticketId });
+    setCreateStage('NOVO_CONTATO');
+    url.searchParams.delete('contactId');
+    url.searchParams.delete('ticketId');
+    window.history.replaceState({}, '', url);
+  }, []);
 
   function openTask(lead, matter) {
     setSelectedLead(null);
@@ -444,7 +460,7 @@ export default function LegalCrmWorkspace({ workspace }) {
         <div><h2>Gestão jurídica</h2><p>Do primeiro atendimento até as tarefas do caso.</p></div>
         <div>
           {workspace.demoMode && <button type="button" className="jd-secondary" onClick={workspace.resetDemo}><RotateCcw size={16} /> Restaurar dados</button>}
-          <button type="button" className="jd-primary" onClick={() => setCreateStage('NOVO_CONTATO')}><Plus size={17} /> Nova oportunidade</button>
+          <button type="button" className="jd-primary" onClick={() => { setCreateContext({ contactId: '', ticketId: '' }); setCreateStage('NOVO_CONTATO'); }}><Plus size={17} /> Nova oportunidade</button>
         </div>
       </div>
 
@@ -467,7 +483,7 @@ export default function LegalCrmWorkspace({ workspace }) {
         </>
       )}
 
-      {createStage && <OpportunityForm workspace={workspace} initialStage={createStage} onClose={() => setCreateStage(null)} />}
+      {createStage && <OpportunityForm workspace={workspace} initialStage={createStage} initialContactId={createContext.contactId} initialTicketId={createContext.ticketId} onClose={() => { setCreateStage(null); setCreateContext({ contactId: '', ticketId: '' }); }} />}
       {selectedLead && <LeadDetail workspace={workspace} lead={selectedLead} onClose={() => setSelectedLead(null)} onTask={openTask} />}
       {selectedMatter && <MatterDetail workspace={workspace} matter={selectedMatter} onClose={() => setSelectedMatter(null)} onTask={openTask} />}
       {taskTarget && <TaskForm workspace={workspace} lead={taskTarget.lead} matter={taskTarget.matter} onClose={() => setTaskTarget(null)} />}

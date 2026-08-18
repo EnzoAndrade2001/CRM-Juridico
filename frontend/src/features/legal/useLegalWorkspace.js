@@ -173,7 +173,8 @@ export default function useLegalWorkspace({ demoMode }) {
     }
     const response = await createLegalLead({
       contactId, title: form.title, area: form.area, stage: form.stage, urgency: form.urgency,
-      summary: form.summary || null, source: 'manual', nextActionAt: form.nextActionAt || null,
+      summary: form.summary || null, source: form.source || 'manual', ticketId: form.ticketId || null,
+      nextActionAt: form.nextActionAt || null,
     });
     await refresh();
     return response.data;

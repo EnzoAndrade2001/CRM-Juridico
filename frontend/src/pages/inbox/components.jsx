@@ -954,7 +954,7 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
               Copiar ficha
             </button>
             {legalMode ? (
-              <button type="button" className="inbox-control" onClick={() => onOpenLegalClient?.(contact)} style={{ ...styles.infoActionBtn, ...styles.infoActionBtnPrimary }}>
+              <button type="button" className="inbox-control" onClick={() => onOpenLegalClient?.(contact, ticket.id)} style={{ ...styles.infoActionBtn, ...styles.infoActionBtnPrimary }}>
                 Abrir cliente jurídico
               </button>
             ) : linkedCrm ? (

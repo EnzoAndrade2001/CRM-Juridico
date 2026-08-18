@@ -165,7 +165,7 @@ export default function LegalClients({ workspace, onNavigate }) {
       </section>
       {creating && <ClientForm workspace={workspace} onClose={() => setCreating(false)} />}
       {editing && <ClientForm workspace={workspace} client={editing} onClose={() => { setEditing(null); setSelected(null); }} />}
-      {selected && !editing && <ClientDetail workspace={workspace} client={selected} onClose={() => setSelected(null)} onEdit={() => setEditing(selected)} onOpenCrm={() => { setSelected(null); onNavigate('crm'); }} />}
+      {selected && !editing && <ClientDetail workspace={workspace} client={selected} onClose={() => setSelected(null)} onEdit={() => setEditing(selected)} onOpenCrm={() => { const url = new URL(window.location.href); url.searchParams.set('contactId', selected.id); window.history.replaceState({}, '', url); setSelected(null); onNavigate('crm'); }} />}
     </div>
   );
 }

@@ -252,10 +252,11 @@ export default function LegalDemo({ demoMode = false }) {
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const legalWorkspace = useLegalWorkspace({ demoMode });
-  function openLegalClient(client) {
+  function openLegalClient(client, ticketId = null) {
     const url = new URL(window.location.href);
     url.searchParams.set('tela', 'clientes');
     if (client?.id) url.searchParams.set('clientId', client.id);
+    if (ticketId) url.searchParams.set('ticketId', ticketId);
     window.history.replaceState({}, '', url);
     setActive('clientes');
   }
