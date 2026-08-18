@@ -58,6 +58,15 @@ function WhatsAppLink({ children, className = '', label }) {
   );
 }
 
+function WhatsAppIcon({ size = 25 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M20.25 11.6a8.25 8.25 0 0 1-12.18 7.25L3.7 20.3l1.43-4.2A8.25 8.25 0 1 1 20.25 11.6Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8.15 7.5c.2-.45.42-.46.75-.47h.62c.2 0 .4.07.51.36l.78 1.9c.08.2.05.4-.08.57l-.6.78c-.13.17-.13.34-.03.51.43.76 1.08 1.42 1.82 1.87.18.11.36.1.5-.06l.84-.97c.15-.17.35-.2.55-.12l1.87.88c.24.11.35.25.33.48-.06.76-.42 1.47-1.02 1.93-.47.36-1.08.49-1.66.35-1.22-.3-2.83-1.09-4.24-2.48-1.17-1.16-1.94-2.44-2.27-3.47-.2-.61-.11-1.29.24-1.83.2-.31.39-.45.59-.23Z" fill="currentColor" />
+    </svg>
+  );
+}
+
 export default function BankReviewLanding() {
   useEffect(() => {
     const previousTitle = document.title;
@@ -234,7 +243,7 @@ export default function BankReviewLanding() {
       </footer>
 
       <WhatsAppLink className="bank-whatsapp-float" label="Abrir conversa no WhatsApp">
-        <MessageCircle size={25} fill="currentColor" />
+        <WhatsAppIcon />
         <span>Fale conosco</span>
       </WhatsAppLink>
     </main>
