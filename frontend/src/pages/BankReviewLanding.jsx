@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import {
   ArrowRight,
-  BadgeCheck,
   Banknote,
   Check,
   FileSearch,
@@ -168,7 +167,7 @@ export default function BankReviewLanding() {
           <div className="bank-process__heading">
             <p className="bank-kicker bank-kicker--light">Como funciona</p>
             <h2>Um atendimento simples, direto e transparente.</h2>
-            <p>O primeiro contato é feito pelo WhatsApp. A partir dele, entendemos o caso e indicamos os documentos necessários.</p>
+            <p>O atendimento inicial é realizado pelo WhatsApp. Após a compreensão preliminar da demanda, orientamos sobre os documentos necessários para a análise jurídica do caso.</p>
             <WhatsAppLink className="bank-text-link">
               Iniciar atendimento <ArrowRight size={18} />
             </WhatsAppLink>
@@ -188,7 +187,6 @@ export default function BankReviewLanding() {
         <div className="bank-shell bank-about__grid">
           <div className="bank-about__portrait">
             <img src={portrait} alt="Advogado Pedro Bastos Lund" />
-            <span><BadgeCheck size={17} /> Atendimento profissional e individualizado</span>
           </div>
           <div className="bank-about__copy">
             <p className="bank-kicker">Atendimento jurídico</p>
