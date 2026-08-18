@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ArrowRight, Calculator, Check, CircleAlert } from 'lucide-react';
+import { submitPublicCalculatorLead } from '../services/api';
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -20,6 +21,10 @@ const emptyForm = {
   paidInstallments: '',
   bank: '',
   contractType: '',
+  name: '',
+  email: '',
+  phone: '',
+  consent: false,
 };
 
 function formatCurrencyInput(value) {
@@ -45,6 +50,7 @@ export default function BankReviewCalculator({ whatsappUrl }) {
   const [form, setForm] = useState(emptyForm);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [submissionState, setSubmissionState] = useState('idle');
 
   function updateField(name, value) {
     const nextValue = name === 'financing' || name === 'installment'
@@ -56,15 +62,42 @@ export default function BankReviewCalculator({ whatsappUrl }) {
     if (error) setError('');
   }
 
-  function calculate(event) {
+  async function calculate(event) {
     event.preventDefault();
     const financing = parseCurrency(form.financing);
     const installment = parseCurrency(form.installment);
     const totalInstallments = parseInteger(form.totalInstallments);
     const paidInstallments = parseInteger(form.paidInstallments);
+    const normalizedEmail = form.email.trim().toLowerCase();
+    const phoneDigits = form.phone.replace(/\D/g, '');
 
+    if (!form.name.trim()) {
+      setError('Informe seu nome para receber o resultado.');
+      setResult(null);
+      return;
+    }
     if (!financing || !installment || !totalInstallments) {
       setError('Informe o valor financiado, o valor da parcela e o total de parcelas.');
+      setResult(null);
+      return;
+    }
+    if (!normalizedEmail && !phoneDigits) {
+      setError('Informe um WhatsApp ou e-mail para receber o retorno da simulação.');
+      setResult(null);
+      return;
+    }
+    if (normalizedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setError('Informe um e-mail válido ou deixe esse campo em branco.');
+      setResult(null);
+      return;
+    }
+    if (phoneDigits && phoneDigits.length < 10) {
+      setError('Informe um WhatsApp válido com DDD.');
+      setResult(null);
+      return;
+    }
+    if (!form.consent) {
+      setError('Autorize o contato para receber o resultado da simulação.');
       setResult(null);
       return;
     }
@@ -80,13 +113,38 @@ export default function BankReviewCalculator({ whatsappUrl }) {
     const monthlySavings = Math.max(0, installment - estimatedInstallment);
     const remainingInstallments = Math.max(0, totalInstallments - paidInstallments);
 
-    setResult({
+    const calculatedResult = {
       estimatedInstallment,
       monthlySavings,
       totalSavings: monthlySavings * remainingInstallments,
       remainingInstallments,
       reductionPercent: installment ? (monthlySavings / installment) * 100 : 0,
-    });
+    };
+    setResult(calculatedResult);
+    setSubmissionState('sending');
+    try {
+      const response = await submitPublicCalculatorLead({
+        name: form.name.trim(),
+        email: normalizedEmail || null,
+        phone: form.phone || null,
+        financing,
+        installment,
+        totalInstallments,
+        paidInstallments,
+        bank: form.bank.trim() || null,
+        contractType: form.contractType || null,
+        consent: form.consent,
+        estimatedInstallment,
+        monthlySavings,
+        totalSavings: calculatedResult.totalSavings,
+        remainingInstallments,
+      });
+      setSubmissionState(response.data?.stored ? 'received' : 'unavailable');
+    } catch {
+      // O resultado local continua disponível mesmo quando o backend ainda não
+      // tem um tenant ou provedor de mensagens configurado.
+      setSubmissionState('unavailable');
+    }
   }
 
   return (
@@ -142,6 +200,22 @@ export default function BankReviewCalculator({ whatsappUrl }) {
               <input value={form.bank} onChange={(event) => updateField('bank', event.target.value)} placeholder="Ex.: Banco do Brasil" />
             </label>
 
+            <div className="bank-calculator__fields bank-calculator__fields--two bank-calculator__contact-fields">
+              <label>
+                <span>Seu nome</span>
+                <input required value={form.name} onChange={(event) => updateField('name', event.target.value)} placeholder="Nome completo" />
+              </label>
+              <label>
+                <span>WhatsApp</span>
+                <input inputMode="tel" value={form.phone} onChange={(event) => updateField('phone', event.target.value)} placeholder="(51) 99999-9999" />
+              </label>
+            </div>
+
+            <label className="bank-calculator__field">
+              <span>E-mail</span>
+              <input type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} placeholder="voce@email.com" />
+            </label>
+
             <fieldset className="bank-calculator__type">
               <legend>Qual o tipo do seu contrato?</legend>
               <div className="bank-calculator__contract-options">
@@ -151,10 +225,15 @@ export default function BankReviewCalculator({ whatsappUrl }) {
               </div>
             </fieldset>
 
+            <label className="bank-calculator__consent">
+              <input type="checkbox" checked={form.consent} onChange={(event) => updateField('consent', event.target.checked)} />
+              <span>Autorizo o escritório a usar estes dados para enviar o resultado da simulação e entrar em contato sobre a análise do contrato.</span>
+            </label>
+
             {error && <p className="bank-calculator__error" role="alert"><CircleAlert size={16} /> {error}</p>}
 
-            <button type="submit" className="bank-button bank-button--gold bank-calculator__submit">
-              Calcular minha estimativa <ArrowRight size={18} />
+            <button type="submit" className="bank-button bank-button--gold bank-calculator__submit" disabled={submissionState === 'sending'}>
+              {submissionState === 'sending' ? 'Enviando dados...' : 'Calcular e receber retorno'} <ArrowRight size={18} />
             </button>
           </form>
 
@@ -168,6 +247,8 @@ export default function BankReviewCalculator({ whatsappUrl }) {
               </div>
               <p>Simulação de até {result.reductionPercent.toFixed(0)}% de redução sobre a parcela informada, considerando {result.remainingInstallments} parcela(s) restante(s).</p>
               <small>O resultado é apenas informativo. A existência de valores revisáveis depende da análise do contrato e dos documentos do caso.</small>
+              {submissionState === 'received' && <p className="bank-calculator__submission bank-calculator__submission--success">Recebemos seus dados. O retorno será enviado pelo WhatsApp ou e-mail informado.</p>}
+              {submissionState === 'unavailable' && <p className="bank-calculator__submission">A simulação foi concluída. O envio automático será ativado assim que o canal de contato do escritório estiver configurado.</p>}
               <a className="bank-button bank-button--navy" href={whatsappUrl} target="_blank" rel="noreferrer">Solicitar análise do contrato <ArrowRight size={17} /></a>
             </div>
           )}

@@ -59,6 +59,7 @@ export const uploadLogo = (file) => {
 };
 export const testFirebirdConnection = () => api.post('/integrations/firebird/test');
 export const syncFirebirdContacts = (data = {}) => api.post('/integrations/firebird/sync/contacts', data);
+export const submitPublicCalculatorLead = (data) => api.post('/public/calculator-leads', data);
 
 // Instance
 export const getInstances = () => api.get('/instance/list');

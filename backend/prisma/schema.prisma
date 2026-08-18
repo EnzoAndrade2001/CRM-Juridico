@@ -47,6 +47,7 @@ model Tenant {
   legalActivities   LegalActivity[]
   legalDocuments    LegalDocument[]
   consentRecords    ConsentRecord[]
+  calculatorSubmissions CalculatorSubmission[]
 }
 
 model TenantSettings {
@@ -881,4 +882,37 @@ model LegalActivity {
 
   @@index([tenantId, entityType, entityId, createdAt])
   @@index([tenantId, createdAt])
+}
+
+model CalculatorSubmission {
+  id                    String   @id @default(cuid())
+  tenantId              String
+  name                  String
+  email                 String?
+  phone                 String?
+  financing             Float?
+  installment           Float
+  totalInstallments     Int
+  paidInstallments      Int      @default(0)
+  bank                  String?
+  contractType          String?
+  estimatedInstallment  Float
+  monthlySavings        Float
+  totalSavings          Float
+  remainingInstallments Int
+  consentAt             DateTime @default(now())
+  consentEvidence      String?  @db.Text
+  status                String   @default("received")
+  whatsappSentAt        DateTime?
+  emailSentAt           DateTime?
+  notificationError     String?  @db.Text
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, email])
+  @@index([tenantId, phone])
+  @@index([tenantId, status])
 }
