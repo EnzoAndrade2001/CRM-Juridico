@@ -107,18 +107,17 @@ export default function BankReviewLanding() {
       >
         <div className="bank-shell bank-hero__inner">
           <div className="bank-hero__copy">
-            <p className="bank-eyebrow"><span /> Atuação em Direito Bancário</p>
+            <p className="bank-eyebrow"><span /> Desconfia de juros abusivos?</p>
             <h1>
-              <span>Seu contrato</span>{' '}
-              <span>bancário</span>{' '}
-              <span>merece uma</span>{' '}
-              <em><span>análise</span>{' '}<span>cuidadosa.</span></em>
+              <span>Juros bancários</span>{' '}
+              <span>altos demais?</span>{' '}
+              <em><span>Seu contrato</span>{' '}<span>pode ser revisado.</span></em>
             </h1>
             <p className="bank-hero__lead">
-              Entenda as condições do seu empréstimo ou financiamento e saiba se existem encargos que precisam ser revistos.
+              Taxas elevadas, cobranças que você não reconhece ou parcelas pesando no orçamento? Uma análise técnica mostra o que pode ser questionado.
             </p>
             <WhatsAppLink className="bank-button bank-button--gold">
-              Solicitar análise pelo WhatsApp <ArrowRight size={19} />
+              Quero analisar meu contrato <ArrowRight size={19} />
             </WhatsAppLink>
             <div className="bank-hero__assurances" aria-label="Características do atendimento">
               <span><Check size={15} /> Atendimento individual</span>
@@ -133,12 +132,12 @@ export default function BankReviewLanding() {
       <section className="bank-intro" id="revisional">
         <div className="bank-shell bank-intro__grid">
           <div>
-            <p className="bank-kicker">Revisional bancário</p>
-            <h2>Você conhece tudo o que está sendo cobrado no seu contrato?</h2>
+            <p className="bank-kicker">Não pague sem entender</p>
+            <h2>Parcelas pesando no bolso? Descubra o que está por trás dos valores cobrados.</h2>
           </div>
           <div className="bank-intro__text">
             <p>
-              Contratos bancários podem envolver juros, tarifas, seguros e outros encargos de difícil compreensão. A análise revisional verifica as condições efetivamente contratadas e orienta sobre possíveis medidas.
+              Juros muito acima do esperado, tarifas, seguros e serviços agregados podem aumentar consideravelmente uma dívida. A análise revisional verifica as condições contratadas e aponta quais cobranças merecem atenção.
             </p>
             <p className="bank-note"><ShieldCheck size={20} /> Cada contrato é analisado individualmente. A viabilidade depende dos documentos e das circunstâncias de cada caso.</p>
           </div>
@@ -149,7 +148,7 @@ export default function BankReviewLanding() {
         <div className="bank-shell">
           <div className="bank-section-heading">
             <p className="bank-kicker">O que pode ser analisado</p>
-            <h2>Clareza para tomar decisões com segurança.</h2>
+            <h2>Encontre respostas antes de continuar pagando no escuro.</h2>
           </div>
           <div className="bank-review__cards">
             {reviewItems.map(({ icon: Icon, title, text }, index) => (
@@ -196,7 +195,7 @@ export default function BankReviewLanding() {
             <h2>Pedro Bastos Lund</h2>
             <p className="bank-about__role">Advocacia e Consultoria Jurídica</p>
             <p>
-              Atuação dedicada à análise responsável de relações bancárias, com comunicação acessível e acompanhamento próximo em cada etapa do atendimento.
+              Atuação dedicada a quem precisa entender e enfrentar cobranças bancárias, com análise responsável, comunicação acessível e acompanhamento próximo em cada etapa.
             </p>
             <blockquote>“Informação clara é o primeiro passo para uma decisão jurídica segura.”</blockquote>
             <WhatsAppLink className="bank-button bank-button--navy">
@@ -211,11 +210,11 @@ export default function BankReviewLanding() {
           <span className="bank-final-cta__icon"><Scale size={30} /></span>
           <div>
             <p className="bank-kicker bank-kicker--light">Fale com o escritório</p>
-            <h2>Quer entender melhor o seu contrato bancário?</h2>
-            <p>Envie uma mensagem e solicite uma avaliação inicial da sua situação.</p>
+            <h2>Não continue pagando sem entender cada cobrança.</h2>
+            <p>Envie seu contrato e solicite uma avaliação inicial da sua situação.</p>
           </div>
           <WhatsAppLink className="bank-button bank-button--gold">
-            Chamar no WhatsApp <ArrowRight size={19} />
+            Quero uma análise <ArrowRight size={19} />
           </WhatsAppLink>
         </div>
       </section>
@@ -223,7 +222,8 @@ export default function BankReviewLanding() {
       <footer className="bank-footer">
         <div className="bank-shell bank-footer__inner">
           <div className="bank-footer__brand">
-            <img src={logo} alt="Pedro Bastos Lund — Advocacia e Consultoria Jurídica" />
+            <span className="bank-footer__mark"><img src={logo} alt="" /></span>
+            <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span>
           </div>
           <p>Conteúdo informativo. A análise jurídica e os resultados possíveis dependem das particularidades de cada caso.</p>
           <span>© {new Date().getFullYear()} Pedro Bastos Lund</span>
