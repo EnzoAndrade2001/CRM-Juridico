@@ -11,7 +11,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import portrait from '../assets/pedro-bastos-lund.jpg';
-import logo from '../assets/pedro-bastos-lund-logo.jpg';
+import logo from '../assets/pedro-bastos-lund-monogram.png';
 import './bank-review-landing.css';
 
 const whatsappMessage = 'Olá, vim pela página de Revisional Bancário e gostaria de solicitar uma análise do meu contrato.';

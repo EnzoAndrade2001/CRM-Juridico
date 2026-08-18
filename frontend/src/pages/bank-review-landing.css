@@ -36,8 +36,8 @@
 }
 
 .bank-brand { display: inline-flex; align-items: center; gap: 13px; min-width: 270px; }
-.bank-brand__mark { position: relative; display: block; width: 55px; height: 55px; overflow: hidden; border: 1px solid rgba(214, 182, 110, .5); background: #fff; }
-.bank-brand__mark img { position: absolute; top: 50%; left: 50%; width: 140px; max-width: none; transform: translate(-50%, -44%); }
+.bank-brand__mark { display: grid; width: 55px; height: 60px; flex: 0 0 auto; place-items: center; }
+.bank-brand__mark img { width: 52px; height: 52px; object-fit: contain; }
 .bank-brand > span:last-child { display: flex; flex-direction: column; }
 .bank-brand strong { font-family: Georgia, "Times New Roman", serif; font-size: 18px; font-weight: 500; letter-spacing: .025em; }
 .bank-brand small { margin-top: 3px; color: var(--bank-gold-light); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; }
@@ -118,16 +118,16 @@
 .bank-final-cta h2 { margin-bottom: 9px; color: #fff; font-size: clamp(30px, 3vw, 42px); }
 .bank-final-cta p:last-child { margin-bottom: 0; color: rgba(255,255,255,.62); font-size: 14px; }
 
-.bank-footer { padding: 48px 0; background: #fff; }
+.bank-footer { border-top: 1px solid rgba(255,255,255,.08); padding: 48px 0; background: #061425; }
 .bank-footer__inner { display: grid; grid-template-columns: 270px 1fr auto; gap: 35px; align-items: center; }
 .bank-footer__brand { display: flex; width: 285px; align-items: center; gap: 13px; }
-.bank-footer__mark { position: relative; display: block; width: 64px; height: 64px; flex: 0 0 auto; overflow: hidden; border: 1px solid #e4d3ad; background: #f5f5f5; }
-.bank-footer__mark img { position: absolute; top: 50%; left: 50%; width: 155px; max-width: none; transform: translate(-50%, -44%); }
+.bank-footer__mark { display: grid; width: 64px; height: 64px; flex: 0 0 auto; place-items: center; }
+.bank-footer__mark img { width: 60px; height: 60px; object-fit: contain; }
 .bank-footer__brand > span:last-child { display: flex; flex-direction: column; }
-.bank-footer__brand strong { color: var(--bank-ink); font-family: Georgia, "Times New Roman", serif; font-size: 17px; font-weight: 500; }
+.bank-footer__brand strong { color: #fff; font-family: Georgia, "Times New Roman", serif; font-size: 17px; font-weight: 500; }
 .bank-footer__brand small { margin-top: 5px; color: #9a742e; font-size: 8px; font-weight: 700; letter-spacing: .13em; line-height: 1.4; text-transform: uppercase; }
-.bank-footer p { max-width: 530px; margin: 0; color: #76808e; font-size: 11px; line-height: 1.55; }
-.bank-footer__inner > span { color: #76808e; font-size: 11px; white-space: nowrap; }
+.bank-footer p { max-width: 530px; margin: 0; color: rgba(255,255,255,.55); font-size: 11px; line-height: 1.55; }
+.bank-footer__inner > span { color: rgba(255,255,255,.55); font-size: 11px; white-space: nowrap; }
 
 .bank-whatsapp-float { position: fixed; z-index: 20; right: 24px; bottom: 24px; display: flex; min-height: 54px; align-items: center; gap: 9px; border-radius: 99px; padding: 0 20px; background: #1fa855; box-shadow: 0 12px 30px rgba(6,75,34,.28); color: #fff !important; font-size: 13px; font-weight: 800; transition: transform .2s ease, background .2s ease; }
 .bank-whatsapp-float:hover { background: #188c46; transform: translateY(-3px); }
@@ -150,7 +150,7 @@
   .bank-header { min-height: 78px; }
   .bank-brand { min-width: 0; }
   .bank-brand__mark { width: 47px; height: 47px; }
-  .bank-brand__mark img { width: 120px; }
+  .bank-brand__mark img { width: 45px; height: 45px; }
   .bank-brand strong { font-size: 15px; }
   .bank-brand small { font-size: 7px; letter-spacing: .12em; }
   .bank-header__cta { width: 43px; min-height: 43px; justify-content: center; overflow: hidden; padding: 0; font-size: 0; }
