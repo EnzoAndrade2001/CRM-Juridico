@@ -4,10 +4,13 @@
   "main": "src/app.js",
   "scripts": {
     "dev": "nodemon src/app.js",
-    "start": "prisma db push && node src/app.js",
+    "start": "prisma migrate deploy && node src/app.js",
     "build": "prisma generate",
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
+    "db:deploy": "prisma migrate deploy",
+    "db:status": "prisma migrate status",
+    "db:bootstrap": "node scripts/bootstrap-production-db.js",
     "test": "node --test test/*.test.js",
     "dedupe:contacts": "node scripts/dedupeContacts.js"
   },

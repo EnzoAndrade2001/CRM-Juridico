@@ -377,15 +377,15 @@ backend/prisma/migrations/20260818_legal_documents/migration.sql
 backend/prisma/migrations/20260818_legal_consents/migration.sql
 ```
 
-Para criar uma base limpa durante esta fase de homologação, utilize:
+Para criar uma base limpa durante esta fase de homologação, utilize o bootstrap controlado na pasta `backend`:
 
 ```bash
-npx prisma db push
+npm run db:bootstrap
 ```
 
-O script de inicialização também foi alterado para nunca aceitar perda de dados automaticamente. Antes da implantação definitiva na VPS, o banco será baselined e passará a usar `prisma migrate deploy` como fluxo de produção.
+Esse comando é destinado à primeira inicialização de uma base PostgreSQL nova: aplica o schema atual sem aceitar perda de dados e registra as migrações incrementais existentes como aplicadas. O processo normal da API usa `prisma migrate deploy` (via `npm start`) para aplicar somente migrações novas.
 
-Não utilizar `db push --accept-data-loss` no ambiente do escritório.
+Não execute `db:bootstrap` em uma base com dados sem backup e conferência do schema. Nunca utilizar `db push --accept-data-loss` no ambiente do escritório.
 
 ## Segurança desta versão
 

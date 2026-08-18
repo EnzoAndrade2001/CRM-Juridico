@@ -4,6 +4,7 @@ const fs = require('fs');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
+const prisma = require('./lib/prisma');
 
 const authRoutes = require('./routes/auth');
 const ticketRoutes = require('./routes/tickets');
@@ -67,6 +68,19 @@ setIoBillingDocuments(io);
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5174', credentials: true }));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+
+// Endpoint usado pelo health check do EasyPanel e pelo monitoramento da VPS.
+// A consulta simples confirma que a API e o PostgreSQL estão respondendo.
+app.get('/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({ status: 'ok', database: 'ok' });
+  } catch (error) {
+    console.error('[health] banco indisponível:', error.message);
+    res.status(503).json({ status: 'degraded', database: 'unavailable' });
+  }
+});
+
 app.use((req, res, next) => {
   const startedAt = Date.now();
 
