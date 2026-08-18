@@ -74,7 +74,7 @@ class InboxSectionErrorBoundary extends React.Component {
   }
 }
 
-export default function Inbox() {
+export default function Inbox({ legalMode = false, instanceList = null, onOpenLegalClient }) {
   const MESSAGE_PAGE_SIZE = 60;
   const [selectedId, setSelectedId] = useState(null);
   const [text, setText] = useState('');
@@ -109,7 +109,8 @@ export default function Inbox() {
   const [isCompactDesktop, setIsCompactDesktop] = useState(() => window.innerWidth > 768 && window.innerWidth <= 1440);
   const openOsHandledRef = useRef(false);
   const isMobile = useIsMobile();
-  const { instances } = useOutletContext() || { instances: [] };
+  const outletContext = useOutletContext() || {};
+  const instances = instanceList ?? outletContext.instances ?? [];
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -565,7 +566,7 @@ export default function Inbox() {
   }
 
   return (
-    <div style={s.layout}>
+    <div className={legalMode ? 'inbox-embedded inbox-embedded--legal' : 'inbox-embedded'} style={{ ...s.layout, ...(legalMode ? s.embeddedLayout : {}) }}>
       <style>{`
         @keyframes pulse {
           0% { opacity: 1; transform: scale(1); }
@@ -619,6 +620,7 @@ export default function Inbox() {
                 handleSummarize={handleSummarize}
                 isMobile={isMobile}
                 isCompactDesktop={isCompactDesktop}
+                legalMode={legalMode}
                 onImageClick={openPreviewImage}
                 selectedTicket={selectedTicket}
                 setShowInfo={setShowInfo}
@@ -714,8 +716,10 @@ export default function Inbox() {
               onClose={() => setShowInfo(false)}
               onUpdate={() => { loadTickets(); setUpdateTrigger(prev => prev + 1); }}
               onImageClick={openPreviewImage}
+              onOpenLegalClient={onOpenLegalClient}
               isMobile={isMobile}
-              isCompactDesktop={isCompactDesktop}
+                isCompactDesktop={isCompactDesktop}
+                legalMode={legalMode}
               onLinkCRM={() => setLinkModal(true)}
               onUnlinkCRM={handleUnlinkCRM}
               onOpenCRM={(crmCustomer) => setCrmProfile(crmCustomer)}
@@ -881,6 +885,7 @@ export default function Inbox() {
 
 export const inboxStyles = {
   layout: { display: 'flex', height: '100%', width: '100%', background: 'var(--bg-base)', color: 'var(--text-main)', overflow: 'hidden', fontFamily: 'var(--font-main)', position: 'relative' },
+  embeddedLayout: { height: 'calc(100vh - 102px)', minHeight: '560px' },
   sidebar: { width: '348px', minWidth: '348px', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)' },
   sidebarHeader: { padding: '1.25rem 1rem 0.9rem', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' },
   sidebarEyebrow: { fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-dim)', fontWeight: 600, marginBottom: '0.45rem' },

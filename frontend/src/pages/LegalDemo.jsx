@@ -32,6 +32,7 @@ import LegalCrmWorkspace from '../features/legal/LegalCrmWorkspace';
 import LegalClients from '../features/legal/LegalClients';
 import LegalOverviewPanel from '../features/legal/LegalOverview';
 import useLegalWorkspace from '../features/legal/useLegalWorkspace';
+import RealInbox from './Inbox';
 import './legal-demo.css';
 
 const navigation = [
@@ -246,6 +247,13 @@ export default function LegalDemo({ demoMode = false }) {
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const legalWorkspace = useLegalWorkspace({ demoMode });
+  function openLegalClient(client) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tela', 'clientes');
+    if (client?.id) url.searchParams.set('clientId', client.id);
+    window.history.replaceState({}, '', url);
+    setActive('clientes');
+  }
   useEffect(() => {
     document.title = 'Áurea — CRM Jurídico com IA';
     const url = new URL(window.location.href);
@@ -268,7 +276,7 @@ export default function LegalDemo({ demoMode = false }) {
       <main className="jd-main">
         <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} />
         {active === 'visao-geral' && <LegalOverviewPanel workspace={legalWorkspace} onNavigate={setActive} />}
-        {active === 'atendimentos' && <InboxDemo />}
+        {active === 'atendimentos' && (demoMode ? <InboxDemo /> : <RealInbox legalMode onOpenLegalClient={openLegalClient} />)}
         {active === 'clientes' && <LegalClients workspace={legalWorkspace} onNavigate={setActive} />}
         {active === 'crm' && <CrmDemo workspace={legalWorkspace} />}
         {active === 'campanhas' && <CampaignsDemo />}

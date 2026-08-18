@@ -15,7 +15,7 @@ A adaptação seguirá três regras:
 | Módulo jurídico | Origem reaproveitada | Situação atual | Decisão para o MVP |
 | --- | --- | --- | --- |
 | Visão geral | Dashboard, contatos, tickets e `/api/legal/summary` | Painel jurídico conectado parcialmente aos dados reais | Manter visível e substituir todos os indicadores simulados por consultas reais |
-| Atendimentos | Inbox, Ticket, Message, TicketEvent, etiquetas, notas, equipes e Socket.IO | Motor real existente; tela jurídica ainda demonstrativa | Manter visível e encaixar a caixa de entrada real no layout jurídico |
+| Atendimentos | Inbox, Ticket, Message, TicketEvent, etiquetas, notas, equipes e Socket.IO | Inbox real incorporada ao ambiente autenticado; demonstração pública permanece fictícia | Manter visível e evoluir o vínculo com cliente, oportunidade e modo IA |
 | Clientes | Contact, histórico de tickets e API jurídica | Cadastro, edição, busca, dossiê e validações implementados | Manter visível como cadastro central único |
 | CRM jurídico | Contact + LegalLead + LegalMatter + LegalTask | Backend e fluxo visual implementados | Manter visível; será o funil oficial do escritório |
 | Tarefas e prazos | LegalTask | API implementada e tarefas exibidas dentro do CRM | Manter inicialmente dentro do CRM; criar agenda própria somente se o piloto exigir |
@@ -182,18 +182,17 @@ Publicações do Instagram não precisam ser copiadas para dentro do CRM no MVP.
 | Classificação | Situação |
 | --- | --- |
 | Reaproveitado e conectado | Login, tenant, clientes, oportunidades, casos, tarefas, visão geral jurídica e auditoria |
-| Reaproveitado no backend, aguardando tela jurídica real | Atendimentos, campanhas, base de conhecimento, usuários, equipes e conexões |
+| Reaproveitado no backend, aguardando tela jurídica real | Campanhas, base de conhecimento, usuários, equipes e conexões |
 | Novo e implementado no backend | Documentos jurídicos e estrutura de consentimento |
 | Novo e ainda pendente | Estado IA/humano por conversa, adaptador de provedor, qualificação automática e regras de transferência |
 | Fora do produto jurídico | Firebird, ordens de serviço, equipamentos, faturamento técnico, prospecção e RevGuard |
 
 ## 9. Próxima sequência de implementação
 
-1. Substituir o atendimento demonstrativo pela Inbox real já existente.
-2. Vincular cada atendimento ao cliente e à oportunidade jurídica.
-3. Exibir documentos na ficha do cliente e do caso.
-4. Adaptar a base de conhecimento existente para categorias jurídicas.
-5. Adaptar campanhas existentes para segmentação jurídica e consentimento.
-6. Criar a configuração de modo IA, híbrido ou humano por conversa.
-7. Simplificar o menu conforme este mapa, sem remover rotas compartilhadas.
-8. Validar o fluxo completo em PostgreSQL de homologação e WhatsApp de teste.
+1. Vincular cada atendimento ao cliente e à oportunidade jurídica.
+2. Exibir documentos na ficha do cliente e do caso.
+3. Adaptar a base de conhecimento existente para categorias jurídicas.
+4. Adaptar campanhas existentes para segmentação jurídica e consentimento.
+5. Criar a configuração de modo IA, híbrido ou humano por conversa.
+6. Simplificar o menu conforme este mapa, sem remover rotas compartilhadas.
+7. Validar o fluxo completo em PostgreSQL de homologação e WhatsApp de teste.

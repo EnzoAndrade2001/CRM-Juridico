@@ -461,7 +461,7 @@ export function MediaContent({ message, onImageClick, styles }) {
   return null;
 }
 
-export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile, isCompactDesktop, onLinkCRM, onUnlinkCRM, onOpenCRM, styles }) {
+export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile, isCompactDesktop, legalMode = false, onLinkCRM, onUnlinkCRM, onOpenCRM, onOpenLegalClient, styles }) {
   const contact = ticket.contact;
   const contactName = getContactDisplayName(contact);
   const contactPhone = getContactPhone(contact);
@@ -493,7 +493,7 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
       const [mediaResponse, tagsResponse, equipmentResponse] = await Promise.all([
         getContactMedia(contact.id),
         getTags(),
-        getEquipments(contact.id),
+        legalMode ? Promise.resolve({ data: [] }) : getEquipments(contact.id),
       ]);
 
       setMedia(mediaResponse.data || []);
@@ -508,7 +508,7 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
 
   useEffect(() => {
     loadPanelContext();
-  }, [contact.id, contactPhone, contact.crmCustomer]);
+  }, [contact.id, contactPhone, contact.crmCustomer, legalMode]);
 
   useEffect(() => {
     setPanelTab('overview');
@@ -619,7 +619,7 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
         </div>
       </div>
 
-      <div style={{ ...styles.infoSection, marginTop: '1rem', marginBottom: '1rem', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '12px 14px', background: 'rgba(255, 255, 255, 0.01)' }}>
+      {!legalMode && <div style={{ ...styles.infoSection, marginTop: '1rem', marginBottom: '1rem', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '12px 14px', background: 'rgba(255, 255, 255, 0.01)' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>
           <input 
             type="checkbox" 
@@ -634,7 +634,7 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
         <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', paddingLeft: '26px', lineHeight: '1.25' }}>
           Habilita o envio automático de boletos e cobranças para este contato via WhatsApp.
         </div>
-      </div>
+      </div>}
 
       <div style={styles.infoSection}>
         <h5 style={styles.infoLabel}>Etiquetas</h5>
@@ -677,7 +677,7 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
         </div>
       </div>
 
-      <div style={styles.infoSection}>
+      {!legalMode && <div style={styles.infoSection}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
           <h5 style={{ ...styles.infoLabel, marginBottom: 0 }}>Equipamentos</h5>
           <button
@@ -721,7 +721,7 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
           ))}
           {equipments.length === 0 ? <div style={styles.infoEmpty}>Nenhum equipamento vinculado</div> : null}
         </div>
-      </div>
+      </div>}
 
       <div style={styles.infoSection}>
         <h5 style={styles.infoLabel}>Detalhes tecnicos</h5>
@@ -897,7 +897,7 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
           )}
           </div>
           </div>
-          {linkedCrm ? (
+          {!legalMode && linkedCrm ? (
             <button
               type="button"
               className="inbox-control"
@@ -907,7 +907,7 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
             >
               <ClipboardList size={15} /> Visão 360 — {linkedCrm.fantasyName || linkedCrm.name}
             </button>
-          ) : contact.fantasyName ? (
+          ) : !legalMode && contact.fantasyName ? (
             <div style={{ color: 'var(--accent)', fontSize: '0.9rem', fontWeight: 700, marginBottom: 8, padding: '4px 12px', background: 'rgba(212,175,55,0.1)', borderRadius: '8px', display: 'inline-block' }}>
               CRM {contact.fantasyName}
             </div>
@@ -953,7 +953,11 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
             <button type="button" className="inbox-control" onClick={() => copyText(buildContactSnapshot(), 'Ficha copiada')} style={styles.infoActionBtn}>
               Copiar ficha
             </button>
-            {linkedCrm ? (
+            {legalMode ? (
+              <button type="button" className="inbox-control" onClick={() => onOpenLegalClient?.(contact)} style={{ ...styles.infoActionBtn, ...styles.infoActionBtnPrimary }}>
+                Abrir cliente jurídico
+              </button>
+            ) : linkedCrm ? (
               <button type="button" className="inbox-control" onClick={onUnlinkCRM} style={{ ...styles.infoActionBtn, color: 'var(--text-muted)' }} title="Desvincular este contato do CRM">
                 Desvincular
               </button>
@@ -1387,6 +1391,7 @@ export const ChatHeader = React.memo(function ChatHeader({
   handleSummarize,
   isMobile,
   isCompactDesktop,
+  legalMode = false,
   onImageClick,
   selectedTicket,
   setShowInfo,
@@ -1481,7 +1486,7 @@ export const ChatHeader = React.memo(function ChatHeader({
       </div>
 
       <div style={styles.headerActions}>
-        <button
+        {!legalMode && <button
           type="button"
           className="inbox-control"
           style={isMobile || isCompactDesktop ? styles.headerGhostIconBtn : styles.headerPrimaryOutlineBtn}
@@ -1491,7 +1496,7 @@ export const ChatHeader = React.memo(function ChatHeader({
         >
           <ClipboardList size={16} strokeWidth={2.2} />
           {isMobile || isCompactDesktop ? null : 'Gerar O.S.'}
-        </button>
+        </button>}
 
         {selectedTicket.status !== 'resolved' ? (
           <button className="inbox-control" style={styles.resolveBtn} onClick={handleResolve} aria-label="Encerrar atendimento" title="Encerrar atendimento">

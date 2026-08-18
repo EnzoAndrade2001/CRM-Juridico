@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BriefcaseBusiness,
   Check,
@@ -130,6 +130,17 @@ export default function LegalClients({ workspace, onNavigate }) {
       // Mantém os dados já carregados da lista caso o dossiê fique temporariamente indisponível.
     }
   }
+
+  useEffect(() => {
+    const clientId = new URLSearchParams(window.location.search).get('clientId');
+    if (!clientId || !workspace.contacts.length) return;
+    const client = workspace.contacts.find((item) => item.id === clientId);
+    if (!client) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('clientId');
+    window.history.replaceState({}, '', url);
+    openClient(client);
+  }, [workspace.contacts]);
 
   return (
     <div className="jd-page jd-clients-page">

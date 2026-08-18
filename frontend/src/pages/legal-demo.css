@@ -16,6 +16,34 @@
 .legal-demo * { box-sizing: border-box; }
 .legal-demo button, .legal-demo input, .legal-demo select, .legal-demo textarea { font: inherit; }
 .legal-demo button { cursor: pointer; }
+.legal-demo .inbox-embedded--legal {
+  --bg-base: #f4f6fa;
+  --bg-surface: #ffffff;
+  --bg-panel: #f8fafc;
+  --bg-panel-hover: #eef2f6;
+  --border-color: #dce2ea;
+  --border-light: rgba(15, 23, 42, .06);
+  --text-main: #16213a;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+  --text-inverse: #ffffff;
+  --accent: #a87928;
+  --accent-hover: #8d641f;
+  --accent-light: rgba(168, 121, 40, .1);
+  --accent-border: rgba(168, 121, 40, .26);
+  --bg-msg-me: #e2f3e9;
+  --text-msg-me: #173e2b;
+  --bg-msg-contact: #ffffff;
+  --text-msg-contact: #16213a;
+  --bg-msg-ai: rgba(79, 124, 255, .08);
+  --text-msg-ai: #244c9a;
+  --border-msg-ai: rgba(79, 124, 255, .2);
+  --chat-header-bg: rgba(255, 255, 255, .96);
+  --chat-meta-bg: rgba(71, 85, 105, .08);
+  --chat-meta-border: rgba(71, 85, 105, .12);
+  --overlay-bg: rgba(15, 23, 42, .56);
+  color-scheme: light;
+}
 .jd-demo-ribbon { height: 32px; position: fixed; inset: 0 0 auto 0; z-index: 70; display: flex; align-items: center; justify-content: center; gap: 16px; color: #d8deea; background: #091224; font-size: 15px; letter-spacing: .03em; }
 .jd-demo-ribbon span { display: flex; align-items: center; gap: 6px; color: #f0d89e; font-weight: 800; }
 .jd-demo-ribbon p { margin: 0; }
