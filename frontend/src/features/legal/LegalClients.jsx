@@ -78,11 +78,11 @@ function ClientForm({ workspace, client, onClose }) {
 }
 
 function ClientDetail({ workspace, client, onClose, onEdit, onOpenCrm }) {
-  const leads = workspace.leads.filter((lead) => lead.contactId === client.id);
-  const matters = workspace.matters.filter((matter) => matter.contactId === client.id);
+  const leads = client.leads || workspace.leads.filter((lead) => lead.contactId === client.id);
+  const matters = client.matters || workspace.matters.filter((matter) => matter.contactId === client.id);
   const matterIds = new Set(matters.map((matter) => matter.id));
   const leadIds = new Set(leads.map((lead) => lead.id));
-  const tasks = workspace.tasks.filter((task) => matterIds.has(task.matterId) || leadIds.has(task.leadId));
+  const tasks = client.tasks || workspace.tasks.filter((task) => matterIds.has(task.matterId) || leadIds.has(task.leadId));
   return (
     <Modal title={client.name || 'Cliente'} subtitle="Perfil jurídico e vínculos do CRM." onClose={onClose} wide>
       <div className="jd-client-detail">
@@ -103,6 +103,7 @@ function ClientDetail({ workspace, client, onClose, onEdit, onOpenCrm }) {
           {matters.map((matter) => <article key={matter.id}><BriefcaseBusiness size={16} /><span><strong>{matter.title}</strong><small>{matter.caseNumber || 'Sem número de processo'}</small></span><b>{labelFor(MATTER_STATUSES, matter.status)}</b></article>)}
           {!leads.length && !matters.length && <div className="jd-client-no-links">Este cliente ainda não possui oportunidade ou caso.</div>}
         </section>
+        {client.activities?.length > 0 && <section className="jd-history"><h4>Histórico cadastral</h4>{client.activities.slice(0, 8).map((item) => <article key={item.id}><i /><span><strong>{item.type === 'client.created' ? 'Cliente cadastrado' : 'Dados do cliente atualizados'}</strong><small>{item.actor?.name || 'Sistema'} · {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.createdAt))}</small></span></article>)}</section>}
       </div>
     </Modal>
   );
@@ -120,6 +121,16 @@ export default function LegalClients({ workspace, onNavigate }) {
   const linkedIds = new Set([...workspace.leads.map((lead) => lead.contactId), ...workspace.matters.map((matter) => matter.contactId)]);
   const whatsappCount = workspace.contacts.filter((client) => client.instanceId).length;
 
+  async function openClient(client) {
+    setSelected(client);
+    try {
+      const detail = await workspace.loadClientDetail(client.id);
+      setSelected((current) => current?.id === client.id ? detail : current);
+    } catch {
+      // Mantém os dados já carregados da lista caso o dossiê fique temporariamente indisponível.
+    }
+  }
+
   return (
     <div className="jd-page jd-clients-page">
       <div className="jd-section-intro"><div><h2>Clientes</h2><p>Cadastro central, dados de contato e relacionamento jurídico.</p></div><button type="button" className="jd-primary" onClick={() => setCreating(true)}><Plus size={17} /> Novo cliente</button></div>
@@ -135,7 +146,7 @@ export default function LegalClients({ workspace, onNavigate }) {
         {clients.map((client) => {
           const leadCount = workspace.leads.filter((lead) => lead.contactId === client.id).length;
           const matterCount = workspace.matters.filter((matter) => matter.contactId === client.id).length;
-          return <button type="button" className="jd-client-table__row" key={client.id} onClick={() => setSelected(client)}><span className="jd-person-cell"><Avatar name={client.name} /><span><strong>{client.name || 'Cliente sem nome'}</strong><small>{client.cpfCnpj || (client.instanceId ? 'WhatsApp vinculado' : 'Cadastro interno')}</small></span></span><span><strong>{client.phone}</strong><small>{client.email || 'Sem e-mail'}</small></span><span>{[client.city, client.state].filter(Boolean).join(' / ') || 'Não informada'}</span><b>{leadCount}</b><b>{matterCount}</b><UserRound size={17} /></button>;
+          return <button type="button" className="jd-client-table__row" key={client.id} onClick={() => openClient(client)}><span className="jd-person-cell"><Avatar name={client.name} /><span><strong>{client.name || 'Cliente sem nome'}</strong><small>{client.cpfCnpj || (client.instanceId ? 'WhatsApp vinculado' : 'Cadastro interno')}</small></span></span><span><strong>{client.phone}</strong><small>{client.email || 'Sem e-mail'}</small></span><span>{[client.city, client.state].filter(Boolean).join(' / ') || 'Não informada'}</span><b>{leadCount}</b><b>{matterCount}</b><UserRound size={17} /></button>;
         })}
         {!clients.length && <div className="jd-legal-empty"><UsersRound size={25} /><strong>Nenhum cliente encontrado</strong><span>Cadastre o primeiro cliente ou altere a busca.</span></div>}
       </section>
@@ -145,4 +156,3 @@ export default function LegalClients({ workspace, onNavigate }) {
     </div>
   );
 }
-

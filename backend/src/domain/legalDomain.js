@@ -209,6 +209,11 @@ function paginationFromQuery(query = {}) {
 
 module.exports = {
   LegalValidationError,
+  hasOwn,
+  textValue,
+  enumValue,
+  dateValue,
+  assignIfPresent,
   LEGAL_AREAS,
   LEGAL_LEAD_STAGES,
   LEGAL_PRIORITIES,

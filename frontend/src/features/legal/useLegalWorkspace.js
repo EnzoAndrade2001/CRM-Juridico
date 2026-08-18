@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  createContact,
+  createLegalClient,
   createLegalLead,
   createLegalMatter,
   createLegalTask,
-  getContacts,
+  getLegalClient,
+  getLegalClients,
   getLegalLead,
   getLegalLeads,
   getLegalMatter,
   getLegalMatters,
   getLegalSummary,
   getLegalTasks,
-  updateContact,
+  updateLegalClient,
   updateLegalLead,
   updateLegalMatter,
   updateLegalTask,
@@ -77,12 +78,12 @@ export default function useLegalWorkspace({ demoMode }) {
         getLegalLeads({ limit: 100 }),
         getLegalMatters({ limit: 100 }),
         getLegalTasks({ limit: 100 }),
-        getContacts('', {}),
+        getLegalClients({ limit: 100 }),
         getLegalSummary(),
       ]);
       setWorkspace({
         leads: leadsResponse.data.items,
-        contacts: contactsResponse.data,
+        contacts: contactsResponse.data.items,
         matters: mattersResponse.data.items,
         tasks: tasksResponse.data.items,
         activities: summaryResponse.data.recentActivities || [],
@@ -123,7 +124,7 @@ export default function useLegalWorkspace({ demoMode }) {
       commitDemo((current) => ({ ...current, contacts: [contact, ...(current.contacts || [])] }));
       return contact;
     }
-    const response = await createContact(form);
+    const response = await createLegalClient(form);
     await refresh();
     return response.data;
   }), [commitDemo, demoMode, refresh, runMutation]);
@@ -138,7 +139,7 @@ export default function useLegalWorkspace({ demoMode }) {
       }));
       return;
     }
-    await updateContact(id, patch);
+    await updateLegalClient(id, patch);
     await refresh();
   }), [commitDemo, demoMode, refresh, runMutation]);
 
@@ -167,7 +168,7 @@ export default function useLegalWorkspace({ demoMode }) {
     }
     let contactId = form.contactId;
     if (!contactId) {
-      const contactResponse = await createContact({ name: form.clientName, phone: form.phone, email: form.email || null });
+      const contactResponse = await createLegalClient({ name: form.clientName, phone: form.phone, email: form.email || null });
       contactId = contactResponse.data.id;
     }
     const response = await createLegalLead({
@@ -298,6 +299,26 @@ export default function useLegalWorkspace({ demoMode }) {
     return response.data;
   }, [demoMode, workspace.activities, workspace.leads, workspace.tasks]);
 
+  const loadClientDetail = useCallback(async (id) => {
+    if (demoMode) {
+      const client = workspace.contacts.find((item) => item.id === id);
+      const leads = workspace.leads.filter((lead) => lead.contactId === id);
+      const matters = workspace.matters.filter((matter) => matter.contactId === id);
+      const leadIds = new Set(leads.map((lead) => lead.id));
+      const matterIds = new Set(matters.map((matter) => matter.id));
+      return {
+        ...client,
+        leads,
+        matters,
+        tasks: workspace.tasks.filter((task) => leadIds.has(task.leadId) || matterIds.has(task.matterId)),
+        tickets: [],
+        activities: workspace.activities.filter((item) => item.entityType === 'client' && item.entityId === id),
+      };
+    }
+    const response = await getLegalClient(id);
+    return response.data;
+  }, [demoMode, workspace.activities, workspace.contacts, workspace.leads, workspace.matters, workspace.tasks]);
+
   const loadMatterDetail = useCallback(async (id) => {
     if (demoMode) {
       const matter = workspace.matters.find((item) => item.id === id);
@@ -329,6 +350,6 @@ export default function useLegalWorkspace({ demoMode }) {
     summary: effectiveSummary,
     loading, saving, error, demoMode,
     addClient, editClient, addLead, editLead, addMatter, editMatter, addTask, editTask,
-    loadLeadDetail, loadMatterDetail, refresh, resetDemo,
+    loadClientDetail, loadLeadDetail, loadMatterDetail, refresh, resetDemo,
   };
 }

@@ -13,6 +13,8 @@ O primeiro marco será um teste visual navegável. Ele deverá permitir que o es
 - Pipeline interativo com cadastro, mudança de etapa, filtros e persistência local na demonstração.
 - Conversão de oportunidade em caso e criação/conclusão de tarefas disponíveis no fluxo visual.
 - Rota autenticada `/juridico` preparada para utilizar a API real; a rota pública `/demo-juridico` continua usando somente dados fictícios do navegador.
+- Módulo de documentos jurídicos: solicitação, recebimento, análise e arquivamento, com armazenamento privado fora do diretório público e download autenticado por escritório.
+- Módulo de clientes do escritório com API própria em `/api/legal/clients`: busca, paginação, filtros por vínculo, contadores do funil, validação de documento, telefone, e-mail, UF e CEP, bloqueio de duplicados e auditoria em `LegalActivity`.
 
 ## 2. Princípios do MVP
 
@@ -143,11 +145,11 @@ O protótipo será implementado no frontend existente, com dados simulados e sem
 
 ### Entidades novas ou adaptadas
 
-- `LegalLead`: qualificação e etapa comercial.
-- `LegalMatter`: caso ou demanda jurídica vinculada ao cliente.
+- `LegalLead`: qualificação e etapa comercial. **Implementado.**
+- `LegalMatter`: caso ou demanda jurídica vinculada ao cliente. **Implementado.**
 - `LegalParty`: partes e respectivos papéis.
-- `LegalTask`: próxima ação, prazo interno ou compromisso.
-- `LegalDocument`: metadados e vínculo dos arquivos.
+- `LegalTask`: próxima ação, prazo interno ou compromisso. **Implementado.**
+- `LegalDocument`: metadados e vínculo dos arquivos. **Implementado.**
 - `AiConversationState`: modo, classificação, resumo e regras de transferência.
 - `ConsentRecord`: origem, finalidade, data e situação do contato.
 

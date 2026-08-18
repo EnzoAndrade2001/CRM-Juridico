@@ -203,6 +203,10 @@ export const getCrmEquipments = (params = {}) => api.get('/crm/equipments', { pa
 // CRM Jurídico
 export const getLegalConfig = () => api.get('/legal/config');
 export const getLegalSummary = () => api.get('/legal/summary');
+export const getLegalClients = (params = {}) => api.get('/legal/clients', { params });
+export const getLegalClient = (id) => api.get(`/legal/clients/${id}`);
+export const createLegalClient = (data) => api.post('/legal/clients', data);
+export const updateLegalClient = (id, data) => api.patch(`/legal/clients/${id}`, data);
 export const getLegalLeads = (params = {}) => api.get('/legal/leads', { params });
 export const getLegalLead = (id) => api.get(`/legal/leads/${id}`);
 export const createLegalLead = (data) => api.post('/legal/leads', data);

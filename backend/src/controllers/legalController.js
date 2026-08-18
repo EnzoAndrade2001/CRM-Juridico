@@ -16,6 +16,7 @@ const {
   validateLegalTaskState,
   paginationFromQuery,
 } = require('../domain/legalDomain');
+const { LEGAL_DOCUMENT_KINDS, LEGAL_DOCUMENT_STATUSES } = require('../domain/legalDocumentDomain');
 
 const userSummarySelect = { id: true, name: true, email: true, role: true };
 const contactSummarySelect = {
@@ -113,6 +114,8 @@ async function getLegalConfig(req, res) {
     matterStatuses: LEGAL_MATTER_STATUSES,
     taskTypes: LEGAL_TASK_TYPES,
     taskStatuses: LEGAL_TASK_STATUSES,
+    documentKinds: LEGAL_DOCUMENT_KINDS,
+    documentStatuses: LEGAL_DOCUMENT_STATUSES,
   });
 }
 
@@ -428,6 +431,12 @@ function handleLegalError(error, req, res, next) {
 }
 
 module.exports = {
+  httpError,
+  requireTenantUser,
+  recordActivity,
+  changedFields,
+  userSummarySelect,
+  safeSearch,
   getLegalConfig,
   getLegalSummary,
   listLegalLeads,

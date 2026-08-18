@@ -45,6 +45,8 @@ model Tenant {
   legalMatters      LegalMatter[]
   legalTasks        LegalTask[]
   legalActivities   LegalActivity[]
+  legalDocuments    LegalDocument[]
+  consentRecords    ConsentRecord[]
 }
 
 model TenantSettings {
@@ -128,6 +130,9 @@ model User {
   responsibleLegalMatters  LegalMatter[]     @relation("LegalMatterResponsible")
   assignedLegalTasks       LegalTask[]       @relation("LegalTaskAssignee")
   legalActivities          LegalActivity[]   @relation("LegalActivityActor")
+  requestedLegalDocuments  LegalDocument[]   @relation("LegalDocumentRequester")
+  reviewedLegalDocuments   LegalDocument[]   @relation("LegalDocumentReviewer")
+  recordedConsents         ConsentRecord[]   @relation("ConsentRecorder")
 
   @@unique([tenantId, email])
 }
@@ -217,6 +222,8 @@ model Contact {
   serviceOrders     ServiceOrder[]
   legalLeads        LegalLead[]
   legalMatters      LegalMatter[]
+  legalDocuments    LegalDocument[]
+  consentRecords    ConsentRecord[]
 
   @@unique([tenantId, instanceId, phone])
   @@unique([tenantId, externalSource, externalId])
@@ -650,6 +657,51 @@ enum LegalTaskType {
   OUTRO
 }
 
+enum ConsentPurpose {
+  ATENDIMENTO
+  CAMPANHA_WHATSAPP
+  MARKETING
+  ARMAZENAMENTO_DOCUMENTOS
+  COMPARTILHAMENTO_PARCEIROS
+}
+
+enum ConsentStatus {
+  CONCEDIDO
+  NEGADO
+  REVOGADO
+  EXPIRADO
+}
+
+enum ConsentBasis {
+  CONSENTIMENTO
+  EXECUCAO_CONTRATO
+  OBRIGACAO_LEGAL
+  EXERCICIO_DIREITOS
+  LEGITIMO_INTERESSE
+}
+
+enum LegalDocumentKind {
+  IDENTIDADE
+  COMPROVANTE_RESIDENCIA
+  COMPROVANTE_RENDA
+  CONTRATO
+  PROCURACAO
+  RESCISAO
+  DECISAO_JUDICIAL
+  LAUDO
+  COMPROVANTE_PAGAMENTO
+  OUTRO
+}
+
+enum LegalDocumentStatus {
+  SOLICITADO
+  RECEBIDO
+  EM_ANALISE
+  APROVADO
+  RECUSADO
+  ARQUIVADO
+}
+
 enum LegalTaskStatus {
   PENDENTE
   EM_ANDAMENTO
@@ -681,6 +733,7 @@ model LegalLead {
   assignedUser User?        @relation("LegalLeadAssignee", fields: [assignedUserId], references: [id], onDelete: SetNull)
   matter       LegalMatter?
   tasks        LegalTask[]
+  documents    LegalDocument[]
 
   @@index([tenantId, stage, updatedAt])
   @@index([tenantId, area])
@@ -711,6 +764,7 @@ model LegalMatter {
   contact         Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
   responsibleUser User?       @relation("LegalMatterResponsible", fields: [responsibleUserId], references: [id], onDelete: SetNull)
   tasks           LegalTask[]
+  documents       LegalDocument[]
 
   @@index([tenantId, status, updatedAt])
   @@index([tenantId, area])
@@ -744,6 +798,72 @@ model LegalTask {
   @@index([tenantId, assigneeId, status])
   @@index([tenantId, leadId])
   @@index([tenantId, matterId])
+}
+
+model LegalDocument {
+  id            String              @id @default(cuid())
+  tenantId      String
+  contactId     String
+  leadId        String?
+  matterId      String?
+  requestedById String?
+  reviewedById  String?
+  title         String
+  kind          LegalDocumentKind   @default(OUTRO)
+  status        LegalDocumentStatus @default(SOLICITADO)
+  description   String?             @db.Text
+  source        String              @default("upload")
+  storageKey    String?             @unique
+  fileName      String?
+  mimeType      String?
+  fileSize      Int?
+  checksum      String?
+  dueAt         DateTime?
+  receivedAt    DateTime?
+  reviewedAt    DateTime?
+  reviewNotes   String?             @db.Text
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact     Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  lead        LegalLead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  matter      LegalMatter? @relation(fields: [matterId], references: [id], onDelete: SetNull)
+  requestedBy User?        @relation("LegalDocumentRequester", fields: [requestedById], references: [id], onDelete: SetNull)
+  reviewedBy  User?        @relation("LegalDocumentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, contactId])
+  @@index([tenantId, leadId])
+  @@index([tenantId, matterId])
+  @@index([tenantId, checksum])
+}
+
+model ConsentRecord {
+  id           String         @id @default(cuid())
+  tenantId     String
+  contactId    String
+  purpose      ConsentPurpose
+  status       ConsentStatus  @default(CONCEDIDO)
+  basis        ConsentBasis   @default(CONSENTIMENTO)
+  channel      String         @default("whatsapp")
+  evidence     String?        @db.Text
+  documentId   String?
+  recordedById String?
+  grantedAt    DateTime       @default(now())
+  expiresAt    DateTime?
+  revokedAt    DateTime?
+  revokeReason String?        @db.Text
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  recordedBy User?    @relation("ConsentRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, contactId, purpose, grantedAt])
+  @@index([tenantId, status])
+  @@index([tenantId, purpose, status])
 }
 
 model LegalActivity {

@@ -85,6 +85,14 @@ app.use((req, res, next) => {
 
 // Serve arquivos estáticos ANTES das rotas da API
 const { uploadsPath } = require('./utils/uploads');
+const { LEGAL_DOCUMENTS_DIRNAME } = require('./utils/legalStorage');
+
+// Documentos jurídicos vivem dentro do volume de uploads para aproveitar a persistência,
+// mas nunca podem ser servidos publicamente. O download acontece apenas pela rota
+// autenticada /api/legal/documents/:id/file.
+app.use(`/uploads/${LEGAL_DOCUMENTS_DIRNAME}`, (req, res) => {
+  res.status(403).json({ error: 'Documentos jurídicos exigem download autenticado' });
+});
 app.use('/uploads', express.static(uploadsPath));
 
 app.use('/api/auth', authRoutes);

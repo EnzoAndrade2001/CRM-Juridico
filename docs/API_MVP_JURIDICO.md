@@ -17,21 +17,87 @@ Content-Type: application/json
 
 ## Clientes do escritório
 
-O CRM jurídico reutiliza a entidade central de contatos do sistema. Um cliente pode ser cadastrado antes de possuir conversa ou conexão no WhatsApp.
+O CRM jurídico reutiliza a entidade central de contatos do sistema, mas expõe endpoints próprios em `/api/legal/clients` com validação jurídica, contadores do funil e auditoria. Um cliente pode ser cadastrado antes de possuir conversa ou conexão no WhatsApp.
 
-### `GET /api/contacts`
+As rotas antigas de `/api/contacts` continuam existindo para a caixa de entrada e para os módulos técnicos herdados. A interface jurídica deve usar somente `/api/legal/clients`.
 
-Lista os clientes do escritório autenticado. O parâmetro opcional `q` pesquisa nome, documento e telefone.
+### `GET /api/legal/clients`
 
-### `POST /api/contacts`
+Lista os clientes do escritório autenticado, do mais recente para o mais antigo.
 
-Cria um cliente. `name` e `phone` são os campos mínimos da interface jurídica. `email`, `cpfCnpj`, `city`, `state` e `notes` são opcionais.
+Filtros opcionais:
 
-Quando não existe uma instância WhatsApp, `instanceId` permanece nulo. A conexão somente será exigida posteriormente para abrir ou enviar uma conversa.
+- `search` (ou `q`): nome, nome fantasia, e-mail, telefone, WhatsApp e documento. Quando a busca contém dígitos, telefone e documento são comparados somente pelos números.
+- `withLead=true|false`: com ou sem oportunidade.
+- `withMatter=true|false`: com ou sem caso jurídico.
+- `linkedToWhatsapp=true|false`: com ou sem conexão vinculada.
+- `page` e `limit` (máximo de 100).
 
-### `PATCH /api/contacts/:id`
+Resposta:
 
-Atualiza os dados cadastrais do cliente, sempre validando o `tenantId` autenticado.
+```json
+{
+  "items": [
+    {
+      "id": "contact-id",
+      "name": "Maria Aparecida Silva",
+      "phone": "5511999998888",
+      "email": "maria@escritorio.com",
+      "cpfCnpj": "52998224725",
+      "city": "São Paulo",
+      "state": "SP",
+      "instanceId": null,
+      "linkedToWhatsapp": false,
+      "counters": { "leads": 2, "matters": 1, "openTasks": 3 }
+    }
+  ],
+  "pagination": { "page": 1, "limit": 25, "total": 1, "pages": 1 }
+}
+```
+
+### `GET /api/legal/clients/:id`
+
+Retorna o dossiê do cliente: dados cadastrais, contadores, oportunidades, casos, até cinquenta tarefas e documentos vinculados, os cinco atendimentos mais recentes e o histórico de alterações cadastrais.
+
+### `POST /api/legal/clients`
+
+Cria um cliente. `name` e `phone` são obrigatórios. `whatsapp`, `fantasyName`, `email`, `cpfCnpj`, `address`, `city`, `state`, `zipCode` e `notes` são opcionais.
+
+```json
+{
+  "name": "Maria Aparecida Silva",
+  "phone": "(11) 99999-8888",
+  "email": "maria@escritorio.com",
+  "cpfCnpj": "529.982.247-25",
+  "city": "São Paulo",
+  "state": "SP",
+  "notes": "Cliente indicada pelo Dr. Paulo."
+}
+```
+
+Quando `instanceId` não é informado, o cliente é criado com `instanceId` nulo. Isso evita vincular um cadastro interno a uma conexão que ainda não originou atendimento. A conexão somente será exigida ao abrir ou enviar uma conversa.
+
+### `PATCH /api/legal/clients/:id`
+
+Atualiza parcialmente os dados cadastrais, sempre validando o `tenantId` autenticado. Campos opcionais aceitam `null` para limpar o valor. `instanceId` pode receber uma conexão pertencente ao escritório ou `null` para desvincular o cliente.
+
+### Normalização e validação
+
+- Telefone e WhatsApp são normalizados para o formato internacional usado pela Evolution API (`5511999998888`).
+- CPF e CNPJ são validados pelos dígitos verificadores e armazenados somente com números.
+- E-mail é normalizado em caixa baixa e validado quanto ao formato.
+- Estado precisa ser uma UF brasileira e CEP precisa ter oito dígitos.
+
+### Conflitos
+
+`POST` e `PATCH` retornam `409` quando o telefone, o WhatsApp ou o documento já pertencem a outro cliente do mesmo escritório:
+
+```json
+{
+  "error": "Já existe um cliente com este telefone, WhatsApp ou documento",
+  "details": [{ "field": "phone", "code": "duplicate", "clientId": "contact-id" }]
+}
+```
 
 ## Configuração do domínio
 
@@ -150,6 +216,83 @@ Atualiza parcialmente o caso. Ao alterar a situação para `ENCERRADO` ou `ARQUI
 }
 ```
 
+## Documentos
+
+Documentos são solicitados ao cliente, recebidos, analisados e arquivados. Todo documento pertence a um cliente e pode estar vinculado a uma oportunidade, a um caso ou aos dois.
+
+### Armazenamento e sigilo
+
+- O arquivo é gravado em `uploads/legal/<tenantId>/`, dentro do volume persistente, com nome gerado pela API.
+- Esse prefixo é bloqueado no `express.static`: qualquer acesso a `/uploads/legal/...` responde `403`.
+- O download acontece somente por `GET /api/legal/documents/:id/file`, autenticado e validado contra o `tenantId`.
+- A chave de armazenamento nunca é devolvida pela API. O cliente recebe `hasFile` e `downloadUrl`.
+- Cada arquivo recebe um `checksum` SHA-256 e tem o nome original higienizado antes de ser persistido.
+- Formatos aceitos: PDF, JPEG, PNG, WEBP, HEIC, DOC, DOCX, XLS, XLSX e TXT. Limite de 20 MB por arquivo.
+
+### `GET /api/legal/documents`
+
+Filtros opcionais:
+
+- `status`, `kind`
+- `contactId`, `leadId`, `matterId`
+- `pending=true`: apenas documentos ainda solicitados.
+- `overdue=true`: solicitados cujo prazo já venceu.
+- `search`: título, nome do arquivo e nome do cliente.
+- `page` e `limit`.
+
+### `POST /api/legal/documents`
+
+Solicita um documento ao cliente. Aceita JSON ou `multipart/form-data`. Quando o campo `file` acompanha a requisição, o documento já nasce como `RECEBIDO`.
+
+```json
+{
+  "matterId": "matter-id",
+  "title": "Termo de rescisão assinado",
+  "kind": "RESCISAO",
+  "description": "Enviar as duas vias assinadas.",
+  "dueAt": "2026-08-25T12:00:00.000Z"
+}
+```
+
+Informando apenas `leadId` ou `matterId`, o cliente é derivado automaticamente do vínculo. Oportunidade e caso precisam pertencer ao mesmo cliente e ao mesmo escritório.
+
+### `GET /api/legal/documents/:id`
+
+Retorna o documento, seus vínculos, quem solicitou, quem analisou e o histórico de atividades, incluindo os downloads realizados.
+
+### `POST /api/legal/documents/:id/file`
+
+Anexa o arquivo a uma solicitação existente (`multipart/form-data`, campo `file`). Marca o documento como `RECEBIDO`, limpa a análise anterior e substitui o arquivo antigo somente depois que o novo foi persistido. Documentos `ARQUIVADO` recusam novo arquivo com `409`.
+
+### `GET /api/legal/documents/:id/file`
+
+Baixa o arquivo. Responde `409` quando o documento ainda não tem arquivo e `410` quando o binário não está mais no volume. Cada download gera uma atividade `document.downloaded`.
+
+### `PATCH /api/legal/documents/:id`
+
+Atualiza parcialmente o documento e sua situação.
+
+```json
+{
+  "status": "APROVADO"
+}
+```
+
+Regras aplicadas:
+
+- `RECEBIDO`, `EM_ANALISE` e `APROVADO` exigem que o arquivo já tenha sido enviado.
+- `RECUSADO` exige `reviewNotes`.
+- `APROVADO` e `RECUSADO` preenchem `reviewedAt` e `reviewedById` com o usuário autenticado.
+- Voltar para `SOLICITADO` limpa `receivedAt` e a análise anterior.
+
+### Tipos de documento
+
+`IDENTIDADE`, `COMPROVANTE_RESIDENCIA`, `COMPROVANTE_RENDA`, `CONTRATO`, `PROCURACAO`, `RESCISAO`, `DECISAO_JUDICIAL`, `LAUDO`, `COMPROVANTE_PAGAMENTO`, `OUTRO`.
+
+### Situações do documento
+
+`SOLICITADO`, `RECEBIDO`, `EM_ANALISE`, `APROVADO`, `RECUSADO`, `ARQUIVADO`.
+
 ## Tarefas
 
 ### `GET /api/legal/tasks`
@@ -224,6 +367,8 @@ A migração está em:
 
 ```text
 backend/prisma/migrations/20260817_legal_mvp_core/migration.sql
+backend/prisma/migrations/20260818_legal_documents/migration.sql
+backend/prisma/migrations/20260818_legal_consents/migration.sql
 ```
 
 Para criar uma base limpa durante esta fase de homologação, utilize:
@@ -241,5 +386,6 @@ Não utilizar `db push --accept-data-loss` no ambiente do escritório.
 - Todas as consultas e referências são verificadas contra o `tenantId` autenticado.
 - Usuários responsáveis precisam pertencer ao mesmo escritório e estar ativos.
 - Contato, atendimento, oportunidade e caso não podem ser vinculados entre escritórios.
-- Alterações geram registros em `LegalActivity` sem duplicar textos jurídicos sensíveis no payload da auditoria.
-- A API não fornece endpoints de exclusão física nesta primeira versão.
+- Alterações geram registros em `LegalActivity` sem duplicar textos jurídicos sensíveis no payload da auditoria. Cadastro e alteração de clientes usam `entityType: "client"`; documentos usam `entityType: "document"` e registram também os downloads.
+- A API não fornece endpoints de exclusão física nesta primeira versão. Documentos saem de circulação pela situação `ARQUIVADO`.
+- Arquivos de documentos não são servidos pelo diretório estático e só podem ser baixados por usuários autenticados do próprio escritório.
