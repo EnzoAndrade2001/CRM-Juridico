@@ -9,7 +9,7 @@ import {
   Scale,
   ShieldCheck,
 } from 'lucide-react';
-import portrait from '../assets/pedro-bastos-lund.jpg';
+import portrait from '../assets/pedro-bastos-lund-hero-hq.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
 import './bank-review-landing.css';

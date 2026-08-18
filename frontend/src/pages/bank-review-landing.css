@@ -79,7 +79,7 @@
 
 .bank-review { padding: 94px 0 106px; background: var(--bank-cream); }
 .bank-section-heading { max-width: 650px; margin-bottom: 48px; }
-.bank-review__cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.bank-review__cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .bank-review-card { position: relative; min-height: 285px; overflow: hidden; border: 1px solid #e3ddd3; padding: 34px 31px; background: #fff; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
 .bank-review-card:hover { border-color: #c9aa6b; box-shadow: 0 20px 45px rgba(31,42,57,.08); transform: translateY(-4px); }
 .bank-review-card__number { position: absolute; top: 22px; right: 24px; color: #d9d3c9; font-family: Georgia, "Times New Roman", serif; font-size: 38px; }
