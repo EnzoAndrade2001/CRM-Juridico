@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import portrait from '../assets/pedro-bastos-lund.jpg';
+import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
 import './bank-review-landing.css';
 
@@ -186,7 +187,11 @@ export default function BankReviewLanding() {
       <section className="bank-about" id="sobre">
         <div className="bank-shell bank-about__grid">
           <div className="bank-about__portrait">
-            <img src={portrait} alt="Advogado Pedro Bastos Lund" />
+            <img src={aboutPortrait} alt="Advogado Pedro Bastos Lund" />
+            <div className="bank-about__identity">
+              <strong>Pedro Bastos Lund</strong>
+              <span>OAB/RS 74.953</span>
+            </div>
           </div>
           <div className="bank-about__copy">
             <p className="bank-kicker">Atendimento jurídico</p>
@@ -195,7 +200,7 @@ export default function BankReviewLanding() {
             <p>
               Atuação dedicada a quem precisa entender e enfrentar cobranças bancárias, com análise responsável, comunicação acessível e acompanhamento próximo em cada etapa.
             </p>
-            <blockquote>“Informação clara é o primeiro passo para uma decisão jurídica segura.”</blockquote>
+            <blockquote>“Uma defesa jurídica eficaz começa pela análise criteriosa do contrato e das cobranças que comprometem o seu patrimônio.”</blockquote>
             <WhatsAppLink className="bank-button bank-button--navy">
               Conversar com o escritório <MessageCircle size={19} />
             </WhatsAppLink>
