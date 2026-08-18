@@ -7,6 +7,23 @@ const fs = require('fs');
 let io;
 function setIo(socketIo) { io = socketIo; }
 
+// Safe legal-opportunity summary returned with Inbox tickets.
+// The ticket itself is filtered by the authenticated tenant before this include.
+const legalLeadSummaryInclude = {
+  legalLead: {
+    select: {
+      id: true,
+      title: true,
+      stage: true,
+      area: true,
+      urgency: true,
+      contactId: true,
+      ticketId: true,
+      matter: { select: { id: true, title: true, status: true, caseNumber: true } },
+    },
+  },
+};
+
 function hasMissingWhatsAppNumber(value) {
   if (Array.isArray(value)) return value.some(hasMissingWhatsAppNumber);
   if (!value || typeof value !== 'object') return false;
@@ -366,7 +383,8 @@ async function list(req, res) {
       contact: { include: { crmCustomer: true } }, 
       agent: { select: { id: true, name: true } }, 
       team: true,
-      instance: { select: { instanceName: true } }
+      instance: { select: { instanceName: true } },
+      ...legalLeadSummaryInclude,
     },
     orderBy: [{ lastMessageAt: 'desc' }, { updatedAt: 'desc' }],
     take: 200,
@@ -528,7 +546,12 @@ async function assign(req, res) {
       teamId: teamId || null,
       status: agentId ? 'open' : (teamId ? 'pending' : 'open'),
     },
-    include: { contact: true, agent: { select: { id: true, name: true } }, team: true },
+    include: {
+      contact: true,
+      agent: { select: { id: true, name: true } },
+      team: true,
+      ...legalLeadSummaryInclude,
+    },
   });
 
   if (io) {
@@ -620,7 +643,7 @@ async function resolve(req, res) {
   const ticket = await prisma.ticket.update({
     where: { id },
     data: { status: 'resolved', resolvedAt: new Date() },
-    include: { contact: true }
+    include: { contact: true, ...legalLeadSummaryInclude }
   });
 
   // Auditoria
@@ -1103,7 +1126,7 @@ async function reopen(req, res) {
       agentId: req.user.userId,
       status: 'open',
     },
-    include: { contact: true, instance: true }
+    include: { contact: true, instance: true, ...legalLeadSummaryInclude }
   });
 
   // Auditoria
@@ -1232,7 +1255,8 @@ async function linkContact(req, res) {
           contact: { include: { crmCustomer: true } },
           agent: { select: { name: true } },
           team: true,
-          instance: { select: { instanceName: true } }
+          instance: { select: { instanceName: true } },
+          ...legalLeadSummaryInclude,
         }
       });
 
@@ -1270,7 +1294,8 @@ async function linkContact(req, res) {
           contact: { include: { crmCustomer: true } },
           agent: { select: { name: true } },
           team: true,
-          instance: { select: { instanceName: true } }
+          instance: { select: { instanceName: true } },
+          ...legalLeadSummaryInclude,
         }
       });
 
@@ -1315,7 +1340,13 @@ async function linkContact(req, res) {
     // Retorna o ticket atualizado (sem mudar o contactId)
     const updatedTicket = await prisma.ticket.findUnique({
       where: { id },
-      include: { contact: { include: { crmCustomer: true } }, agent: { select: { name: true } }, team: true, instance: { select: { instanceName: true } } }
+      include: {
+        contact: { include: { crmCustomer: true } },
+        agent: { select: { name: true } },
+        team: true,
+        instance: { select: { instanceName: true } },
+        ...legalLeadSummaryInclude,
+      }
     });
 
     // 3. Log de evento

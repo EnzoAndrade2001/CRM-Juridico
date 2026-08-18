@@ -130,7 +130,7 @@ GET /api/legal/leads?stage=qualificacao_ia&area=trabalhista&page=1&limit=25
 
 ### `POST /api/legal/leads`
 
-Cria uma oportunidade vinculada a um contato existente.
+Cria uma oportunidade vinculada a um contato existente. Quando `ticketId` é informado, a oportunidade também fica vinculada ao atendimento do Inbox.
 
 ```json
 {
@@ -153,6 +153,12 @@ Cria uma oportunidade vinculada a um contato existente.
 ```
 
 Campos mínimos: `contactId`, `title` e `area`.
+
+Quando enviado, `ticketId` precisa existir no mesmo escritório e pertencer ao `contactId` informado. Caso contrário, a API responde `400`; essa validação impede que uma oportunidade misture dados de contatos ou escritórios diferentes. A resposta inclui o resumo do atendimento vinculado (`ticket.id`, `ticket.status` e `ticket.subject`).
+
+#### Fluxo iniciado no Inbox
+
+O painel do contato pode encaminhar `contactId` e `ticketId` para a área jurídica. A interface então abre a ficha do cliente, pré-preenche a criação da oportunidade e envia a origem como `whatsapp`. Depois da criação, `GET /api/legal/leads/:id` retorna o atendimento no campo `ticket`, permitindo confirmar o vínculo e consultar o histórico da oportunidade.
 
 ### `GET /api/legal/leads/:id`
 

@@ -4,6 +4,7 @@ const prisma = require('../src/lib/prisma');
 const {
   listLegalLeads,
   createLegalLead,
+  updateLegalLead,
   createLegalMatter,
   createLegalTask,
 } = require('../src/controllers/legalController');
@@ -91,6 +92,54 @@ test('cria oportunidade com tenant e atividade de auditoria', async (t) => {
   assert.equal(calls.activities[0].tenantId, 'tenant-a');
   assert.equal(calls.activities[0].actorId, 'user-1');
   assert.equal(calls.activities[0].type, 'lead.created');
+});
+
+test('impede trocar o contato mantendo um atendimento de outro contato', async (t) => {
+  const originalFindFirst = prisma.legalLead.findFirst;
+  const originalTransaction = prisma.$transaction;
+  t.after(() => {
+    prisma.legalLead.findFirst = originalFindFirst;
+    prisma.$transaction = originalTransaction;
+  });
+
+  prisma.legalLead.findFirst = async () => ({
+    id: 'lead-1',
+    tenantId: 'tenant-a',
+    contactId: 'contact-a',
+    ticketId: 'ticket-1',
+    title: 'Revisao contratual',
+    area: 'CONSUMIDOR',
+    stage: 'NOVO_CONTATO',
+    urgency: 'MEDIA',
+  });
+
+  let checkedTicket;
+  const tx = {
+    contact: {
+      findFirst: async ({ where }) => ({ id: where.id }),
+    },
+    ticket: {
+      findFirst: async ({ where }) => {
+        checkedTicket = where;
+        return { id: where.id, contactId: 'contact-a' };
+      },
+    },
+  };
+  prisma.$transaction = async (handler) => handler(tx);
+
+  await assert.rejects(
+    updateLegalLead(authenticatedRequest(
+      { contactId: 'contact-b' },
+      { params: { id: 'lead-1' } },
+    ), responseRecorder()),
+    (error) => {
+      assert.equal(error.statusCode, 400);
+      assert.equal(error.message, 'O atendimento informado pertence a outro contato');
+      return true;
+    },
+  );
+
+  assert.deepEqual(checkedTicket, { id: 'ticket-1', tenantId: 'tenant-a' });
 });
 
 test('deriva o contato do caso a partir da oportunidade do mesmo tenant', async (t) => {

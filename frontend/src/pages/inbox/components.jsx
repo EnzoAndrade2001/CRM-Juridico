@@ -8,9 +8,12 @@ import api, {
   getMediaUrl,
   getEquipments,
   getContacts,
+  getLegalLeads,
+  updateLegalLead,
 } from '../../services/api';
 import {
   ArrowLeft,
+  ArrowRight,
   ArrowRightLeft,
   Bot,
   CheckCheck,
@@ -78,6 +81,43 @@ function getContactDisplayName(contact, fallback = 'Desconhecido') {
 function getContactPhone(contact, fallback = '') {
   return getSafeText(contact?.phone, fallback);
 }
+
+const LEGAL_STAGE_LABELS = {
+  NOVO_CONTATO: 'Novo contato',
+  QUALIFICACAO_IA: 'Triagem da IA',
+  AGUARDANDO_DOCUMENTOS: 'Aguardando documentos',
+  ANALISE_HUMANA: 'Análise humana',
+  CONSULTA_AGENDADA: 'Consulta agendada',
+  PROPOSTA_ENVIADA: 'Proposta enviada',
+  CONTRATADO: 'Contratado',
+  NAO_CONVERTIDO: 'Não convertido',
+};
+
+const NEXT_LEGAL_STAGE = {
+  NOVO_CONTATO: 'QUALIFICACAO_IA',
+  QUALIFICACAO_IA: 'ANALISE_HUMANA',
+  AGUARDANDO_DOCUMENTOS: 'ANALISE_HUMANA',
+  ANALISE_HUMANA: 'PROPOSTA_ENVIADA',
+  CONSULTA_AGENDADA: 'PROPOSTA_ENVIADA',
+};
+
+const LEGAL_AREA_LABELS = {
+  CIVEL: 'Cível',
+  TRABALHISTA: 'Trabalhista',
+  FAMILIA: 'Família',
+  PREVIDENCIARIO: 'Previdenciário',
+  SUCESSOES: 'Sucessões',
+  CONSUMIDOR: 'Consumidor',
+  EMPRESARIAL: 'Empresarial',
+  OUTRO: 'Outro',
+};
+
+const LEGAL_PRIORITY_LABELS = {
+  BAIXA: 'Baixa',
+  MEDIA: 'Média',
+  ALTA: 'Alta',
+  URGENTE: 'Urgente',
+};
 
 function getEquipmentDisplayName(equipment) {
   const manufacturer = getSafeText(equipment?.manufacturer);
@@ -481,6 +521,9 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
   const [availableTags, setAvailableTags] = useState([]);
   const [equipments, setEquipments] = useState([]);
   const [linkedCrm, setLinkedCrm] = useState(null);
+  const [legalLead, setLegalLead] = useState(null);
+  const [legalLeadLoading, setLegalLeadLoading] = useState(false);
+  const [advancingLegalLead, setAdvancingLegalLead] = useState(false);
   const [panelTab, setPanelTab] = useState('overview');
   const [profileModal, setProfileModal] = useState(null);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -504,11 +547,43 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
     }
 
     setLinkedCrm(contact.crmCustomer || null);
+
+    if (!legalMode) {
+      setLegalLead(null);
+      return;
+    }
+
+    // A listagem do Inbox já traz um resumo seguro da oportunidade vinculada.
+    // Usamos esse dado primeiro para evitar uma consulta extra a cada conversa;
+    // o fallback abaixo cobre tickets carregados por endpoints mais antigos.
+    if (ticket.legalLead) {
+      setLegalLead(ticket.legalLead);
+      setLegalLeadLoading(false);
+      return;
+    }
+
+    setLegalLeadLoading(true);
+    try {
+      // A API de oportunidades inclui o ticket vinculado. Filtramos pelo ID
+      // do atendimento para que o painel mostre somente o contexto desta conversa.
+      // O escritório tem um volume pequeno de oportunidades; buscar a primeira
+      // página completa evita perder o vínculo quando o nome do contato foi
+      // atualizado depois da criação da oportunidade.
+      const response = await getLegalLeads({ limit: 100 });
+      const items = response.data?.items || [];
+      const linked = items.find((item) => item.ticket?.id === ticket.id) || null;
+      setLegalLead(linked);
+    } catch (error) {
+      console.warn('[inbox] nao foi possivel carregar o contexto juridico:', error);
+      setLegalLead(null);
+    } finally {
+      setLegalLeadLoading(false);
+    }
   }
 
   useEffect(() => {
     loadPanelContext();
-  }, [contact.id, contactPhone, contact.crmCustomer, legalMode]);
+  }, [contact.id, contactPhone, contact.crmCustomer, legalMode, ticket.id, ticket.legalLead?.id]);
 
   useEffect(() => {
     setPanelTab('overview');
@@ -551,6 +626,21 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
     setPriority(nextPriority);
     await updateTicket(ticket.id, { priority: nextPriority });
     onUpdate();
+  }
+
+  async function advanceLegalLead() {
+    if (!legalLead || !NEXT_LEGAL_STAGE[legalLead.stage] || advancingLegalLead) return;
+    const nextStage = NEXT_LEGAL_STAGE[legalLead.stage];
+    setAdvancingLegalLead(true);
+    try {
+      const response = await updateLegalLead(legalLead.id, { stage: nextStage });
+      setLegalLead(response.data);
+      toast.success(`Oportunidade avançada para ${LEGAL_STAGE_LABELS[nextStage]}.`);
+    } catch (error) {
+      toast.error(`Não foi possível avançar a oportunidade: ${error.response?.data?.error || error.message}`);
+    } finally {
+      setAdvancingLegalLead(false);
+    }
   }
 
   function addTag(tagName) {
@@ -618,6 +708,60 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
           <strong style={styles.infoSnapshotValue}>{state || '--'}</strong>
         </div>
       </div>
+
+      {legalMode && (
+        <div style={{ ...styles.infoSection, marginTop: '1rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+            <h5 style={{ ...styles.infoLabel, marginBottom: 0 }}>Fluxo jurídico</h5>
+            {legalLead?.stage && (
+              <span style={{ ...styles.infoBadge, background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent-border)' }}>
+                {LEGAL_STAGE_LABELS[legalLead.stage] || legalLead.stage}
+              </span>
+            )}
+          </div>
+          {legalLeadLoading ? (
+            <div style={styles.infoEmpty}>Carregando oportunidade vinculada...</div>
+          ) : legalLead ? (
+            <div style={{ ...styles.infoListCard, borderColor: 'var(--accent-border)', background: 'var(--accent-light)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={styles.infoListTitle}>{legalLead.title || 'Oportunidade jurídica'}</div>
+                  <div style={styles.infoListMeta}>
+                    {LEGAL_AREA_LABELS[legalLead.area] || legalLead.area || 'Área não informada'}
+                    {legalLead.urgency ? ` · ${LEGAL_PRIORITY_LABELS[legalLead.urgency] || legalLead.urgency}` : ''}
+                  </div>
+                  {legalLead.summary ? <div style={styles.infoListSubtle}>{legalLead.summary}</div> : null}
+                </div>
+                {NEXT_LEGAL_STAGE[legalLead.stage] ? (
+                  <button
+                    type="button"
+                    className="inbox-control"
+                    onClick={advanceLegalLead}
+                    disabled={advancingLegalLead}
+                    style={{ ...styles.infoActionBtn, ...styles.infoActionBtnPrimary, minHeight: '34px', padding: '0 0.7rem', fontSize: '0.75rem', flexShrink: 0 }}
+                    title={`Avançar para ${LEGAL_STAGE_LABELS[NEXT_LEGAL_STAGE[legalLead.stage]]}`}
+                  >
+                    <ArrowRight size={14} /> {advancingLegalLead ? 'Salvando...' : 'Avançar etapa'}
+                  </button>
+                ) : null}
+              </div>
+              {legalLead.matter ? (
+                <div style={{ marginTop: '0.8rem', paddingTop: '0.75rem', borderTop: '1px solid var(--accent-border)', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', fontSize: '0.8rem', fontWeight: 700 }}>
+                  <ClipboardList size={15} color="var(--accent)" />
+                  Caso jurídico: {legalLead.matter.caseNumber || 'Sem número de processo'} · {legalLead.matter.status || 'Em triagem'}
+                </div>
+              ) : null}
+              {NEXT_LEGAL_STAGE[legalLead.stage] ? (
+                <div style={{ marginTop: '0.55rem', color: 'var(--text-muted)', fontSize: '0.72rem', lineHeight: 1.4 }}>
+                  Próxima etapa: {LEGAL_STAGE_LABELS[NEXT_LEGAL_STAGE[legalLead.stage]]}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div style={styles.infoEmpty}>Nenhuma oportunidade jurídica vinculada a este atendimento.</div>
+          )}
+        </div>
+      )}
 
       {!legalMode && <div style={{ ...styles.infoSection, marginTop: '1rem', marginBottom: '1rem', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '12px 14px', background: 'rgba(255, 255, 255, 0.01)' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none' }}>

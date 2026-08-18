@@ -220,8 +220,13 @@ async function updateLegalLead(req, res) {
     if (data.contactId) await requireTenantRecord(tx, 'contact', data.contactId, tenantId, 'Contato');
     if (data.assignedUserId) await requireTenantUser(tx, data.assignedUserId, tenantId, 'Responsável');
     const finalContactId = data.contactId || existing.contactId;
-    if (data.ticketId) {
-      const ticket = await requireTenantRecord(tx, 'ticket', data.ticketId, tenantId, 'Atendimento', {
+    // Revalidate the existing ticket when the contact changes. Otherwise an
+    // opportunity could remain linked to a ticket owned by another contact.
+    const finalTicketId = Object.prototype.hasOwnProperty.call(data, 'ticketId')
+      ? data.ticketId
+      : existing.ticketId;
+    if (finalTicketId) {
+      const ticket = await requireTenantRecord(tx, 'ticket', finalTicketId, tenantId, 'Atendimento', {
         id: true,
         contactId: true,
       });

@@ -15,11 +15,11 @@ A adaptação seguirá três regras:
 | Módulo jurídico | Origem reaproveitada | Situação atual | Decisão para o MVP |
 | --- | --- | --- | --- |
 | Visão geral | Dashboard, contatos, tickets e `/api/legal/summary` | Painel jurídico conectado parcialmente aos dados reais | Manter visível e substituir todos os indicadores simulados por consultas reais |
-| Atendimentos | Inbox, Ticket, Message, TicketEvent, etiquetas, notas, equipes e Socket.IO | Inbox real incorporada ao ambiente autenticado; demonstração pública permanece fictícia | Manter visível e evoluir o vínculo com cliente, oportunidade e modo IA |
+| Atendimentos | Inbox, Ticket, Message, TicketEvent, etiquetas, notas, equipes e Socket.IO | Inbox real incorporada ao ambiente autenticado; o painel de contato exibe o contexto jurídico e preserva o atendimento selecionado | Manter visível e evoluir o modo IA |
 | Clientes | Contact, histórico de tickets e API jurídica | Cadastro, edição, busca, dossiê e validações implementados | Manter visível como cadastro central único |
 | CRM jurídico | Contact + LegalLead + LegalMatter + LegalTask | Backend e fluxo visual implementados | Manter visível; será o funil oficial do escritório |
 | Tarefas e prazos | LegalTask | API implementada e tarefas exibidas dentro do CRM | Manter inicialmente dentro do CRM; criar agenda própria somente se o piloto exigir |
-| Documentos | Upload existente + LegalDocument | Backend privado implementado; interface específica pendente | Manter visível dentro da ficha do cliente e do caso |
+| Documentos | Upload existente + LegalDocument | Backend privado e interface jurídica implementados, com solicitação, upload, revisão, download autenticado e vínculos com cliente/caso | Manter visível no módulo próprio e dentro da ficha do cliente e do caso |
 | Campanhas | Campaign, contatos, etiquetas e Evolution API | Envio básico existente; tela jurídica ainda simulada | Manter visível depois de adicionar segmentação, consentimento, fila e descadastro |
 | Base da IA | Knowledge e KnowledgeLog | CRUD e tela jurídica conectados ao banco | Manter visível com linguagem e categorias jurídicas |
 | Administração | Users, Teams, WaInstance e Settings | Backend e telas existentes | Exibir em área secundária somente para administradores |
@@ -49,6 +49,8 @@ Reaproveitamento: dashboard, contatos e tickets existentes, complementados pelo 
 - Mensagens agendadas.
 - Resumo de conversa.
 - Alternância futura entre atendimento por IA, híbrido e humano.
+- Abertura da ficha do cliente jurídico diretamente no painel do contato.
+- Preservação do `ticketId` para criar a oportunidade já vinculada ao atendimento.
 
 Reaproveitamento direto: rotas `/api/tickets`, `/api/quick-responses`, `/api/scheduled-messages`, `/api/tags`, webhooks e eventos Socket.IO.
 
@@ -60,6 +62,8 @@ Reaproveitamento direto: rotas `/api/tickets`, `/api/quick-responses`, `/api/sch
 - Oportunidades, casos, tarefas, documentos e atendimentos vinculados.
 - Histórico cadastral.
 - Vínculo explícito com a conexão de atendimento.
+- Abertura pelo Inbox com cliente e atendimento selecionados.
+- Atalho para iniciar uma oportunidade já preenchida com o cliente e o atendimento de origem.
 
 Reaproveitamento direto: tabela `Contact`. A API `/api/legal/clients` é uma camada jurídica sobre essa mesma entidade, não uma duplicação.
 
@@ -74,6 +78,16 @@ Reaproveitamento direto: tabela `Contact`. A API `/api/legal/clients` é uma cam
 - Auditoria das alterações.
 
 Implementação específica: `LegalLead`, `LegalMatter`, `LegalTask` e `LegalActivity`.
+
+#### Fluxo atual a partir do Inbox
+
+1. No painel do contato da conversa, a equipe seleciona **Abrir cliente jurídico**.
+2. O CRM abre a ficha do cliente e preserva o identificador do atendimento (`ticketId`).
+3. Em **Nova oportunidade**, o cliente e o atendimento são pré-preenchidos; a origem é marcada como WhatsApp.
+4. A API valida que contato e atendimento pertencem ao mesmo escritório e que o atendimento pertence ao contato informado.
+5. A oportunidade é criada com o `ticketId`; sua ficha exibe o atendimento vinculado e o histórico da alteração.
+
+O painel jurídico do Inbox também exibe a oportunidade vinculada, o caso relacionado e a próxima etapa do funil. A equipe pode avançar a etapa diretamente na conversa, sem navegar para a ficha do cliente e para o CRM.
 
 ### 3.5 Documentos
 
@@ -181,17 +195,15 @@ Publicações do Instagram não precisam ser copiadas para dentro do CRM no MVP.
 
 | Classificação | Situação |
 | --- | --- |
-| Reaproveitado e conectado | Login, tenant, clientes, oportunidades, casos, tarefas, visão geral jurídica e auditoria |
+| Reaproveitado e conectado | Login, tenant, clientes, oportunidades, casos, tarefas, visão geral jurídica, auditoria e fluxo Inbox → cliente → oportunidade → avanço de etapa |
 | Reaproveitado no backend, aguardando tela jurídica real | Campanhas, usuários, equipes e conexões |
-| Novo e implementado no backend | Documentos jurídicos e estrutura de consentimento |
+| Novo e implementado no backend | Documentos jurídicos, estrutura de consentimento e validação do vínculo de oportunidade com atendimento |
 | Novo e ainda pendente | Estado IA/humano por conversa, adaptador de provedor, qualificação automática e regras de transferência |
 | Fora do produto jurídico | Firebird, ordens de serviço, equipamentos, faturamento técnico, prospecção e RevGuard |
 
 ## 9. Próxima sequência de implementação
 
-1. Vincular cada atendimento ao cliente e à oportunidade jurídica.
-2. Exibir documentos na ficha do cliente e do caso com upload e consulta.
-3. Adaptar campanhas existentes para segmentação jurídica e consentimento.
-4. Criar a configuração de modo IA, híbrido ou humano por conversa.
-5. Simplificar o menu conforme este mapa, sem remover rotas compartilhadas.
-6. Validar o fluxo completo em PostgreSQL de homologação e WhatsApp de teste.
+1. Adaptar campanhas existentes para segmentação jurídica e consentimento.
+2. Criar a configuração de modo IA, híbrido ou humano por conversa.
+3. Simplificar o menu conforme este mapa, sem remover rotas compartilhadas.
+4. Validar o fluxo completo em PostgreSQL de homologação e WhatsApp de teste.
