@@ -18,6 +18,8 @@ O primeiro marco será um teste visual navegável. Ele deverá permitir que o es
 
 ## 2. Princípios do MVP
 
+O inventário de reaproveitamento, visibilidade e ocultação dos módulos existentes está documentado em [`MAPA_FUNCIONAL_CRM_JURIDICO.md`](./MAPA_FUNCIONAL_CRM_JURIDICO.md).
+
 - Preservar o núcleo já funcional de autenticação, contatos, tickets, mensagens, usuários, equipes, etiquetas, respostas rápidas, campanhas e Evolution API.
 - Remover da navegação inicial os módulos específicos da LCD Digital: ordens de serviço, equipamentos, Firebird e faturamento técnico.
 - Manter a IA desacoplada do provedor. OpenAI, Anthropic ou Gemini deverão implementar a mesma interface interna.
