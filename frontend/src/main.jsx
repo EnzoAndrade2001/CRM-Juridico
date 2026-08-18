@@ -23,6 +23,7 @@ const SuperAdmin = lazy(() => import('./pages/SuperAdmin'));
 const LeadScraper = lazy(() => import('./pages/LeadScraper'));
 const RevGuard = lazy(() => import('./pages/RevGuard'));
 const LegalDemo = lazy(() => import('./pages/LegalDemo'));
+const BankReviewLanding = lazy(() => import('./pages/BankReviewLanding'));
 
 // Interceptor global para tratar erros de autenticacao (401)
 api.interceptors.response.use(
@@ -149,6 +150,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/:slug/login" element={<Login />} />
           <Route path="/validation/auth-spec" element={<AuthSpecPage />} />
           <Route path="/demo-juridico" element={<LegalDemo demoMode />} />
+          <Route path="/revisional-bancario" element={<BankReviewLanding />} />
           <Route path="/juridico" element={<PrivateRoute><LegalDemo /></PrivateRoute>} />
 
           <Route

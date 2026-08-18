@@ -39,6 +39,7 @@ jobs:
         working-directory: frontend
         env:
           GITHUB_PAGES: "true"
+          VITE_LANDING_WHATSAPP: ${{ vars.LANDING_WHATSAPP }}
         run: npm run build
 
       - name: Preparar fallback das rotas
@@ -47,6 +48,8 @@ jobs:
           cp frontend/dist/index.html frontend/dist/404.html
           mkdir -p frontend/dist/demo-juridico
           cp frontend/dist/index.html frontend/dist/demo-juridico/index.html
+          mkdir -p frontend/dist/revisional-bancario
+          cp frontend/dist/index.html frontend/dist/revisional-bancario/index.html
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
