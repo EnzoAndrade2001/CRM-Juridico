@@ -13,6 +13,7 @@ import {
 import portrait from '../assets/pedro-bastos-lund-hero-hq.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
+import BankReviewCalculator from './BankReviewCalculator';
 import './bank-review-landing.css';
 
 const whatsappMessage = 'Olá, vim pela página de Revisional Bancário e gostaria de solicitar uma análise do meu contrato.';
@@ -107,6 +108,7 @@ export default function BankReviewLanding() {
         </a>
         <nav className="bank-nav" aria-label="Navegação principal">
           <a href="#revisional">Revisional bancário</a>
+          <a href="#calculadora">Calculadora</a>
           <a href="#como-funciona">Como funciona</a>
           <a href="#sobre">Sobre</a>
         </nav>
@@ -158,6 +160,8 @@ export default function BankReviewLanding() {
           </div>
         </div>
       </section>
+
+      <BankReviewCalculator whatsappUrl={whatsappUrl} />
 
       <section className="bank-review">
         <div className="bank-shell">

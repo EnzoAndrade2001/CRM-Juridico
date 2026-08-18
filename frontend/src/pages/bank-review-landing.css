@@ -77,6 +77,45 @@
 .bank-note { display: flex; gap: 12px; margin-bottom: 0; border-left: 2px solid var(--bank-gold); padding: 15px 18px; background: var(--bank-cream); color: #3e4b5d; font-size: 13px; line-height: 1.55; }
 .bank-note svg { flex: 0 0 auto; color: var(--bank-gold); }
 
+.bank-calculator { position: relative; overflow: hidden; padding: 96px 0; background: var(--bank-cream); }
+.bank-calculator::after { position: absolute; right: -140px; bottom: -210px; width: 430px; height: 430px; border: 1px solid rgba(189,147,69,.26); border-radius: 50%; content: ''; pointer-events: none; }
+.bank-calculator__grid { position: relative; z-index: 1; display: grid; grid-template-columns: .82fr 1.18fr; gap: 80px; align-items: start; }
+.bank-calculator__copy { padding-top: 28px; }
+.bank-calculator__copy h2 { max-width: 510px; margin-bottom: 23px; color: var(--bank-ink); font-family: Georgia, "Times New Roman", serif; font-size: clamp(36px, 4vw, 52px); font-weight: 400; line-height: 1.1; letter-spacing: -.025em; }
+.bank-calculator__copy > p:not(.bank-kicker) { max-width: 510px; color: var(--bank-copy); font-size: 16px; line-height: 1.8; }
+.bank-calculator__benefits { display: grid; gap: 13px; margin-top: 29px; color: #3e4b5d; font-size: 13px; }
+.bank-calculator__benefits span { display: flex; align-items: center; gap: 8px; }
+.bank-calculator__benefits svg { color: var(--bank-gold); }
+.bank-calculator__card { position: relative; border: 1px solid rgba(189,147,69,.25); padding: 31px; background: rgba(255,255,255,.86); box-shadow: 0 22px 55px rgba(21,34,54,.1); }
+.bank-calculator__card-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 27px; }
+.bank-calculator__icon { display: grid; width: 48px; height: 48px; flex: 0 0 auto; place-items: center; background: var(--bank-navy); color: var(--bank-gold-light); }
+.bank-calculator__card h3 { margin-bottom: 4px; color: var(--bank-ink); font-family: Georgia, "Times New Roman", serif; font-size: 23px; font-weight: 400; }
+.bank-calculator__card-heading p { margin: 0; color: var(--bank-copy); font-size: 12px; line-height: 1.5; }
+.bank-calculator__fields { display: grid; gap: 12px; }
+.bank-calculator__fields--two { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 12px; }
+.bank-calculator__card label, .bank-calculator__type legend { color: #485568; font-size: 12px; font-weight: 700; }
+.bank-calculator__card label { display: grid; gap: 7px; }
+.bank-calculator__card input { width: 100%; border: 1px solid #e4e0d8; border-radius: 2px; padding: 13px 14px; outline: none; background: #fbfaf8; color: var(--bank-ink); font: inherit; font-size: 14px; transition: border-color .2s ease, box-shadow .2s ease, background .2s ease; }
+.bank-calculator__card input::placeholder { color: #9aa0a9; }
+.bank-calculator__card input:focus { border-color: var(--bank-gold); background: #fff; box-shadow: 0 0 0 3px rgba(189,147,69,.12); }
+.bank-calculator__field { margin-bottom: 17px; }
+.bank-calculator__type { margin: 0 0 16px; border: 0; padding: 0; }
+.bank-calculator__type legend { margin-bottom: 9px; }
+.bank-calculator__contract-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.bank-calculator__contract-options button { min-height: 47px; border: 1px solid #d5d0c6; padding: 7px 9px; background: transparent; color: #566172; cursor: pointer; font: inherit; font-size: 12px; line-height: 1.3; transition: border-color .2s ease, background .2s ease, color .2s ease; }
+.bank-calculator__contract-options button:hover, .bank-calculator__contract-options button.is-selected { border-color: var(--bank-navy); background: var(--bank-navy); color: #fff; }
+.bank-calculator__error { display: flex; align-items: center; gap: 7px; margin: 0 0 13px; color: #9b3a32; font-size: 12px; line-height: 1.4; }
+.bank-calculator__submit { width: 100%; border: 0; cursor: pointer; }
+.bank-calculator__result { margin-top: 22px; border-top: 1px solid rgba(189,147,69,.42); padding-top: 23px; }
+.bank-calculator__result-kicker { margin-bottom: 5px; color: #9a742e; font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.bank-calculator__result > strong { display: block; margin-bottom: 17px; color: var(--bank-navy); font-family: Georgia, "Times New Roman", serif; font-size: clamp(32px, 4vw, 45px); font-weight: 400; }
+.bank-calculator__result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-bottom: 15px; }
+.bank-calculator__result-grid span { display: grid; gap: 4px; border-left: 2px solid var(--bank-gold); padding: 7px 10px; background: var(--bank-cream); color: #687180; font-size: 11px; line-height: 1.35; }
+.bank-calculator__result-grid b { color: var(--bank-ink); font-size: 14px; }
+.bank-calculator__result > p:not(.bank-calculator__result-kicker) { margin-bottom: 12px; color: var(--bank-copy); font-size: 12px; line-height: 1.55; }
+.bank-calculator__result small { display: block; margin-bottom: 18px; color: #7b8490; font-size: 10px; line-height: 1.55; }
+.bank-calculator__result .bank-button { min-height: 47px; font-size: 12px; }
+
 .bank-review { padding: 94px 0 106px; background: var(--bank-cream); }
 .bank-section-heading { max-width: 650px; margin-bottom: 48px; }
 .bank-review__cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
@@ -140,6 +179,7 @@
   .bank-hero::after { background: linear-gradient(90deg, #07182c 0%, #07182c 47%, rgba(7,24,44,.76) 70%, rgba(7,24,44,.23) 100%); }
   .bank-hero__copy { width: 64%; }
   .bank-intro__grid, .bank-process__grid, .bank-about__grid { gap: 55px; }
+  .bank-calculator__grid { gap: 55px; }
   .bank-review__cards { grid-template-columns: repeat(2, 1fr); }
   .bank-final-cta__inner { grid-template-columns: auto 1fr; }
   .bank-final-cta .bank-button { grid-column: 2; justify-self: start; }
@@ -169,6 +209,9 @@
   .bank-hero__name { display: none; }
   .bank-intro, .bank-review, .bank-process, .bank-about { padding: 72px 0; }
   .bank-intro__grid, .bank-process__grid, .bank-about__grid { grid-template-columns: 1fr; gap: 38px; }
+  .bank-calculator__grid { grid-template-columns: 1fr; gap: 42px; }
+  .bank-calculator__copy { padding-top: 0; }
+  .bank-calculator__card { padding: 24px 20px; }
   .bank-review__cards { grid-template-columns: 1fr; }
   .bank-review-card { min-height: 0; }
   .bank-about__portrait { width: min(92%, 420px); height: 500px; }
@@ -188,6 +231,8 @@
   .bank-hero__assurances { display: grid; gap: 8px; }
   .bank-button { width: 100%; padding-inline: 16px; }
   .bank-about__portrait { height: 440px; }
+  .bank-calculator__fields--two, .bank-calculator__result-grid { grid-template-columns: 1fr; }
+  .bank-calculator__contract-options { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
