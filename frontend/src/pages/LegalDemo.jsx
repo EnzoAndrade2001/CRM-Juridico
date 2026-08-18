@@ -31,6 +31,7 @@ import {
 import LegalCrmWorkspace from '../features/legal/LegalCrmWorkspace';
 import LegalClients from '../features/legal/LegalClients';
 import LegalOverviewPanel from '../features/legal/LegalOverview';
+import LegalKnowledgeBase from '../features/legal/LegalKnowledgeBase';
 import useLegalWorkspace from '../features/legal/useLegalWorkspace';
 import RealInbox from './Inbox';
 import './legal-demo.css';
@@ -280,7 +281,7 @@ export default function LegalDemo({ demoMode = false }) {
         {active === 'clientes' && <LegalClients workspace={legalWorkspace} onNavigate={setActive} />}
         {active === 'crm' && <CrmDemo workspace={legalWorkspace} />}
         {active === 'campanhas' && <CampaignsDemo />}
-        {active === 'conhecimento' && <PlaceholderPage type={active} />}
+        {active === 'conhecimento' && (demoMode ? <PlaceholderPage type={active} /> : <LegalKnowledgeBase />)}
       </main>
     </div>
   );

@@ -108,6 +108,32 @@
 .jd-tone--amber { color: #c47b20 !important; background: #fff3df !important; }
 .jd-text--blue { color: #416dd5; }.jd-text--violet { color: #7651cf; }.jd-text--green { color: #178664; }.jd-text--amber { color: #c47b20; }
 .jd-card { background: #fff; border: 1px solid var(--jd-line); border-radius: 12px; }
+.jd-knowledge-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+.jd-knowledge-stats article { min-height: 76px; display: flex; align-items: center; gap: 11px; padding: 0 16px; color: #a87928; background: #fff; border: 1px solid var(--jd-line); border-radius: 12px; }
+.jd-knowledge-stats article span { display: flex; flex-direction: column; gap: 2px; color: #6e788b; font-size: 13px; }
+.jd-knowledge-stats article strong { color: #182237; font-size: 20px; }
+.jd-knowledge-card > header { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 20px; border-bottom: 1px solid var(--jd-line); }
+.jd-knowledge-card > header h3 { margin: 0 0 4px; color: #17223b; font-size: 17px; }
+.jd-knowledge-card > header p { margin: 0; color: #8a93a3; font-size: 13px; }
+.jd-knowledge-card > header label { width: min(360px, 45%); height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 11px; color: #8a93a3; background: #f8fafc; border: 1px solid #dfe4eb; border-radius: 8px; }
+.jd-knowledge-card > header input { width: 100%; border: 0; outline: 0; color: #26334a; background: transparent; font-size: 13px; }
+.jd-knowledge-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 18px; }
+.jd-knowledge-item { min-width: 0; display: flex; flex-direction: column; gap: 11px; padding: 17px; border: 1px solid #e1e6ed; border-radius: 11px; background: #fff; }
+.jd-knowledge-item.is-archived { background: #fafbfc; opacity: .76; }
+.jd-knowledge-item__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #98a1af; font-size: 11px; }
+.jd-knowledge-status { display: inline-flex; align-items: center; gap: 4px; padding: 4px 7px; color: #8a93a3; background: #f0f2f5; border-radius: 999px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.jd-knowledge-status.is-active { color: #21754e; background: #e7f6ec; }
+.jd-knowledge-item h4 { margin: 0; color: #1a2740; font-size: 16px; line-height: 1.35; }
+.jd-knowledge-item > p { min-height: 74px; margin: 0; color: #617087; font-size: 13px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.jd-knowledge-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.jd-knowledge-tags span { padding: 3px 7px; color: #8a6421; background: #fbf4e5; border: 1px solid #ebd7a8; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.jd-knowledge-item footer { display: flex; align-items: center; gap: 7px; padding-top: 11px; border-top: 1px solid #edf0f4; }
+.jd-knowledge-item footer .jd-secondary { min-height: 32px; padding: 0 9px; display: inline-flex; align-items: center; gap: 5px; color: #5e6b80; background: #f8fafc; border: 1px solid #dfe4eb; border-radius: 7px; font-size: 12px; font-weight: 700; }
+.jd-icon-danger { width: 32px; height: 32px; display: grid; place-items: center; margin-left: auto; color: #a43e3e; background: #fff0f0; border: 1px solid #f1cdcd; border-radius: 7px; }
+.jd-knowledge-empty { grid-column: 1 / -1; min-height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; color: #8792a3; text-align: center; }
+.jd-knowledge-empty strong { color: #4d5c73; font-size: 16px; }
+.jd-knowledge-empty span { max-width: 370px; font-size: 13px; line-height: 1.5; }
+.jd-knowledge-empty .jd-primary { margin-top: 7px; }
 .jd-card__heading { min-height: 66px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid var(--jd-line); }
 .jd-card__heading h3 { margin: 0 0 4px; color: #17223b; font-size: 17px; }
 .jd-card__heading p { margin: 0; color: #8a93a3; font-size: 13px; }
@@ -167,6 +193,7 @@
 .jd-placeholder-hero { min-height: 360px; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 35px; background: #fff; border: 1px solid var(--jd-line); border-radius: 13px; text-align: center; }.jd-placeholder-hero > span { width: 62px; height: 62px; display: grid; place-items: center; color: #9b7331; background: #fbf1dd; border-radius: 18px; }.jd-placeholder-hero p { margin: 18px 0 8px; color: #a0793b; font-size: 12px; font-weight: 800; letter-spacing: .13em; }.jd-placeholder-hero h3 { margin: 0; color: #18243c; font-family: Georgia, serif; font-size: 26px; }.jd-placeholder-hero small { max-width: 420px; margin: 9px 0 20px; color: #7e899a; line-height: 1.6; }.jd-placeholder-hero button { display: flex; align-items: center; gap: 6px; color: #40506a; background: #fff; border: 1px solid #dce2e9; border-radius: 8px; padding: 9px 12px; font-size: 13px; font-weight: 700; }
 .jd-overlay { display: none; }
 @media (max-width: 1120px) { .jd-inbox { grid-template-columns: 245px minmax(360px, 1fr); }.jd-client-panel { display: none; }.jd-metrics { grid-template-columns: repeat(2,1fr); }.jd-kanban { grid-template-columns: repeat(4, 240px); }.jd-campaign-stats { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 760px) { .jd-knowledge-stats { grid-template-columns: 1fr; }.jd-knowledge-card > header { align-items: stretch; flex-direction: column; padding: 15px; }.jd-knowledge-card > header label { width: 100%; }.jd-knowledge-grid { grid-template-columns: 1fr; padding: 12px; } }
 @media (max-width: 820px) {
   .jd-demo-ribbon p { display: none; }.jd-sidebar { transform: translateX(-100%); transition: transform .2s ease; }.jd-sidebar.is-open { transform: translateX(0); }.jd-sidebar__close { display: block; }.jd-overlay { display: block; position: fixed; z-index: 55; inset: 32px 0 0; background: rgba(6,12,23,.55); border: 0; }.jd-main { margin-left: 0; }.jd-header { padding: 0 16px; }.jd-menu-button { display: grid; place-items: center; }.jd-header__title { min-width: 0; flex: 1; }.jd-header__title p, .jd-search, .jd-profile span, .jd-profile > svg { display: none; }.jd-page { padding: 18px 16px 30px; }.jd-overview-grid { grid-template-columns: 1fr; }.jd-inbox { grid-template-columns: 220px minmax(330px,1fr); overflow-x: auto; }.jd-attention__table > button { grid-template-columns: 38px 1fr 90px 18px; }.jd-attention__reason, .jd-attention time { display: none; }.jd-table-head, .jd-table-row { min-width: 760px; }.jd-campaign-table { overflow-x: auto; }
 }

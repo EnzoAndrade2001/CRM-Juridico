@@ -21,7 +21,7 @@ A adaptação seguirá três regras:
 | Tarefas e prazos | LegalTask | API implementada e tarefas exibidas dentro do CRM | Manter inicialmente dentro do CRM; criar agenda própria somente se o piloto exigir |
 | Documentos | Upload existente + LegalDocument | Backend privado implementado; interface específica pendente | Manter visível dentro da ficha do cliente e do caso |
 | Campanhas | Campaign, contatos, etiquetas e Evolution API | Envio básico existente; tela jurídica ainda simulada | Manter visível depois de adicionar segmentação, consentimento, fila e descadastro |
-| Base da IA | Knowledge e KnowledgeLog | CRUD existente; tela jurídica ainda demonstrativa | Manter visível com linguagem e categorias jurídicas |
+| Base da IA | Knowledge e KnowledgeLog | CRUD e tela jurídica conectados ao banco | Manter visível com linguagem e categorias jurídicas |
 | Administração | Users, Teams, WaInstance e Settings | Backend e telas existentes | Exibir em área secundária somente para administradores |
 
 ## 3. Funções que permanecem visíveis
@@ -182,7 +182,7 @@ Publicações do Instagram não precisam ser copiadas para dentro do CRM no MVP.
 | Classificação | Situação |
 | --- | --- |
 | Reaproveitado e conectado | Login, tenant, clientes, oportunidades, casos, tarefas, visão geral jurídica e auditoria |
-| Reaproveitado no backend, aguardando tela jurídica real | Campanhas, base de conhecimento, usuários, equipes e conexões |
+| Reaproveitado no backend, aguardando tela jurídica real | Campanhas, usuários, equipes e conexões |
 | Novo e implementado no backend | Documentos jurídicos e estrutura de consentimento |
 | Novo e ainda pendente | Estado IA/humano por conversa, adaptador de provedor, qualificação automática e regras de transferência |
 | Fora do produto jurídico | Firebird, ordens de serviço, equipamentos, faturamento técnico, prospecção e RevGuard |
@@ -190,9 +190,8 @@ Publicações do Instagram não precisam ser copiadas para dentro do CRM no MVP.
 ## 9. Próxima sequência de implementação
 
 1. Vincular cada atendimento ao cliente e à oportunidade jurídica.
-2. Exibir documentos na ficha do cliente e do caso.
-3. Adaptar a base de conhecimento existente para categorias jurídicas.
-4. Adaptar campanhas existentes para segmentação jurídica e consentimento.
-5. Criar a configuração de modo IA, híbrido ou humano por conversa.
-6. Simplificar o menu conforme este mapa, sem remover rotas compartilhadas.
-7. Validar o fluxo completo em PostgreSQL de homologação e WhatsApp de teste.
+2. Exibir documentos na ficha do cliente e do caso com upload e consulta.
+3. Adaptar campanhas existentes para segmentação jurídica e consentimento.
+4. Criar a configuração de modo IA, híbrido ou humano por conversa.
+5. Simplificar o menu conforme este mapa, sem remover rotas compartilhadas.
+6. Validar o fluxo completo em PostgreSQL de homologação e WhatsApp de teste.

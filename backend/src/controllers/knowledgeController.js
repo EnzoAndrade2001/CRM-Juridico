@@ -53,7 +53,7 @@ async function update(req, res) {
       data: {
         ...(question && { question }),
         ...(answer && { answer }),
-        ...(tags && { tags }),
+        ...(tags !== undefined && { tags }),
         ...(active !== undefined && { active }),
         ...(embedding && { embedding })
       }
