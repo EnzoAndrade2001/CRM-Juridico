@@ -51,6 +51,17 @@ No serviço `crm-juridico-api`:
 - Start: `npm run start`.
 - Porta interna: `3002`.
 
+### Se o Nixpacks falhar
+
+O repositório também inclui `backend/Dockerfile`. Ele é a opção recomendada caso a instalação Nixpacks do EasyPanel gere o erro `undefined variable 'npm-9_x'`:
+
+- Fonte: **Dockerfile**.
+- Caminho de build: `/backend`.
+- Porta interna: `3002`.
+- Comando de início: o próprio `CMD` do Dockerfile (`npm run start`).
+
+O Dockerfile instala Node 22, Prisma, OpenSSL e FFmpeg sem depender do pacote Nix `npm-9_x`.
+
 Variáveis mínimas:
 
 ```text
