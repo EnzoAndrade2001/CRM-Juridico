@@ -114,10 +114,10 @@ export default function BankReviewLanding() {
               <em><span>Seu contrato</span>{' '}<span>pode ser revisado.</span></em>
             </h1>
             <p className="bank-hero__lead">
-              Taxas elevadas, cobranças que você não reconhece ou parcelas pesando no orçamento? Uma análise técnica mostra o que pode ser questionado.
+              Você pode ter dinheiro a receber do banco. Descubra se pagou juros ou cobranças além do devido e se tem direito à devolução de valores.
             </p>
             <WhatsAppLink className="bank-button bank-button--gold">
-              Quero analisar meu contrato <ArrowRight size={19} />
+              REVISAR MEU CONTRATO <ArrowRight size={19} />
             </WhatsAppLink>
             <div className="bank-hero__assurances" aria-label="Características do atendimento">
               <span><Check size={15} /> Atendimento individual</span>
