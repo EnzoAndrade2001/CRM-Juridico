@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import {
   ArrowRight,
   Banknote,
+  CarFront,
   Check,
   FileSearch,
   Landmark,
@@ -35,6 +36,11 @@ const reviewItems = [
     icon: FileSearch,
     title: 'Cobranças e contratos',
     text: 'Verificação de tarifas, seguros, serviços agregados e cláusulas contratuais.',
+  },
+  {
+    icon: CarFront,
+    title: 'Busca e apreensão de veículos',
+    text: 'Orientação jurídica para quem recebeu uma ordem de busca e apreensão ou enfrenta risco de perder o veículo.',
   },
 ];
 

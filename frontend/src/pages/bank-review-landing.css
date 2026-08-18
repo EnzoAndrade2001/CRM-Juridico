@@ -79,7 +79,7 @@
 
 .bank-review { padding: 94px 0 106px; background: var(--bank-cream); }
 .bank-section-heading { max-width: 650px; margin-bottom: 48px; }
-.bank-review__cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.bank-review__cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .bank-review-card { position: relative; min-height: 285px; overflow: hidden; border: 1px solid #e3ddd3; padding: 34px 31px; background: #fff; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
 .bank-review-card:hover { border-color: #c9aa6b; box-shadow: 0 20px 45px rgba(31,42,57,.08); transform: translateY(-4px); }
 .bank-review-card__number { position: absolute; top: 22px; right: 24px; color: #d9d3c9; font-family: Georgia, "Times New Roman", serif; font-size: 38px; }
@@ -140,6 +140,7 @@
   .bank-hero::after { background: linear-gradient(90deg, #07182c 0%, #07182c 47%, rgba(7,24,44,.76) 70%, rgba(7,24,44,.23) 100%); }
   .bank-hero__copy { width: 64%; }
   .bank-intro__grid, .bank-process__grid, .bank-about__grid { gap: 55px; }
+  .bank-review__cards { grid-template-columns: repeat(2, 1fr); }
   .bank-final-cta__inner { grid-template-columns: auto 1fr; }
   .bank-final-cta .bank-button { grid-column: 2; justify-self: start; }
   .bank-footer__inner { grid-template-columns: 230px 1fr; }
