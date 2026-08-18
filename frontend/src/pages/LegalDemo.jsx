@@ -11,6 +11,7 @@ import {
   CircleUserRound,
   Clock3,
   FileText,
+  Files,
   Gauge,
   Inbox,
   LayoutDashboard,
@@ -32,6 +33,7 @@ import LegalCrmWorkspace from '../features/legal/LegalCrmWorkspace';
 import LegalClients from '../features/legal/LegalClients';
 import LegalOverviewPanel from '../features/legal/LegalOverview';
 import LegalKnowledgeBase from '../features/legal/LegalKnowledgeBase';
+import LegalDocuments from '../features/legal/LegalDocuments';
 import useLegalWorkspace from '../features/legal/useLegalWorkspace';
 import RealInbox from './Inbox';
 import './legal-demo.css';
@@ -40,6 +42,7 @@ const navigation = [
   { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard },
   { id: 'atendimentos', label: 'Atendimentos', icon: MessageCircleMore, badge: 8 },
   { id: 'clientes', label: 'Clientes', icon: UsersRound },
+  { id: 'documentos', label: 'Documentos', icon: Files },
   { id: 'crm', label: 'CRM jurídico', icon: BriefcaseBusiness },
   { id: 'campanhas', label: 'Campanhas', icon: Megaphone },
   { id: 'conhecimento', label: 'Base da IA', icon: BrainCircuit },
@@ -236,6 +239,7 @@ function PlaceholderPage({ type }) {
   const content = {
     clientes: ['Clientes', 'Base central de contatos, documentos e histórico jurídico.', UsersRound, '1.284 clientes cadastrados'],
     conhecimento: ['Base de conhecimento da IA', 'Conteúdo revisado pelo escritório para orientar o atendimento automático.', BrainCircuit, '46 orientações aprovadas'],
+    documentos: ['Documentos jurídicos', 'Solicitações, arquivos e revisões vinculados aos clientes e casos.', Files, 'Dossiê documental do escritório'],
   }[type];
   const [title, description, Icon, stat] = content;
   return <div className="jd-page"><div className="jd-section-intro"><div><h2>{title}</h2><p>{description}</p></div><button type="button" className="jd-primary"><Plus size={17} /> Adicionar</button></div><section className="jd-placeholder-hero"><span><Icon size={30} /></span><p>AMBIENTE DE DEMONSTRAÇÃO</p><h3>{stat}</h3><small>Esta tela representa o módulo que será detalhado após a validação do fluxo principal.</small><button type="button">Visualizar exemplo <ArrowUpRight size={16} /></button></section></div>;
@@ -269,6 +273,7 @@ export default function LegalDemo({ demoMode = false }) {
     crm: ['CRM jurídico', 'Oportunidades e contratações'],
     campanhas: ['Campanhas', 'Comunicação segmentada e responsável'],
     conhecimento: ['Base da IA', 'Conteúdo aprovado pelo escritório'],
+    documentos: ['Documentos jurídicos', 'Solicitações, arquivos e revisões vinculados aos clientes e casos'],
   }[active]), [active]);
   return (
     <div className="legal-demo">
@@ -280,6 +285,7 @@ export default function LegalDemo({ demoMode = false }) {
         {active === 'atendimentos' && (demoMode ? <InboxDemo /> : <RealInbox legalMode onOpenLegalClient={openLegalClient} />)}
         {active === 'clientes' && <LegalClients workspace={legalWorkspace} onNavigate={setActive} />}
         {active === 'crm' && <CrmDemo workspace={legalWorkspace} />}
+        {active === 'documentos' && (demoMode ? <PlaceholderPage type={active} /> : <LegalDocuments workspace={legalWorkspace} />)}
         {active === 'campanhas' && <CampaignsDemo />}
         {active === 'conhecimento' && (demoMode ? <PlaceholderPage type={active} /> : <LegalKnowledgeBase />)}
       </main>

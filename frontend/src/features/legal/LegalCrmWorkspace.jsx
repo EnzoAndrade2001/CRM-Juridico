@@ -26,6 +26,7 @@ import {
   PRIORITIES,
   TASK_TYPES,
 } from './legalWorkspace';
+import LegalDocuments from './LegalDocuments';
 
 const PIPELINE_COLUMNS = [
   { id: 'NOVO_CONTATO', title: 'Novo contato', color: '#4f7cff', stages: ['NOVO_CONTATO'] },
@@ -376,6 +377,7 @@ function MatterDetail({ workspace, matter, onClose, onTask }) {
           <Field label="Descrição" full><textarea rows="3" value={form.description} onChange={update('description')} /></Field>
         </div>
         {detailLoading ? <div className="jd-detail-loading"><LoaderCircle size={17} /> Carregando histórico...</div> : <ActivityTimeline activities={detail.activities} />}
+        {!workspace.demoMode && <LegalDocuments workspace={workspace} contactId={detail.contactId || detail.contact?.id} leadId={detail.leadId} matterId={detail.id} compact />}
         {formError && <div className="jd-form-error"><CircleAlert size={16} />{formError}</div>}
       </div>
       <footer className="jd-modal__actions jd-modal__actions--spread"><button type="button" className="jd-secondary" onClick={() => onTask(null, detail)}><CalendarClock size={16} /> Nova tarefa</button><span /><button type="button" className="jd-primary" disabled={workspace.saving} onClick={save}><Save size={16} />{workspace.saving ? 'Salvando...' : 'Salvar caso'}</button></footer>

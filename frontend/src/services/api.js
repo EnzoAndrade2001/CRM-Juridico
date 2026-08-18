@@ -219,6 +219,20 @@ export const updateLegalMatter = (id, data) => api.patch(`/legal/matters/${id}`,
 export const getLegalTasks = (params = {}) => api.get('/legal/tasks', { params });
 export const createLegalTask = (data) => api.post('/legal/tasks', data);
 export const updateLegalTask = (id, data) => api.patch(`/legal/tasks/${id}`, data);
+export const getLegalDocuments = (params = {}) => api.get('/legal/documents', { params });
+export const getLegalDocument = (id) => api.get(`/legal/documents/${id}`);
+export const createLegalDocument = (data) => api.post('/legal/documents', data, {
+  headers: { 'Content-Type': 'multipart/form-data' },
+});
+export const uploadLegalDocumentFile = (id, file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post(`/legal/documents/${id}/file`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+export const updateLegalDocument = (id, data) => api.patch(`/legal/documents/${id}`, data);
+export const downloadLegalDocument = (id) => api.get(`/legal/documents/${id}/file`, { responseType: 'blob' });
 
 // Billing Integration (Automação de Cobranças)
 export const triggerBillingProcess = () => api.post('/integrations/firebird/trigger-billing-process');

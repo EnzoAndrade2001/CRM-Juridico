@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { initialsFor, labelFor, LEGAL_AREAS, LEAD_STAGES, MATTER_STATUSES } from './legalWorkspace';
+import LegalDocuments from './LegalDocuments';
 
 const EMPTY_CLIENT = { name: '', phone: '', email: '', cpfCnpj: '', city: '', state: '', notes: '' };
 
@@ -104,6 +105,7 @@ function ClientDetail({ workspace, client, onClose, onEdit, onOpenCrm }) {
           {!leads.length && !matters.length && <div className="jd-client-no-links">Este cliente ainda não possui oportunidade ou caso.</div>}
         </section>
         {client.activities?.length > 0 && <section className="jd-history"><h4>Histórico cadastral</h4>{client.activities.slice(0, 8).map((item) => <article key={item.id}><i /><span><strong>{item.type === 'client.created' ? 'Cliente cadastrado' : 'Dados do cliente atualizados'}</strong><small>{item.actor?.name || 'Sistema'} · {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.createdAt))}</small></span></article>)}</section>}
+        {!workspace.demoMode && <LegalDocuments workspace={workspace} contactId={client.id} compact />}
       </div>
     </Modal>
   );
