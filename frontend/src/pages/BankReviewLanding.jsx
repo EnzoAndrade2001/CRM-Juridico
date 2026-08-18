@@ -114,7 +114,7 @@ export default function BankReviewLanding() {
               <em><span>Seu contrato</span>{' '}<span>pode ser revisado.</span></em>
             </h1>
             <p className="bank-hero__lead">
-              Você pode ter dinheiro a receber do banco. Descubra se pagou juros ou cobranças além do devido e se tem direito à devolução de valores.
+              Você pode ter valores a recuperar junto ao banco. Uma análise jurídica do contrato pode identificar juros e cobranças indevidas, além de verificar a possibilidade de restituição das quantias pagas a maior.
             </p>
             <WhatsAppLink className="bank-button bank-button--gold">
               REVISAR MEU CONTRATO <ArrowRight size={19} />
