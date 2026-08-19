@@ -11,6 +11,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status",
     "db:bootstrap": "node scripts/bootstrap-production-db.js",
+    "user:bootstrap": "node scripts/bootstrap-legal-user.js",
     "test": "node --test test/*.test.js",
     "dedupe:contacts": "node scripts/dedupeContacts.js"
   },
