@@ -66,7 +66,8 @@ export default function Login() {
   }
 
   const primaryColor = tenantInfo?.primaryColor || '#C9A84E';
-  const displayName = tenantInfo?.name || (routeSlug ? routeSlug.toUpperCase() : 'Multiatendimento');
+  const displayName = tenantInfo?.name || (routeSlug ? routeSlug.toUpperCase() : 'CRM Jurídico');
+  const displayMonogram = tenantInfo ? getMonogram(displayName) : 'PL';
 
   return (
     <main style={{ ...s.container, '--login-accent': primaryColor }}>
@@ -100,14 +101,14 @@ export default function Login() {
           ) : (
             <div style={{ ...s.monogram, borderColor: `${primaryColor}66` }} aria-hidden="true">
               <span style={{ ...s.monogramAccent, background: primaryColor }} />
-              <span>{getMonogram(displayName)}</span>
+              <span>{displayMonogram}</span>
             </div>
           )}
 
-          <p style={{ ...s.eyebrow, color: primaryColor }}>Multiatendimento PRO</p>
+          <p style={{ ...s.eyebrow, color: primaryColor }}>Atendimento PRO Pedro Lund</p>
           <h1 id="login-title" style={s.title}>{displayName}</h1>
           <p style={s.subtitle}>
-            {tenantInfo?.name ? `Acesse o ambiente de ${tenantInfo.name}.` : 'Sua operação de atendimento em um só lugar.'}
+            {tenantInfo?.name ? `Acesse o ambiente de ${tenantInfo.name}.` : 'Gestão jurídica e atendimento em um só lugar.'}
           </p>
         </div>
 
@@ -158,7 +159,7 @@ export default function Login() {
         </form>
 
         <footer style={s.footer}>
-          <span>© {new Date().getFullYear()} Multiatendimento PRO</span>
+          <span>© {new Date().getFullYear()} Atendimento PRO Pedro Lund</span>
           <span style={s.footerDot} aria-hidden="true">•</span>
           <span>Ambiente seguro</span>
         </footer>
