@@ -15,16 +15,29 @@ function run(command, args) {
   if (result.status !== 0) process.exit(result.status || 1);
 }
 
-async function findFailedMigrations() {
+async function readMigrationState() {
   const prisma = new PrismaClient();
   try {
     const rows = await prisma.$queryRawUnsafe(
-      'SELECT "migration_name" FROM "_prisma_migrations" WHERE "finished_at" IS NULL AND "rolled_back_at" IS NULL',
+      'SELECT "migration_name", "finished_at", "rolled_back_at" FROM "_prisma_migrations"',
     );
-    return rows.map((row) => row.migration_name).filter(Boolean);
+    return {
+      failed: rows
+        .filter((row) => !row.finished_at && !row.rolled_back_at)
+        .map((row) => row.migration_name)
+        .filter(Boolean),
+      applied: new Set(
+        rows
+          .filter((row) => row.finished_at && !row.rolled_back_at)
+          .map((row) => row.migration_name)
+          .filter(Boolean),
+      ),
+    };
   } catch (error) {
     // A brand-new database does not have the Prisma history table yet.
-    if (error.message?.includes('does not exist') || error.message?.includes('42P01')) return [];
+    if (error.message?.includes('does not exist') || error.message?.includes('42P01')) {
+      return { failed: [], applied: new Set() };
+    }
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -42,14 +55,18 @@ async function main() {
 
   // If the API attempted migrate deploy before bootstrap, mark only those
   // incomplete migrations as rolled back so the schema can be synchronized.
-  const failedMigrations = await findFailedMigrations();
-  for (const migration of failedMigrations) {
+  const migrationState = await readMigrationState();
+  for (const migration of migrationState.failed) {
     run('npx', ['prisma', 'migrate', 'resolve', '--rolled-back', migration]);
   }
 
   run('npx', ['prisma', 'db', 'push', '--skip-generate']);
 
   for (const migration of migrations) {
+    // Existing databases already have part (or all) of the migration history.
+    // Resolving those again causes Prisma P3008, so only initialize entries
+    // that are not recorded as successfully applied yet.
+    if (migrationState.applied.has(migration)) continue;
     run('npx', ['prisma', 'migrate', 'resolve', '--applied', migration]);
   }
 
