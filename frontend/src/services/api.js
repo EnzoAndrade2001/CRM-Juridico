@@ -2,11 +2,9 @@ import axios from 'axios';
 
 // Em produção usa a URL do backend via variável de ambiente
 // Em desenvolvimento usa proxy do Vite (/api → localhost:3002)
-const DEFAULT_PRODUCTION_API_URL = 'https://api-crm.lcddigital.com.br';
-const isProductionCrm =
-  typeof window !== 'undefined' && window.location.hostname === 'crm.lcddigital.com.br';
-
-export const BACKEND_URL = import.meta.env.VITE_API_URL || (isProductionCrm ? DEFAULT_PRODUCTION_API_URL : '');
+// Em producao, configure VITE_API_URL no build do ambiente. Sem a variavel,
+// o desenvolvimento usa o proxy do Vite e nao aciona nenhum backend legado.
+export const BACKEND_URL = import.meta.env.VITE_API_URL || '';
 const BASE_URL = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
 const api = axios.create({ baseURL: BASE_URL });
 

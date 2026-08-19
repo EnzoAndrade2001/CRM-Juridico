@@ -20,6 +20,7 @@ import {
   syncFirebirdContacts,
   triggerBillingProcess,
   getBillingLogs,
+  BACKEND_URL,
 } from '../services/api';
 import Users from './Users';
 import Teams from './Teams';
@@ -331,8 +332,8 @@ export default function Settings() {
     'FIREBIRD_PASSWORD=preencha_a_senha_do_firebird',
     'FIREBIRD_CHARSET=WIN1252',
     '',
-    'CRM_BASE_URL=https://api-crm.lcddigital.com.br',
-    `CRM_TENANT_SLUG=${tenant?.slug || 'lcddigital'}`,
+    `CRM_BASE_URL=${BACKEND_URL || window.location.origin}`,
+    `CRM_TENANT_SLUG=${tenant?.slug || 'eduarda'}`,
     `CRM_SYNC_TOKEN=${form.firebirdClientToken || 'gere_um_token_no_crm_e_salve'}`,
     'SYNC_INTERVAL_SECONDS=300',
     'BATCH_SIZE=250',

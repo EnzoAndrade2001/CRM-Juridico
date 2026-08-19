@@ -1,8 +1,8 @@
 {
-  "name": "Multiatendimento PRO",
-  "short_name": "MultiPRO",
-  "description": "Sistema de Atendimento Omnichannel com IA",
-  "start_url": "/lcddigital/login",
+  "name": "CRM Juridico - Atendimento PRO Pedro Lund",
+  "short_name": "CRM Juridico",
+  "description": "Atendimento juridico com WhatsApp e inteligencia artificial",
+  "start_url": "/login",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#D4AF37",
