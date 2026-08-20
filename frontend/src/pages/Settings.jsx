@@ -42,6 +42,8 @@ export default function Settings() {
     botEnabled: false,
     botName: '',
     geminiKey: '',
+    openaiKey: '',
+    aiProvider: 'auto',
     webhookUrl: '',
     systemPrompt: '',
     transferKeyword: 'atendente',
@@ -437,6 +439,32 @@ export default function Settings() {
                   placeholder="Ex: LCD Bot"
                 />
                 <p style={s.hint}>Este nome aparece para a equipe no chat interno.</p>
+              </div>
+
+              <div style={s.field}>
+                <label style={s.label}>Provedor de IA</label>
+                <select
+                  style={s.input}
+                  value={form.aiProvider || 'auto'}
+                  onChange={(e) => setForm({ ...form, aiProvider: e.target.value })}
+                >
+                  <option value="auto">Automático (usa OpenAI se tiver chave, senão Gemini)</option>
+                  <option value="openai">OpenAI (GPT-4o / Whisper)</option>
+                  <option value="gemini">Google Gemini</option>
+                </select>
+                <p style={s.hint}>Escolha qual IA responderá no WhatsApp e transcreverá os áudios.</p>
+              </div>
+
+              <div style={s.field}>
+                <label style={s.label}>Chave OpenAI (GPT-4o + Whisper)</label>
+                <input
+                  style={s.input}
+                  type="password"
+                  value={form.openaiKey || ''}
+                  onChange={(e) => setForm({ ...form, openaiKey: e.target.value })}
+                  placeholder="sk-proj-..."
+                />
+                <p style={s.hint}>Recomendado para transcrição de áudio em PT-BR (Whisper) e respostas mais naturais.</p>
               </div>
 
               <div style={s.field}>

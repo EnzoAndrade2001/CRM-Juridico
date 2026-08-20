@@ -24,7 +24,7 @@ async function getSettings(req, res) {
 
 async function saveSettings(req, res) {
   const { 
-    botEnabled, geminiKey, botName, systemPrompt, transferKeyword, 
+    botEnabled, geminiKey, openaiKey, aiProvider, botName, systemPrompt, transferKeyword, 
     evolutionUrl, evolutionKey, webhookUrl, outOfOfficeMessage,
     ratingEnabled, ratingMessage, notificationPhone,
     serviceOrderManagerCopyEnabled, serviceOrderManagerPhone, serviceOrderManagerInstanceId,
@@ -79,6 +79,8 @@ async function saveSettings(req, res) {
     update: { 
       botEnabled, 
       geminiKey,
+      openaiKey,
+      aiProvider,
       botName,
       botSystemPrompt: systemPrompt,
       botTransferWord: transferKeyword,
@@ -121,6 +123,8 @@ async function saveSettings(req, res) {
       tenantId: req.user.tenantId, 
       botEnabled, 
       geminiKey,
+      openaiKey,
+      aiProvider,
       botName,
       botSystemPrompt: systemPrompt,
       botTransferWord: transferKeyword,

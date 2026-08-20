@@ -2,7 +2,7 @@ const prisma = require('../lib/prisma');
 const path = require('path');
 const fs = require('fs');
 const evolutionService = require('../services/evolutionService');
-const geminiService = require('../services/geminiService');
+const aiService = require('../services/aiService');
 const businessHourService = require('../services/businessHourService');
 
 let io;
@@ -151,7 +151,7 @@ function isHumanOnlyInstance(instanceName = '') {
 }
 
 function shouldUseBotForInstance(instanceName, tenantSettings) {
-  return Boolean(tenantSettings?.botEnabled) && !isHumanOnlyInstance(instanceName);
+  return Boolean(tenantSettings?.botEnabled) && !isHumanOnlyInstance(instanceName) && aiService.hasAiConfigured(tenantSettings);
 }
 
 function isLikelyEquipmentModel(message) {
@@ -622,24 +622,24 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
       let transcription = null;
       const fullPath = path.join(__dirname, '../../', mediaUrl);
 
-      if (media.type === 'audio' && tenant.settings?.geminiKey) {
+      if (media.type === 'audio' && aiService.hasAiConfigured(tenant.settings)) {
         try {
           if (fs.existsSync(fullPath)) {
             const audioBase64 = (await fs.promises.readFile(fullPath)).toString('base64');
             const mimeType = mediaUrl.endsWith('.mp3') ? 'audio/mp3' : 'audio/ogg';
-            transcription = await geminiService.transcribeAudio(tenant.settings.geminiKey, audioBase64, mimeType);
+            transcription = await aiService.transcribeAudio(tenant.settings, audioBase64, mimeType);
           }
         } catch (err) { console.error('[transcription] erro:', err.message); }
       }
 
-      if (media.type === 'image' && tenant.settings?.geminiKey) {
+      if (media.type === 'image' && aiService.hasAiConfigured(tenant.settings)) {
         try {
           if (fs.existsSync(fullPath)) {
             const imgBase64 = (await fs.promises.readFile(fullPath)).toString('base64');
             const mimeType = mediaUrl.endsWith('.png') ? 'image/png' : 'image/jpeg';
             console.log('[vision] analisando imagem...');
-            transcription = await geminiService.analyzeImage(
-              tenant.settings.geminiKey,
+            transcription = await aiService.analyzeImage(
+              tenant.settings,
               imgBase64,
               mimeType,
               'Você está analisando uma foto enviada em um atendimento técnico de impressora. Descreva apenas o que é visível na impressão e destaque defeitos como sombra, repetição, manchas, desalinhamento, falha de cor, faixa, borrado ou marcas. Responda em português, de forma objetiva, em até 3 frases.'
@@ -687,7 +687,7 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
     console.warn('[socket] aviso: objeto io não inicializado no webhookController');
   }
 
-  if (!isHistorical && ticket.status === 'bot' && useBotForInstance && tenant.settings?.geminiKey && !fromMe) {
+  if (!isHistorical && ticket.status === 'bot' && useBotForInstance && aiService.hasAiConfigured(tenant.settings) && !fromMe) {
     console.log(`[bot] Iniciando debounce para ticket ${ticket.id} (12s)...`);
     if (pendingReplies[ticket.id]) {
       clearTimeout(pendingReplies[ticket.id]);
@@ -831,7 +831,7 @@ async function handleAutoTagging(tenant, ticket, contact) {
       take: 10
     });
     
-    const tags = await geminiService.generateTags(tenant.settings.geminiKey, history);
+    const tags = await aiService.generateTags(tenant.settings, history);
     if (tags.length > 0) {
       console.log(`[webhook] auto-tags para ${contact.phone}:`, tags);
       await prisma.contact.update({
@@ -931,16 +931,16 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
   let topContent = null;
   let found = false;
 
-  if (settings.geminiKey && shouldUseKnowledgeSearch(currentUserTurn)) {
+  if (aiService.hasAiConfigured(settings) && shouldUseKnowledgeSearch(currentUserTurn)) {
     try {
-      const userEmbedding = await geminiService.getEmbedding(settings.geminiKey, currentUserTurn);
+      const userEmbedding = await aiService.getEmbedding(settings, currentUserTurn);
       if (userEmbedding) {
         const allKnowledges = await getKnowledgeCached(tenant.id);
         
         const relevant = allKnowledges.map(k => {
           let vec = null;
           try { vec = k.embedding; } catch(e) {}
-          return { ...k, similarity: geminiService.cosineSimilarity(userEmbedding, vec) };
+          return { ...k, similarity: aiService.cosineSimilarity(userEmbedding, vec) };
         })
         .filter(k => k.similarity > 0.65)
         .sort((a, b) => b.similarity - a.similarity)
@@ -977,12 +977,12 @@ ${technicalInstructions}`;
 
   console.log(`[bot] Ticket ${ticket.id} | Turno atual normalizado:\n${currentUserTurn}`);
 
-  let botReply = await geminiService.chat(settings.geminiKey, finalPrompt, reversedHistory, currentUserTurn);
+  let botReply = await aiService.chat(settings, finalPrompt, reversedHistory, currentUserTurn);
 
   // EXTRAÇÃO DE MEMÓRIA DE LONGO PRAZO (Background Task)
   if (shouldExtractClientMemory(currentUserTurn)) {
     const extractionHistory = [...reversedHistory, { fromMe: false, body: currentUserTurn }];
-    geminiService.extractClientInfo(settings.geminiKey, extractionHistory, contact.notes)
+    aiService.extractClientInfo(settings, extractionHistory, contact.notes)
       .then(async (result) => {
         if (result) {
           const updateData = {};

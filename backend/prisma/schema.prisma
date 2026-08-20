@@ -57,6 +57,9 @@ model TenantSettings {
   evolutionUrl                   String?
   evolutionKey                   String?
   geminiKey                      String?
+  // Provedor de IA
+  openaiKey                      String?
+  aiProvider                     String? @default("auto") // auto | openai | gemini
   botEnabled                     Boolean @default(false)
   botName                        String? @default("LCD Bot")
   botSystemPrompt                String? @db.Text
