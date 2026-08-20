@@ -501,7 +501,7 @@ export function MediaContent({ message, onImageClick, styles }) {
   return null;
 }
 
-export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile, isCompactDesktop, legalMode = false, onLinkCRM, onUnlinkCRM, onOpenCRM, onOpenLegalClient, styles }) {
+export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile, isCompactDesktop, legalMode = false, onLinkCRM, onUnlinkCRM, onOpenCRM, onOpenLegalClient, onOpenLegalDocuments, styles }) {
   const contact = ticket.contact;
   const contactName = getContactDisplayName(contact);
   const contactPhone = getContactPhone(contact);
@@ -1098,9 +1098,14 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
               Copiar ficha
             </button>
             {legalMode ? (
-              <button type="button" className="inbox-control" onClick={() => onOpenLegalClient?.(contact, ticket.id)} style={{ ...styles.infoActionBtn, ...styles.infoActionBtnPrimary }}>
-                Abrir cliente jurídico
-              </button>
+              <>
+                <button type="button" className="inbox-control" onClick={() => onOpenLegalClient?.(contact, ticket.id)} style={{ ...styles.infoActionBtn, ...styles.infoActionBtnPrimary }}>
+                  Abrir cliente jurídico
+                </button>
+                <button type="button" className="inbox-control" onClick={() => onOpenLegalDocuments?.(contact, ticket.id)} style={styles.infoActionBtn}>
+                  Documentos do cliente
+                </button>
+              </>
             ) : linkedCrm ? (
               <button type="button" className="inbox-control" onClick={onUnlinkCRM} style={{ ...styles.infoActionBtn, color: 'var(--text-muted)' }} title="Desvincular este contato do CRM">
                 Desvincular

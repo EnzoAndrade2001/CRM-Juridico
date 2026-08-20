@@ -74,7 +74,7 @@ class InboxSectionErrorBoundary extends React.Component {
   }
 }
 
-export default function Inbox({ legalMode = false, instanceList = null, onOpenLegalClient }) {
+export default function Inbox({ legalMode = false, instanceList = null, onOpenLegalClient, onOpenLegalDocuments }) {
   const MESSAGE_PAGE_SIZE = 60;
   const [selectedId, setSelectedId] = useState(null);
   const [text, setText] = useState('');
@@ -717,6 +717,7 @@ export default function Inbox({ legalMode = false, instanceList = null, onOpenLe
               onUpdate={() => { loadTickets(); setUpdateTrigger(prev => prev + 1); }}
               onImageClick={openPreviewImage}
               onOpenLegalClient={onOpenLegalClient}
+              onOpenLegalDocuments={onOpenLegalDocuments}
               isMobile={isMobile}
                 isCompactDesktop={isCompactDesktop}
                 legalMode={legalMode}

@@ -256,10 +256,20 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
   function openLegalClient(client, ticketId = null) {
     const url = new URL(window.location.href);
     url.searchParams.set('tela', 'clientes');
+    url.searchParams.delete('contactId');
     if (client?.id) url.searchParams.set('clientId', client.id);
     if (ticketId) url.searchParams.set('ticketId', ticketId);
     window.history.replaceState({}, '', url);
     setActive('clientes');
+  }
+  function openLegalDocuments(contact, ticketId = null) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tela', 'documentos');
+    if (contact?.id) url.searchParams.set('contactId', contact.id);
+    else url.searchParams.delete('contactId');
+    if (ticketId) url.searchParams.set('ticketId', ticketId);
+    window.history.replaceState({}, '', url);
+    setActive('documentos');
   }
   useEffect(() => {
     document.title = 'CRM Jurídico — Atendimento PRO Pedro Lund';
@@ -284,10 +294,10 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
       <main className="jd-main">
         <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} />
         {active === 'visao-geral' && <LegalOverviewPanel workspace={legalWorkspace} onNavigate={setActive} />}
-        {active === 'atendimentos' && (demoMode ? <InboxDemo /> : <RealInbox legalMode onOpenLegalClient={openLegalClient} />)}
+        {active === 'atendimentos' && (demoMode ? <InboxDemo /> : <RealInbox legalMode onOpenLegalClient={openLegalClient} onOpenLegalDocuments={openLegalDocuments} />)}
         {active === 'clientes' && <LegalClients workspace={legalWorkspace} onNavigate={setActive} />}
         {active === 'crm' && <CrmDemo workspace={legalWorkspace} />}
-        {active === 'documentos' && (demoMode ? <PlaceholderPage type={active} /> : <LegalDocuments workspace={legalWorkspace} />)}
+        {active === 'documentos' && (demoMode ? <PlaceholderPage type={active} /> : <LegalDocuments workspace={legalWorkspace} contactId={new URLSearchParams(window.location.search).get('contactId')} />)}
         {active === 'campanhas' && <CampaignsDemo />}
         {active === 'conhecimento' && (demoMode ? <PlaceholderPage type={active} /> : <LegalKnowledgeBase />)}
       </main>
