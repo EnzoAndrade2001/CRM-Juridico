@@ -716,9 +716,27 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
         delete pendingReplies[ticket.id];
       } catch (err) {
         console.error('[bot-debounce] erro fatal:', err.message);
-        await handoffAfterBotFailure(tenant, waInstance, ticket, contact).catch((handoffError) => {
-          console.error('[bot-fallback] erro ao transferir atendimento:', handoffError.message);
-        });
+
+        // Erros temporários de API (sem créditos, rate limit, rede) — mantém o ticket em "bot"
+        // para que a próxima mensagem dispare nova tentativa automaticamente.
+        const isTemporaryApiError = (
+          err.message?.includes('credits') ||
+          err.message?.includes('rate limit') ||
+          err.message?.includes('quota') ||
+          err.message?.includes('ECONNREFUSED') ||
+          err.message?.includes('ETIMEDOUT') ||
+          err.message?.includes('socket hang up') ||
+          err.status === 429 ||
+          err.status === 503
+        );
+
+        if (isTemporaryApiError) {
+          console.warn(`[bot-debounce] Erro temporário de API — ticket ${ticket.id} mantido em "bot" para retry automático.`);
+        } else {
+          await handoffAfterBotFailure(tenant, waInstance, ticket, contact).catch((handoffError) => {
+            console.error('[bot-fallback] erro ao transferir atendimento:', handoffError.message);
+          });
+        }
         delete pendingReplies[ticket.id];
       }
     }, 12000);
