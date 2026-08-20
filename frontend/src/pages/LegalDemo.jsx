@@ -78,7 +78,7 @@ function Sidebar({ active, setActive, open, setOpen }) {
       <aside className={`jd-sidebar ${open ? 'is-open' : ''}`}>
         <div className="jd-brand">
           <span className="jd-brand__mark"><Scale size={21} strokeWidth={2.2} /></span>
-          <span><strong>Áurea</strong><small>CRM JURÍDICO</small></span>
+          <span><strong>CRM Jurídico</strong><small>ATENDIMENTO PRO PEDRO LUND</small></span>
           <button className="jd-sidebar__close" type="button" onClick={() => setOpen(false)}><X size={20} /></button>
         </div>
         <p className="jd-nav-label">ESCRITÓRIO</p>
@@ -101,7 +101,7 @@ function Sidebar({ active, setActive, open, setOpen }) {
         </div>
         <div className="jd-user-card">
           <Avatar initials="EA" size="sm" />
-          <span><strong>Eduarda Andrade</strong><small>Administradora</small></span>
+          <span><strong>Dra. Eduarda</strong><small>Administradora</small></span>
           <MoreHorizontal size={18} />
         </div>
       </aside>
@@ -261,7 +261,7 @@ export default function LegalDemo({ demoMode = false }) {
     setActive('clientes');
   }
   useEffect(() => {
-    document.title = 'Áurea — CRM Jurídico com IA';
+    document.title = 'CRM Jurídico — Atendimento PRO Pedro Lund';
     const url = new URL(window.location.href);
     if (active === 'visao-geral') url.searchParams.delete('tela');
     else url.searchParams.set('tela', active);
