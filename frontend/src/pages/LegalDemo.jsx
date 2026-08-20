@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { getSettings, saveSettings } from '../../services/api';
 import {
   ArrowUpRight,
   Bell,
@@ -50,6 +51,7 @@ const navigation = [
   { id: 'campanhas', label: 'Campanhas', icon: Megaphone },
   { id: 'conhecimento', label: 'Base da IA', icon: BrainCircuit },
   { id: 'conexoes', label: 'Conexões', icon: Smartphone },
+  { id: 'configuracoes', label: 'Configurações', icon: ShieldCheck },
 ];
 
 const conversations = [
@@ -239,7 +241,144 @@ function CampaignsDemo() {
     ['Documentos para revisão de benefício', 'Previdenciário · Qualificados', '386', 'Agendada · 19/08', '—', 'violet'],
     ['Pesquisa pós-consulta', 'Consultas realizadas', '214', 'Concluída', '89%', 'green'],
   ];
-  return <div className="jd-page"><div className="jd-section-intro"><div><h2>Campanhas</h2><p>Comunicação segmentada com revisão, limites e controle de descadastro.</p></div><button className="jd-primary" type="button" onClick={() => setCreated(true)}><Plus size={17} /> Nova campanha</button></div>{created && <div className="jd-demo-toast"><Check size={17} /> Rascunho criado. Nenhuma mensagem real será enviada neste ambiente.</div>}<section className="jd-campaign-stats"><article><Megaphone size={20} /><span><strong>3</strong> campanhas neste mês</span></article><article><Send size={20} /><span><strong>1.848</strong> mensagens entregues</span></article><article><MessageCircleMore size={20} /><span><strong>412</strong> respostas recebidas</span></article><article><ShieldCheck size={20} /><span><strong>99,2%</strong> entrega válida</span></article></section><section className="jd-card jd-campaign-table"><div className="jd-card__heading"><div><h3>Campanhas recentes</h3><p>Dados fictícios para demonstração</p></div><label className="jd-small-search"><Search size={15} /><input placeholder="Buscar campanha" /></label></div><div className="jd-table-head"><span>Campanha</span><span>Público</span><span>Contatos</span><span>Status</span><span>Entrega</span><span /></div>{campaigns.map(([name, audience, contacts, status, delivery, tone]) => <div className="jd-table-row" key={name}><span><b>{name}</b><small>Criada por Eduarda Andrade</small></span><span>{audience}</span><strong>{contacts}</strong><span><StatusPill tone={tone}>{status}</StatusPill></span><strong>{delivery}</strong><button type="button"><MoreHorizontal size={18} /></button></div>)}</section></div>;
+  return <div className="jd-page"><div className="jd-section-intro"><div><h2>Campanhas</h2><p>Comunicação segmentada com revisão, limites e controle de descadastro.</p></div><button className="jd-primary" type="button" onClick={() => setCreated(true)}><Plus size={17} /> Nova campanha</button></div>{created && <div className="jd-demo-toast"><Check size={17} /> Rascunho criado. Nenhuma mensagem real será enviada neste ambiente.</div>}<section className="jd-campaign-stats"><article><Megaphone size={20} /><span><strong>3</strong> campanhas neste mês</span></article><article><Send size={20} /><span><strong>1.848</strong> mensagens entregues</span></article><article><MessageCircleMore size={20} /><span><strong>412</strong> respostas recebidas</span></article><article><ShieldCheck size={20} /><span><strong>99,2%</strong> entrega válida</span></article></section><section className="jd-card jd-campaign-table"><div className="jd-card__heading"><div><h3>Campanhas recentes</h3><p>Dados fictícios para demonstração</p></div><label className="jd-small-search"><Search size={15} /><input placeholder="Buscar campanha" /></label></div><div className="jd-table-head"><span>Campanha</span><span>Público</span><span>Contatos</span><span>Status</span><span>Entrega</span><span /></div>{campaigns.map(([name, audience, contacts, status, delivery, tone]) => <div className="jd-table-row" key={name}><span><b>{name}</b><small>Criada por Eduarda Andrade</small></span><span>{audience}</span><strong>{contacts}</strong><span><StatusPill tone={tone}>{status}</StatusPill></span><strong>{delivery}</strong><button type="button"><MoreHorizontal size={18} /></button>)}</section></div>;
+}
+
+function LegalSettings({ demoMode }) {
+  const [form, setForm] = useState({
+    botEnabled: false,
+    botName: '',
+    aiProvider: 'auto',
+    openaiKey: '',
+    geminiKey: '',
+    systemPrompt: '',
+    transferKeyword: 'atendente',
+  });
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (demoMode) { setLoaded(true); return; }
+    getSettings()
+      .then(({ data }) => setForm(f => ({ ...f, ...data, systemPrompt: data.botSystemPrompt || data.systemPrompt || '', transferKeyword: data.botTransferWord || data.transferKeyword || 'atendente' })))
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, [demoMode]);
+
+  async function handleSave(e) {
+    e.preventDefault();
+    if (demoMode) return;
+    setSaving(true);
+    try {
+      await saveSettings(form);
+      alert('Configurações salvas com sucesso!');
+    } catch {
+      alert('Erro ao salvar. Tente novamente.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const s = {
+    page: { padding: '2rem', maxWidth: '680px' },
+    card: { background: 'var(--bg-card, #1a1a2e)', border: '1px solid var(--border, rgba(255,255,255,0.08))', borderRadius: '16px', padding: '1.5rem', marginBottom: '1.25rem' },
+    title: { fontSize: '1rem', fontWeight: 800, color: 'var(--text-main, #fff)', marginBottom: '0.25rem' },
+    sub: { fontSize: '0.8rem', color: 'var(--text-muted, #888)', marginBottom: '1.25rem' },
+    field: { marginBottom: '1rem' },
+    label: { display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted, #888)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.04em' },
+    input: { width: '100%', background: 'var(--bg-base, #0f0f1a)', border: '1px solid var(--border, rgba(255,255,255,0.1))', borderRadius: '10px', padding: '0.65rem 0.9rem', color: 'var(--text-main, #fff)', fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box' },
+    hint: { fontSize: '0.75rem', color: 'var(--text-muted, #666)', marginTop: '0.35rem' },
+    row: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' },
+    toggle: { width: '44px', height: '24px', background: form.botEnabled ? '#7c3aed' : 'rgba(255,255,255,0.12)', borderRadius: '99px', border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0, transition: 'background 0.2s' },
+    toggleKnob: { position: 'absolute', top: '3px', left: form.botEnabled ? '23px' : '3px', width: '18px', height: '18px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s' },
+    saveBtn: { background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', color: '#fff', border: 'none', borderRadius: '10px', padding: '0.75rem 1.5rem', fontWeight: 800, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 },
+    providerBadge: { display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(124,58,237,0.15)', color: '#a78bfa', borderRadius: '8px', padding: '0.3rem 0.7rem', fontSize: '0.78rem', fontWeight: 700 },
+  };
+
+  if (!loaded) return <div style={{ padding: '2rem', color: 'var(--text-muted)' }}>Carregando configurações...</div>;
+
+  const providerLabel = form.aiProvider === 'openai' ? 'OpenAI (GPT-4o)'
+    : form.aiProvider === 'gemini' ? 'Google Gemini'
+    : form.openaiKey ? 'Auto → OpenAI' : 'Auto → Gemini';
+
+  return (
+    <div style={s.page}>
+      {demoMode && (
+        <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1.25rem', fontSize: '0.82rem', color: '#fbbf24' }}>
+          <strong>Modo demonstração</strong> — alterações não são salvas.
+        </div>
+      )}
+
+      <form onSubmit={handleSave}>
+        {/* CARD: Robô de IA */}
+        <div style={s.card}>
+          <p style={s.title}>🤖 Robô de atendimento</p>
+          <p style={s.sub}>Configure o bot de IA que responde automaticamente no WhatsApp.</p>
+
+          <div style={{ ...s.field, ...s.row }}>
+            <div>
+              <p style={{ ...s.label, marginBottom: 0 }}>Habilitar robô</p>
+              <p style={s.hint}>{form.botEnabled ? 'Bot ativo — respondendo automaticamente.' : 'Bot desligado — sem resposta automática.'}</p>
+            </div>
+            <button type="button" style={s.toggle} onClick={() => setForm(f => ({ ...f, botEnabled: !f.botEnabled }))} aria-label="Toggle bot">
+              <span style={s.toggleKnob} />
+            </button>
+          </div>
+
+          <div style={s.field}>
+            <label style={s.label}>Nome do robô</label>
+            <input style={s.input} value={form.botName || ''} onChange={e => setForm(f => ({ ...f, botName: e.target.value }))} placeholder="Ex: Áurea IA" />
+          </div>
+
+          <div style={s.field}>
+            <label style={s.label}>Palavra-chave de transferência</label>
+            <input style={s.input} value={form.transferKeyword || ''} onChange={e => setForm(f => ({ ...f, transferKeyword: e.target.value }))} placeholder="atendente" />
+            <p style={s.hint}>Quando o cliente digitar isso, o robô para e envia para a fila humana.</p>
+          </div>
+
+          <div style={s.field}>
+            <label style={s.label}>Instruções do sistema (system prompt)</label>
+            <textarea style={{ ...s.input, minHeight: '110px', resize: 'vertical' }} value={form.systemPrompt || ''} onChange={e => setForm(f => ({ ...f, systemPrompt: e.target.value }))} placeholder="Ex: Você é a Áurea, assistente jurídica do escritório. Seu objetivo é qualificar o cliente e coletar as informações iniciais do caso..." />
+            <p style={s.hint}>Defina a personalidade e o contexto da IA.</p>
+          </div>
+        </div>
+
+        {/* CARD: Provedor de IA */}
+        <div style={s.card}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+            <p style={s.title}>⚡ Provedor de IA</p>
+            <span style={s.providerBadge}><Sparkles size={13} /> {providerLabel}</span>
+          </div>
+          <p style={s.sub}>Escolha qual modelo de IA responderá no WhatsApp e transcreverá os áudios.</p>
+
+          <div style={s.field}>
+            <label style={s.label}>Provedor ativo</label>
+            <select style={s.input} value={form.aiProvider || 'auto'} onChange={e => setForm(f => ({ ...f, aiProvider: e.target.value }))}>
+              <option value="auto">Automático (usa OpenAI se tiver chave, senão Gemini)</option>
+              <option value="openai">OpenAI — GPT-4o + Whisper (recomendado)</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
+          </div>
+
+          <div style={s.field}>
+            <label style={s.label}>Chave OpenAI</label>
+            <input style={s.input} type="password" value={form.openaiKey || ''} onChange={e => setForm(f => ({ ...f, openaiKey: e.target.value }))} placeholder="sk-proj-..." />
+            <p style={s.hint}>Melhor para transcrição de áudio em PT-BR (Whisper) e respostas mais naturais. Gere em platform.openai.com/api-keys</p>
+          </div>
+
+          <div style={s.field}>
+            <label style={s.label}>Chave Gemini (alternativa)</label>
+            <input style={s.input} type="password" value={form.geminiKey || ''} onChange={e => setForm(f => ({ ...f, geminiKey: e.target.value }))} placeholder="AIza..." />
+            <p style={s.hint}>Chave do Google AI Studio. Usada quando o provedor for Gemini ou Auto sem chave OpenAI.</p>
+          </div>
+        </div>
+
+        <button type="submit" style={s.saveBtn} disabled={saving || demoMode}>
+          {saving ? 'Salvando...' : 'Salvar configurações'}
+        </button>
+      </form>
+    </div>
+  );
 }
 
 function PlaceholderPage({ type }) {
@@ -295,12 +434,12 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
     conhecimento: ['Base da IA', 'Conteúdo aprovado pelo escritório'],
     documentos: ['Documentos jurídicos', 'Solicitações, arquivos e revisões vinculados aos clientes e casos'],
     conexoes: ['Conexões WhatsApp', 'Gerencie os números e o pareamento da Evolution API'],
+    configuracoes: ['Configurações', 'Robô de IA, provedor e chaves de integração'],
   }[active]), [active]);
   return (
     <div className="legal-demo">
       <div className="jd-demo-ribbon"><span><Sparkles size={14} /> {demoMode ? 'DEMONSTRAÇÃO INTERATIVA' : 'AMBIENTE DO ESCRITÓRIO'}</span><p>{demoMode ? 'Dados fictícios · alterações salvas neste navegador' : 'Dados protegidos do escritório'}</p></div>
       <Sidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} demoMode={demoMode} />
-      <main className="jd-main">
         <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} />
         {active === 'visao-geral' && <LegalOverviewPanel workspace={legalWorkspace} onNavigate={setActive} />}
         {active === 'atendimentos' && (demoMode ? <InboxDemo /> : <RealInbox legalMode onOpenLegalClient={openLegalClient} onOpenLegalDocuments={openLegalDocuments} />)}
@@ -310,6 +449,7 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
         {active === 'campanhas' && (demoMode ? <CampaignsDemo /> : <Campaigns />)}
         {active === 'conhecimento' && (demoMode ? <PlaceholderPage type={active} /> : <LegalKnowledgeBase />)}
         {active === 'conexoes' && (demoMode ? <PlaceholderPage type={active} /> : <div className="jd-connections-shell"><ConnectionsPage /></div>)}
+        {active === 'configuracoes' && <LegalSettings demoMode={demoMode} />}
       </main>
     </div>
   );
