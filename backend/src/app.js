@@ -45,9 +45,24 @@ app.use('/api/report', require('./routes/report'));
 const server = http.createServer(app);
 const bootAt = Date.now();
 
+// CORS precisa receber somente a origem (protocolo + host + porta). Se a
+// variÃ¡vel vier com um caminho, como /login, os navegadores rejeitam a
+// resposta porque o header Access-Control-Allow-Origin nunca pode conter path.
+function resolveFrontendOrigin(value) {
+  const configured = String(value || '').trim();
+  if (!configured || configured === '*') return configured || '*';
+  try {
+    return new URL(configured).origin;
+  } catch {
+    return configured.replace(/\/+$/, '');
+  }
+}
+
+const frontendOrigin = resolveFrontendOrigin(process.env.FRONTEND_URL || 'http://localhost:5174');
+
 const io = new Server(server, {
   cors: { 
-    origin: process.env.FRONTEND_URL || '*', 
+    origin: frontendOrigin,
     credentials: true,
     methods: ["GET", "POST"]
   },
@@ -65,7 +80,7 @@ setIoBilling(io);
 setIoManagerCopy(io);
 setIoBillingDocuments(io);
 
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5174', credentials: true }));
+app.use(cors({ origin: frontendOrigin, credentials: true }));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
