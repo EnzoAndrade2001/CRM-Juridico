@@ -29,9 +29,16 @@ const BankReviewLanding = lazy(() => import('./pages/BankReviewLanding'));
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const requestUrl = String(error.config?.url || '');
+    const isLoginRequest = requestUrl.endsWith('/auth/login');
+
+    // A tentativa de login deve permanecer no portal da empresa para que o
+    // slug continue sendo enviado. Redirecionar para /login transforma um
+    // 401 de credenciais em um novo login global, bloqueado para admins.
+    if (error.response?.status === 401 && !isLoginRequest) {
       localStorage.clear();
-      window.location.href = '/login';
+      const tenantLogin = window.location.pathname.match(/^\/([^/]+)\/login(?:\/)?$/);
+      window.location.href = tenantLogin ? `/${tenantLogin[1]}/login` : '/login';
     }
     return Promise.reject(error);
   }
