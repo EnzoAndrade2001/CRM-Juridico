@@ -52,14 +52,18 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      const { data } = await login(email, password, routeSlug);
+      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedSlug = routeSlug.trim().toLowerCase();
+      const { data } = await login(normalizedEmail, password, normalizedSlug);
       localStorage.setItem('token', data.token);
       localStorage.setItem('tenantId', data.tenant?.id || '');
       localStorage.setItem('userId', data.user.id);
       localStorage.setItem('role', data.user.role);
       navigate(data.user.role === 'superadmin' ? '/superadmin' : '/dashboard');
-    } catch {
+    } catch (requestError) {
+      const serverMessage = requestError?.response?.data?.error;
       setError('E-mail ou senha inválidos. Tente novamente.');
+      if (serverMessage) setError(serverMessage);
     } finally {
       setLoading(false);
     }

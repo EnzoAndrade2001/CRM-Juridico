@@ -6,20 +6,24 @@ async function login(req, res) {
   const { email, password, slug } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email e senha obrigatórios' });
 
+  // Normalize identifiers while preserving the password exactly as entered.
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const normalizedSlug = slug ? String(slug).trim().toLowerCase() : '';
+
   const user = await prisma.user.findFirst({
-    where: { email },
+    where: { email: normalizedEmail },
     include: { tenant: true },
   });
 
   if (!user || !user.active) return res.status(401).json({ error: 'Credenciais inválidas' });
 
   // Se o login for feito via portal de empresa, validar se o usuário pertence a ela
-  if (slug && user.tenant.slug !== slug) {
+  if (normalizedSlug && user.tenant.slug !== normalizedSlug) {
     return res.status(401).json({ error: 'Este usuário não possui permissão para acessar esta empresa.' });
   }
 
   // Se for um usuário comum tentando login global (sem slug), bloquear se não for superadmin
-  if (!slug && user.role !== 'superadmin') {
+  if (!normalizedSlug && user.role !== 'superadmin') {
     return res.status(401).json({ error: 'Por favor, utilize o link de acesso exclusivo da sua empresa.' });
   }
 
