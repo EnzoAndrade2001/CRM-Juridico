@@ -44,7 +44,7 @@ import './legal-demo.css';
 
 const navigation = [
   { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard },
-  { id: 'atendimentos', label: 'Atendimentos', icon: MessageCircleMore, badge: 8 },
+  { id: 'atendimentos', label: 'Atendimentos', icon: MessageCircleMore },
   { id: 'clientes', label: 'Clientes', icon: UsersRound },
   { id: 'documentos', label: 'Documentos', icon: Files },
   { id: 'crm', label: 'CRM jurídico', icon: BriefcaseBusiness },
