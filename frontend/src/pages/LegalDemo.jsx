@@ -245,10 +245,11 @@ function PlaceholderPage({ type }) {
   return <div className="jd-page"><div className="jd-section-intro"><div><h2>{title}</h2><p>{description}</p></div><button type="button" className="jd-primary"><Plus size={17} /> Adicionar</button></div><section className="jd-placeholder-hero"><span><Icon size={30} /></span><p>AMBIENTE DE DEMONSTRAÇÃO</p><h3>{stat}</h3><small>Esta tela representa o módulo que será detalhado após a validação do fluxo principal.</small><button type="button">Visualizar exemplo <ArrowUpRight size={16} /></button></section></div>;
 }
 
-export default function LegalDemo({ demoMode = false }) {
+export default function LegalDemo({ demoMode = false, initialScreen = 'visao-geral' }) {
   const [active, setActive] = useState(() => {
     const requestedScreen = new URLSearchParams(window.location.search).get('tela');
-    return navigation.some(({ id }) => id === requestedScreen) ? requestedScreen : 'visao-geral';
+    if (navigation.some(({ id }) => id === requestedScreen)) return requestedScreen;
+    return navigation.some(({ id }) => id === initialScreen) ? initialScreen : 'visao-geral';
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const legalWorkspace = useLegalWorkspace({ demoMode });

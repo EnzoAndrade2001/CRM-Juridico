@@ -159,6 +159,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/demo-juridico" element={<LegalDemo demoMode />} />
           <Route path="/revisional-bancario" element={<BankReviewLanding />} />
           <Route path="/juridico" element={<PrivateRoute><LegalDemo /></PrivateRoute>} />
+          <Route path="/inbox" element={<PrivateRoute><LegalDemo initialScreen="atendimentos" /></PrivateRoute>} />
 
           <Route
             element={(
@@ -169,7 +170,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           >
             <Route path="/dashboard" element={<Dashboard />} />
             <Route index element={<Dashboard />} />
-            <Route path="/inbox" element={<Inbox />} />
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/crm" element={<CRM />} />
             <Route path="/users" element={<Users />} />
