@@ -86,8 +86,9 @@ async function create(req, res) {
 
     // Cria na Evolution
     console.log(`[instanceController] Criando instância "${instanceName}" na Evolution...`);
+    let remoteInstance;
     try {
-      await evolution.createInstance(evolutionUrl, evolutionKey, instanceName);
+      remoteInstance = await evolution.createInstance(evolutionUrl, evolutionKey, instanceName);
     } catch (err) {
       const responseData = err.response?.data;
       if (evolution.isInstanceAlreadyInUse(err)) {
@@ -113,7 +114,14 @@ async function create(req, res) {
     const webhookUrl = `${backendUrl}/api/webhook`;
     await evolution.setWebhook(evolutionUrl, evolutionKey, instanceName, webhookUrl);
 
-    res.json(inst);
+    // Evolution normally returns the first QR code during creation. Returning
+    // it avoids an immediate second request to /instance/connect, which can
+    // fail while Baileys is still initializing the session.
+    res.json({
+      ...inst,
+      qrcode: remoteInstance?.qrcode?.base64 || remoteInstance?.base64 || null,
+      pairingCode: remoteInstance?.qrcode?.pairingCode || remoteInstance?.pairingCode || null,
+    });
   } catch (err) {
     console.error(`[instanceController] Erro geral ao criar instância:`, err);
     res.status(400).json({ error: err.message });
@@ -134,7 +142,15 @@ async function getQrCode(req, res) {
       pairingCode: data?.pairingCode || null 
     });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    const upstreamStatus = Number(err.statusCode || err.response?.status);
+    const status = upstreamStatus >= 400 && upstreamStatus < 600 ? upstreamStatus : 400;
+    console.error('[instanceController] Falha ao gerar QR Code:', {
+      instanceId: req.params.id,
+      status,
+      message: err.message,
+      response: err.response?.data || null,
+    });
+    res.status(status).json({ error: err.message, status });
   }
 }
 
@@ -165,8 +181,9 @@ async function repair(req, res) {
       console.warn('[instanceController] Falha ao remover instancia remota antes do reparo:', err.response?.data || err.message);
     }
 
+    let recreatedRemoteInstance = null;
     try {
-      await evolution.createInstance(evolutionUrl, evolutionKey, inst.instanceName);
+      recreatedRemoteInstance = await evolution.createInstance(evolutionUrl, evolutionKey, inst.instanceName);
     } catch (err) {
       if (!evolution.isInstanceAlreadyInUse(err)) {
         diagnostics.push(`createInstance: ${err.response?.data?.message || err.message}`);
@@ -188,12 +205,14 @@ async function repair(req, res) {
       data: { status: 'disconnected', qrCode: null },
     });
 
-    let qrData = null;
-    try {
-      qrData = await evolution.getQrCode(evolutionUrl, evolutionKey, inst.instanceName);
-    } catch (err) {
-      diagnostics.push(`getQrCode: ${err.response?.data?.message || err.message}`);
-      console.warn('[instanceController] Reparo concluiu, mas QR Code ainda nao veio:', err.response?.data || err.message);
+    let qrData = recreatedRemoteInstance;
+    if (!qrData?.qrcode?.base64 && !qrData?.base64) {
+      try {
+        qrData = await evolution.getQrCode(evolutionUrl, evolutionKey, inst.instanceName);
+      } catch (err) {
+        diagnostics.push(`getQrCode: ${err.response?.data?.message || err.message}`);
+        console.warn('[instanceController] Reparo concluiu, mas QR Code ainda nao veio:', err.response?.data || err.message);
+      }
     }
 
     res.json({

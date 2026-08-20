@@ -304,8 +304,19 @@ async function saveMediaFile(base64, mimetype, messageId) {
 
 async function getQrCode(url, key, instanceName) {
   const client = getClient(url, key);
-  const { data } = await client.get(`/instance/connect/${instanceName}`);
-  return data;
+  try {
+    const { data } = await client.get(`/instance/connect/${instanceName}`);
+    return data;
+  } catch (err) {
+    // Preserve the upstream status/message so the API can distinguish an
+    // invalid key (401), an unknown instance (404) and a connection that is
+    // not ready (400). Never include the API key in this diagnostic.
+    const detail = getEvolutionErrorDetail(err);
+    const wrapped = new Error(`Evolution API (${err.response?.status || 'erro'}): ${detail}`);
+    wrapped.response = err.response;
+    wrapped.statusCode = err.response?.status;
+    throw wrapped;
+  }
 }
 
 async function getConnectionState(url, key, instanceName) {

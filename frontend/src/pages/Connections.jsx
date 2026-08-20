@@ -48,7 +48,8 @@ export default function Connections() {
       const { data } = await createInstance(name);
       setModal('qrcode');
       setSelectedInst(data);
-      loadQr(data.id);
+      setQrcode(data.qrcode || null);
+      if (!data.qrcode) loadQr(data.id);
     } catch (err) {
       const msg = err.response?.data?.error || 'Erro ao criar conexao';
       toast.error(msg);
@@ -62,8 +63,10 @@ export default function Connections() {
     try {
       const { data } = await getInstanceQrCode(id);
       setQrcode(data.qrcode);
-    } catch {
-      toast.info('Erro ao gerar QR Code');
+    } catch (err) {
+      const status = err.response?.status ? ` (${err.response.status})` : '';
+      const message = err.response?.data?.error || 'Erro ao gerar QR Code';
+      toast.error(`${message}${status}`);
     }
   }
 
