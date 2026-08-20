@@ -26,6 +26,7 @@ import {
   Send,
   ShieldCheck,
   Sparkles,
+  Smartphone,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -36,6 +37,7 @@ import LegalKnowledgeBase from '../features/legal/LegalKnowledgeBase';
 import LegalDocuments from '../features/legal/LegalDocuments';
 import useLegalWorkspace from '../features/legal/useLegalWorkspace';
 import RealInbox from './Inbox';
+import ConnectionsPage from './Connections';
 import './legal-demo.css';
 
 const navigation = [
@@ -46,6 +48,7 @@ const navigation = [
   { id: 'crm', label: 'CRM jurídico', icon: BriefcaseBusiness },
   { id: 'campanhas', label: 'Campanhas', icon: Megaphone },
   { id: 'conhecimento', label: 'Base da IA', icon: BrainCircuit },
+  { id: 'conexoes', label: 'Conexões', icon: Smartphone },
 ];
 
 const conversations = [
@@ -240,6 +243,7 @@ function PlaceholderPage({ type }) {
     clientes: ['Clientes', 'Base central de contatos, documentos e histórico jurídico.', UsersRound, '1.284 clientes cadastrados'],
     conhecimento: ['Base de conhecimento da IA', 'Conteúdo revisado pelo escritório para orientar o atendimento automático.', BrainCircuit, '46 orientações aprovadas'],
     documentos: ['Documentos jurídicos', 'Solicitações, arquivos e revisões vinculados aos clientes e casos.', Files, 'Dossiê documental do escritório'],
+    conexoes: ['Conexões WhatsApp', 'Números, QR Code e canais de atendimento do escritório.', Smartphone, 'Pareamento do WhatsApp'],
   }[type];
   const [title, description, Icon, stat] = content;
   return <div className="jd-page"><div className="jd-section-intro"><div><h2>{title}</h2><p>{description}</p></div><button type="button" className="jd-primary"><Plus size={17} /> Adicionar</button></div><section className="jd-placeholder-hero"><span><Icon size={30} /></span><p>AMBIENTE DE DEMONSTRAÇÃO</p><h3>{stat}</h3><small>Esta tela representa o módulo que será detalhado após a validação do fluxo principal.</small><button type="button">Visualizar exemplo <ArrowUpRight size={16} /></button></section></div>;
@@ -286,6 +290,7 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
     campanhas: ['Campanhas', 'Comunicação segmentada e responsável'],
     conhecimento: ['Base da IA', 'Conteúdo aprovado pelo escritório'],
     documentos: ['Documentos jurídicos', 'Solicitações, arquivos e revisões vinculados aos clientes e casos'],
+    conexoes: ['Conexões WhatsApp', 'Gerencie os números e o pareamento da Evolution API'],
   }[active]), [active]);
   return (
     <div className="legal-demo">
@@ -300,6 +305,7 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
         {active === 'documentos' && (demoMode ? <PlaceholderPage type={active} /> : <LegalDocuments workspace={legalWorkspace} contactId={new URLSearchParams(window.location.search).get('contactId')} />)}
         {active === 'campanhas' && <CampaignsDemo />}
         {active === 'conhecimento' && (demoMode ? <PlaceholderPage type={active} /> : <LegalKnowledgeBase />)}
+        {active === 'conexoes' && (demoMode ? <PlaceholderPage type={active} /> : <div className="jd-connections-shell"><ConnectionsPage /></div>)}
       </main>
     </div>
   );

@@ -44,6 +44,30 @@
   --overlay-bg: rgba(15, 23, 42, .56);
   color-scheme: light;
 }
+.jd-connections-shell {
+  --bg-base: var(--jd-bg);
+  --bg-surface: #fff;
+  --bg-panel: #f8fafc;
+  --bg-panel-hover: #eef2f6;
+  --border-color: var(--jd-line);
+  --border-light: rgba(15, 23, 42, .06);
+  --glass-bg: #fff;
+  --glass-border: var(--jd-line);
+  --text-main: var(--jd-text);
+  --text-muted: var(--jd-muted);
+  --text-dim: #94a3b8;
+  --text-inverse: #fff;
+  --accent: var(--jd-gold);
+  --accent-hover: #8d641f;
+  --brand-solid: var(--jd-gold);
+  --brand-on-solid: #18223a;
+  --success: #1c9c70;
+  --danger: #cf4b54;
+  --warning: #b97927;
+  color: var(--text-main);
+  color-scheme: light;
+}
+.jd-connections-shell > div { min-height: calc(100vh - 102px); }
 .jd-demo-ribbon { height: 32px; position: fixed; inset: 0 0 auto 0; z-index: 70; display: flex; align-items: center; justify-content: center; gap: 16px; color: #d8deea; background: #091224; font-size: 15px; letter-spacing: .03em; }
 .jd-demo-ribbon span { display: flex; align-items: center; gap: 6px; color: #f0d89e; font-weight: 800; }
 .jd-demo-ribbon p { margin: 0; }
