@@ -344,8 +344,8 @@ async function list(req, res) {
     if (status === 'pending') {
       conditions.push(pendingCondition);
     } else if (status === 'all') {
-      // "Contatos" - Mostra resolvidos e todos os em atendimento (independente de quem atende)
-      conditions.push({ status: { in: ['resolved', 'open'] } });
+      // "Contatos" mostra somente atendimentos ativos; os encerrados ficam em "Concluídos".
+      conditions.push({ status: 'open' });
     } else {
       conditions.push({ status });
     }
@@ -418,7 +418,7 @@ async function list(req, res) {
       where: buildWhere([
         { tenantId: req.user.tenantId },
         visibilityFilter,
-        { status: { in: ['resolved', 'open'] } }
+        { status: 'open' }
       ])
     })
   ]);

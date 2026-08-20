@@ -1332,6 +1332,7 @@ export const TicketSidebar = React.memo(function TicketSidebar({
     mine: 'Minhas conversas',
     pending: 'Fila de espera',
     all: 'Todos os contatos',
+    resolved: 'Atendimentos concluídos',
   }[tab] || 'Inbox';
   const activeFilterCount = [filters.priority, filters.agentId, filters.teamId].filter(Boolean).length;
 
@@ -1356,13 +1357,14 @@ export const TicketSidebar = React.memo(function TicketSidebar({
 
       <div style={styles.tabsWrap}>
         <div style={styles.tabs}>
-          {['mine', 'pending', 'all'].map((tabId) => (
+          {['mine', 'pending', 'all', 'resolved'].map((tabId) => (
             <button
               key={tabId}
+              type="button"
               onClick={() => setTab(tabId)}
               style={{ ...styles.tab, ...(tab === tabId ? styles.tabActive : {}) }}
             >
-              {tabId === 'mine' ? 'Meus' : tabId === 'pending' ? 'Espera' : 'Contatos'}
+              {tabId === 'mine' ? 'Meus' : tabId === 'pending' ? 'Espera' : tabId === 'resolved' ? 'Concluídos' : 'Contatos'}
               {counts[tabId] > 0 && <span style={styles.badge}>{counts[tabId]}</span>}
             </button>
           ))}

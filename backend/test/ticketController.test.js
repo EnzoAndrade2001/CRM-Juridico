@@ -45,4 +45,5 @@ test('ticket list returns the linked legal opportunity summary', async (t) => {
     caseNumber: true,
   });
   assert.equal(res.payload.counts.all, 0);
+  assert.equal(res.payload.counts.resolved, 0);
 });

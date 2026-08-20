@@ -62,7 +62,7 @@ export function useInboxTickets({ me }) {
   const [tab, setTab] = useState('mine');
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({ priority: '', agentId: '', teamId: '' });
-  const [counts, setCounts] = useState({ mine: 0, pending: 0, all: 0 });
+  const [counts, setCounts] = useState({ mine: 0, pending: 0, all: 0, resolved: 0 });
 
   const tabRef = useRef(tab);
   const filtersRef = useRef(filters);
@@ -105,7 +105,7 @@ export function useInboxTickets({ me }) {
       );
 
       setTickets(normalizeTicketsForTab(data.tickets || [], currentTab));
-      setCounts(data.counts || { mine: 0, pending: 0, all: 0 });
+      setCounts(data.counts || { mine: 0, pending: 0, all: 0, resolved: 0 });
     } catch (error) {
       console.error(error);
     }
@@ -139,7 +139,9 @@ export function useInboxTickets({ me }) {
         ? ticket.status === 'open' && ticket.agentId === currentUserId
         : currentTab === 'pending'
           ? pendingMatch
-          : ['open', 'resolved'].includes(ticket.status);
+          : currentTab === 'resolved'
+            ? ticket.status === 'resolved'
+            : ticket.status === 'open';
 
     if (!tabMatch) return false;
     if (currentFilters.priority && ticket.priority !== currentFilters.priority) return false;
