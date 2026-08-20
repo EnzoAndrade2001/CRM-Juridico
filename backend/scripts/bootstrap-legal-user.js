@@ -28,7 +28,7 @@ async function main() {
   const tenantName = String(process.env.BOOTSTRAP_TENANT_NAME || 'Escritório Dra. Eduarda').trim();
   const tenantSlug = normalizeSlug(process.env.BOOTSTRAP_TENANT_SLUG || 'eduarda');
   const userName = String(process.env.BOOTSTRAP_USER_NAME || 'Dra. Eduarda').trim();
-  const userEmail = required('BOOTSTRAP_USER_EMAIL').toLowerCase();
+  const userEmail = String(process.env.BOOTSTRAP_USER_EMAIL || 'eduarda@juridico.com.br').trim().toLowerCase();
   const userPassword = required('BOOTSTRAP_USER_PASSWORD');
 
   if (userPassword.length < 10) {
@@ -38,13 +38,13 @@ async function main() {
 
   const tenant = await prisma.tenant.upsert({
     where: { slug: tenantSlug },
-    update: {},
+    update: { maxUsers: 0 },
     create: {
       name: tenantName,
       slug: tenantSlug,
       plan: 'trial',
       maxConnections: 1,
-      maxUsers: 5,
+      maxUsers: 0,
       settings: { create: {} },
     },
   });
