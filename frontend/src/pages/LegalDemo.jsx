@@ -37,6 +37,7 @@ import LegalKnowledgeBase from '../features/legal/LegalKnowledgeBase';
 import LegalDocuments from '../features/legal/LegalDocuments';
 import useLegalWorkspace from '../features/legal/useLegalWorkspace';
 import RealInbox from './Inbox';
+import Campaigns from './Campaigns';
 import ConnectionsPage from './Connections';
 import './legal-demo.css';
 
@@ -74,7 +75,7 @@ function StatusPill({ children, tone = 'neutral' }) {
   return <span className={`jd-pill jd-pill--${tone}`}>{children}</span>;
 }
 
-function Sidebar({ active, setActive, open, setOpen }) {
+function Sidebar({ active, setActive, open, setOpen, demoMode = false }) {
   return (
     <>
       {open && <button className="jd-overlay" type="button" aria-label="Fechar menu" onClick={() => setOpen(false)} />}
@@ -99,7 +100,10 @@ function Sidebar({ active, setActive, open, setOpen }) {
         </nav>
         <div className="jd-ai-card">
           <span className="jd-ai-card__icon"><Sparkles size={18} /></span>
-          <div><strong>IA em operação</strong><small>94% resolvidos sem espera</small></div>
+          <div>
+            <strong>{demoMode ? 'IA em demonstração' : 'IA em preparação'}</strong>
+            <small>{demoMode ? 'Dados fictícios neste navegador' : 'Ativação após configurar o provedor'}</small>
+          </div>
           <span className="jd-live-dot" />
         </div>
         <div className="jd-user-card">
@@ -295,7 +299,7 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
   return (
     <div className="legal-demo">
       <div className="jd-demo-ribbon"><span><Sparkles size={14} /> {demoMode ? 'DEMONSTRAÇÃO INTERATIVA' : 'AMBIENTE DO ESCRITÓRIO'}</span><p>{demoMode ? 'Dados fictícios · alterações salvas neste navegador' : 'Dados protegidos do escritório'}</p></div>
-      <Sidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} />
+      <Sidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} demoMode={demoMode} />
       <main className="jd-main">
         <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} />
         {active === 'visao-geral' && <LegalOverviewPanel workspace={legalWorkspace} onNavigate={setActive} />}
@@ -303,7 +307,7 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
         {active === 'clientes' && <LegalClients workspace={legalWorkspace} onNavigate={setActive} />}
         {active === 'crm' && <CrmDemo workspace={legalWorkspace} />}
         {active === 'documentos' && (demoMode ? <PlaceholderPage type={active} /> : <LegalDocuments workspace={legalWorkspace} contactId={new URLSearchParams(window.location.search).get('contactId')} />)}
-        {active === 'campanhas' && <CampaignsDemo />}
+        {active === 'campanhas' && (demoMode ? <CampaignsDemo /> : <Campaigns />)}
         {active === 'conhecimento' && (demoMode ? <PlaceholderPage type={active} /> : <LegalKnowledgeBase />)}
         {active === 'conexoes' && (demoMode ? <PlaceholderPage type={active} /> : <div className="jd-connections-shell"><ConnectionsPage /></div>)}
       </main>

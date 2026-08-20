@@ -20,7 +20,7 @@ A adaptação seguirá três regras:
 | CRM jurídico | Contact + LegalLead + LegalMatter + LegalTask | Backend e fluxo visual implementados | Manter visível; será o funil oficial do escritório |
 | Tarefas e prazos | LegalTask | API implementada e tarefas exibidas dentro do CRM | Manter inicialmente dentro do CRM; criar agenda própria somente se o piloto exigir |
 | Documentos | Upload existente + LegalDocument | Backend privado e interface jurídica implementados, com solicitação, upload, revisão, download autenticado e vínculos com cliente/caso | Manter visível no módulo próprio e dentro da ficha do cliente e do caso |
-| Campanhas | Campaign, contatos, etiquetas e Evolution API | Envio básico existente; tela jurídica ainda simulada | Manter visível depois de adicionar segmentação, consentimento, fila e descadastro |
+| Campanhas | Campaign, contatos, etiquetas e Evolution API | Tela jurídica agora usa o envio básico real; consentimento, fila e descadastro ainda precisam de evolução | Manter visível com teste controlado e evoluir os controles de campanha |
 | Base da IA | Knowledge e KnowledgeLog | CRUD e tela jurídica conectados ao banco | Manter visível com linguagem e categorias jurídicas |
 | Administração | Users, Teams, WaInstance e Settings | Backend e telas existentes | Exibir em área secundária somente para administradores |
 
@@ -196,14 +196,14 @@ Publicações do Instagram não precisam ser copiadas para dentro do CRM no MVP.
 | Classificação | Situação |
 | --- | --- |
 | Reaproveitado e conectado | Login, tenant, clientes, oportunidades, casos, tarefas, visão geral jurídica, auditoria e fluxo Inbox → cliente → oportunidade → avanço de etapa |
-| Reaproveitado no backend, aguardando tela jurídica real | Campanhas, usuários, equipes e conexões |
+| Reaproveitado no backend, aguardando ajustes de experiência | Usuários e equipes; conexões já possuem tela operacional |
 | Novo e implementado no backend | Documentos jurídicos, estrutura de consentimento e validação do vínculo de oportunidade com atendimento |
 | Novo e ainda pendente | Estado IA/humano por conversa, adaptador de provedor, qualificação automática e regras de transferência |
 | Fora do produto jurídico | Firebird, ordens de serviço, equipamentos, faturamento técnico, prospecção e RevGuard |
 
 ## 9. Próxima sequência de implementação
 
-1. Adaptar campanhas existentes para segmentação jurídica e consentimento.
+1. Adaptar campanhas existentes para segmentação jurídica, consentimento, fila e descadastro.
 2. Criar a configuração de modo IA, híbrido ou humano por conversa.
 3. Simplificar o menu conforme este mapa, sem remover rotas compartilhadas.
 4. Validar o fluxo completo em PostgreSQL de homologação e WhatsApp de teste.
