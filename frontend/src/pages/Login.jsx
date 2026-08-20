@@ -65,7 +65,7 @@ export default function Login() {
     }
   }
 
-  const primaryColor = tenantInfo?.primaryColor || '#C9A84E';
+  const primaryColor = tenantInfo?.primaryColor || '#BD9345';
   const displayName = tenantInfo?.name || (routeSlug ? routeSlug.toUpperCase() : 'CRM Jurídico');
   const displayMonogram = tenantInfo ? getMonogram(displayName) : 'PL';
 
@@ -174,7 +174,7 @@ const s = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100dvh',
-    background: '#0B0D12',
+    background: '#07182C',
     fontFamily: 'var(--font-main)',
     position: 'relative',
     overflow: 'hidden',
@@ -183,7 +183,7 @@ const s = {
   grid: {
     position: 'absolute',
     inset: 0,
-    backgroundImage: 'linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px)',
+    backgroundImage: 'linear-gradient(rgba(214,182,110,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(214,182,110,0.045) 1px, transparent 1px)',
     backgroundSize: '48px 48px',
     maskImage: 'linear-gradient(to bottom, rgba(0,0,0,.55), transparent 78%)',
     pointerEvents: 'none',
@@ -199,11 +199,11 @@ const s = {
   },
   card: {
     width: 'min(100%, 430px)',
-    background: 'rgba(17, 21, 29, 0.94)',
+    background: 'rgba(14, 41, 70, 0.97)',
     padding: 'clamp(2rem, 5vw, 3rem)',
     borderRadius: 'var(--radius-lg)',
-    border: '1px solid #293241',
-    boxShadow: 'var(--shadow-lg)',
+    border: '1px solid rgba(214, 182, 110, 0.34)',
+    boxShadow: '0 26px 70px rgba(2, 12, 25, 0.42)',
     zIndex: 1,
     position: 'relative',
     backdropFilter: 'blur(18px)',
@@ -217,7 +217,7 @@ const s = {
     height: '64px',
     margin: '0 auto var(--space-5)',
     borderRadius: 'var(--radius-md)',
-    background: '#171C26',
+    background: '#07182C',
     border: '1px solid',
     color: '#F4F6FA',
     display: 'inline-flex',
@@ -232,19 +232,19 @@ const s = {
   },
   monogramAccent: { position: 'absolute', inset: '0 auto 0 0', width: '3px' },
   eyebrow: { margin: '0 0 var(--space-2)', fontSize: 'var(--text-xs)', fontWeight: 700, letterSpacing: '0.11em', textTransform: 'uppercase' },
-  title: { fontSize: '1.65rem', lineHeight: 1.2, fontWeight: 700, color: '#F4F6FA', letterSpacing: '-0.035em', margin: 0 },
-  subtitle: { color: '#AAB4C5', fontSize: 'var(--text-sm)', lineHeight: 1.6, margin: 'var(--space-2) auto 0', maxWidth: '22rem' },
+  title: { fontSize: '1.65rem', lineHeight: 1.2, fontWeight: 700, color: '#FFFFFF', letterSpacing: '-0.035em', margin: 0 },
+  subtitle: { color: '#D1DAE5', fontSize: 'var(--text-sm)', lineHeight: 1.6, margin: 'var(--space-2) auto 0', maxWidth: '22rem' },
   form: { display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' },
   inputGroup: { display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' },
-  label: { fontSize: 'var(--text-xs)', fontWeight: 600, color: '#AAB4C5' },
+  label: { fontSize: 'var(--text-xs)', fontWeight: 600, color: '#D6B66E' },
   input: {
     minHeight: '48px',
     padding: '0.8rem 0.95rem',
-    background: '#171C26',
-    border: '1px solid #293241',
+    background: '#07182C',
+    border: '1px solid #385471',
     borderRadius: 'var(--radius-sm)',
     fontSize: 'var(--text-md)',
-    color: '#F4F6FA',
+    color: '#FFFFFF',
     outline: 'none',
     transition: 'border-color 0.16s ease, box-shadow 0.16s ease',
     width: '100%',
@@ -264,9 +264,9 @@ const s = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 'var(--space-2)',
-    boxShadow: '0 10px 26px rgba(201, 168, 78, 0.15)',
+    boxShadow: '0 10px 26px rgba(189, 147, 69, 0.24)',
   },
   error: { color: '#FCA5A5', fontSize: 'var(--text-sm)', background: 'rgba(239, 68, 68, 0.1)', padding: 'var(--space-3)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(239, 68, 68, 0.26)' },
-  footer: { marginTop: 'var(--space-8)', paddingTop: 'var(--space-5)', borderTop: '1px solid #293241', display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 'var(--space-2)', textAlign: 'center', fontSize: 'var(--text-xs)', color: '#7C899E' },
-  footerDot: { color: '#C9A84E' },
+  footer: { marginTop: 'var(--space-8)', paddingTop: 'var(--space-5)', borderTop: '1px solid #2C4862', display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 'var(--space-2)', textAlign: 'center', fontSize: 'var(--text-xs)', color: '#B8C3D0' },
+  footerDot: { color: '#D6B66E' },
 };
