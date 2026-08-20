@@ -902,15 +902,17 @@ export function ContactPanel({ ticket, onClose, onUpdate, onImageClick, isMobile
       <div style={styles.infoSection}>
         <h5 style={styles.infoLabel}>Fotos e Videos</h5>
         <div style={{ ...styles.mediaGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : styles.mediaGrid.gridTemplateColumns }}>
-          {media.filter((item) => item.mediaType === 'image' || item.mediaType === 'video').slice(0, 12).map((item) => (
+          {media.filter((item) => ['image', 'video', 'sticker'].includes(item.mediaType)).slice(0, 12).map((item) => (
             item.mediaType === 'image' ? (
+              <img key={item.id} src={getMediaUrl(item.mediaUrl)} style={styles.mediaThumb} onClick={() => onImageClick(getMediaUrl(item.mediaUrl))} />
+            ) : item.mediaType === 'sticker' ? (
               <img key={item.id} src={getMediaUrl(item.mediaUrl)} style={styles.mediaThumb} onClick={() => onImageClick(getMediaUrl(item.mediaUrl))} />
             ) : (
               <video key={item.id} src={getMediaUrl(item.mediaUrl)} style={{...styles.mediaThumb, background: '#000'}} controls={false} onClick={() => triggerMediaDownload(getMediaUrl(item.mediaUrl))} />
             )
           ))}
         </div>
-        {media.filter((item) => item.mediaType === 'image' || item.mediaType === 'video').length === 0 ? <div style={styles.infoEmpty}>Nenhuma imagem ou video</div> : null}
+        {media.filter((item) => ['image', 'video', 'sticker'].includes(item.mediaType)).length === 0 ? <div style={styles.infoEmpty}>Nenhuma imagem, figurinha ou video</div> : null}
       </div>
 
       <div style={styles.infoSection}>

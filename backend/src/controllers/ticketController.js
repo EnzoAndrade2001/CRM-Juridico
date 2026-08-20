@@ -1032,6 +1032,7 @@ async function sendMediaMessage(req, res) {
         fromMe: true,
         mediaUrl,
         mediaType,
+        mediaStatus: 'ok',
         fileName: file.originalname,
         externalId,
         quotedMsgId,

@@ -4,6 +4,12 @@ const path = require('path');
 const prisma = require('../lib/prisma');
 const evolutionService = require('./evolutionService');
 
+let io = null;
+
+function setIo(socketIo) {
+  io = socketIo;
+}
+
 async function processScheduledMessages() {
   const now = new Date();
   
@@ -86,6 +92,15 @@ async function retryPendingMedia() {
       mediaStatus: 'pending'
     };
 
+    const expiredMessages = await prisma.message.findMany({
+      where: {
+        ...mediaPendingWhere,
+        createdAt: { lt: fifteenMinutesAgo }
+      },
+      select: { id: true, ticketId: true, ticket: { select: { tenantId: true } } },
+      take: 100,
+    });
+
     const expired = await prisma.message.updateMany({
       where: {
         ...mediaPendingWhere,
@@ -95,6 +110,15 @@ async function retryPendingMedia() {
     });
     if (expired.count > 0) {
       console.log(`[media-retry] ${expired.count} mídias marcadas como falha definitiva (token expirado).`);
+      if (io) {
+        expiredMessages.forEach((message) => {
+          if (!message.ticket?.tenantId) return;
+          io.to(message.ticket.tenantId).emit('message_updated', {
+            ticketId: message.ticketId,
+            message: { id: message.id, mediaStatus: 'failed' },
+          });
+        });
+      }
     }
 
     // 2. Tenta rebaixar mídias recentes (menos de 15 min) ainda pendentes
@@ -135,10 +159,19 @@ async function retryPendingMedia() {
 
         if (base64) {
           const mediaUrl = await evolutionService.saveMediaFile(base64, mimetype, msg.id);
-          await prisma.message.update({
+          const updated = await prisma.message.update({
             where: { id: msg.id },
             data: { mediaUrl, mediaStatus: 'ok' }
           });
+          if (io) {
+            const tenantId = msg.ticket?.tenantId;
+            if (tenantId) {
+              io.to(tenantId).emit('message_updated', {
+                ticketId: msg.ticketId,
+                message: updated,
+              });
+            }
+          }
           console.log(`[media-retry] ✅ Mídia recuperada para msg ${msg.id}`);
         }
       } catch (err) {
@@ -169,4 +202,4 @@ function start() {
   console.log('[cleanup] Cron de limpeza noturna agendado (03:00)');
 }
 
-module.exports = { start };
+module.exports = { start, setIo };

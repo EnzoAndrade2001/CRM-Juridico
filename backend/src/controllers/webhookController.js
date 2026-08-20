@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma');
 const path = require('path');
 const fs = require('fs');
+const { mediaPath } = require('../utils/uploads');
 const evolutionService = require('../services/evolutionService');
 const aiService = require('../services/aiService');
 const businessHourService = require('../services/businessHourService');
@@ -221,7 +222,7 @@ function extractMedia(msg) {
   if (m.audioMessage)    return { type: 'audio',    caption: '🎤 Áudio' };
   if (m.pttMessage)      return { type: 'audio',    caption: '🎤 Áudio' };
   if (m.documentMessage) return { type: 'document', caption: m.documentMessage.caption || '', fileName: m.documentMessage.fileName || 'Documento' };
-  if (m.stickerMessage)  return { type: 'image',    caption: '' };
+  if (m.stickerMessage)  return { type: 'sticker',  caption: '' };
   return null;
 }
 
@@ -290,12 +291,19 @@ function normalizeHistoryForAi(messages = []) {
 async function downloadMedia(settings, instanceName, msg, messageId) {
   let attempts = 0;
   const maxAttempts = 5;
+  const evolutionUrl = settings?.evolutionUrl || process.env.DEFAULT_EVOLUTION_URL;
+  const evolutionKey = settings?.evolutionKey || process.env.DEFAULT_EVOLUTION_KEY;
+
+  if (!evolutionUrl || !evolutionKey) {
+    console.warn(`[media-download] [${instanceName}] Evolution API não configurada.`);
+    return null;
+  }
 
   while (attempts < maxAttempts) {
     try {
       console.log(`[media-download] [${instanceName}] Tentativa ${attempts + 1} para msg ${msg.key.id}...`);
       const result = await evolutionService.getMediaBase64(
-        settings.evolutionUrl, settings.evolutionKey, instanceName, msg.key
+        evolutionUrl, evolutionKey, instanceName, msg.key
       );
       
       const base64 = result?.base64 || result?.data?.base64;
@@ -556,6 +564,7 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
       fromMe,
       fromBot: false,
       mediaType: media?.type || null,
+      ...(media ? { mediaStatus: 'pending' } : {}),
       fileName: media?.fileName || null,
       externalId,
       quotedMsgId,
@@ -620,7 +629,7 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
       }
 
       let transcription = null;
-      const fullPath = path.join(__dirname, '../../', mediaUrl);
+      const fullPath = path.join(mediaPath, path.basename(mediaUrl));
 
       if (media.type === 'audio' && aiService.hasAiConfigured(tenant.settings)) {
         try {

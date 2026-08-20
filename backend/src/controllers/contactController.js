@@ -120,7 +120,7 @@ async function getMedia(req, res) {
     where: {
       ticket: { contactId: id, tenantId: req.user.tenantId },
       mediaUrl: { not: null },
-      mediaType: { in: ['image', 'document', 'audio'] },
+      mediaType: { in: ['image', 'video', 'audio', 'document', 'sticker'] },
     },
     orderBy: { createdAt: 'desc' },
     take: 20,

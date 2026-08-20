@@ -20,6 +20,7 @@ const quickResponseRoutes = require('./routes/quickResponses');
 const internalMessageRoutes = require('./routes/internalMessages');
 const scheduledMessageRoutes = require('./routes/scheduledMessages');
 const scheduleProcessor = require('./services/scheduleProcessor');
+const { setIo: setIoSchedule } = scheduleProcessor;
 const { setIo: setIoWebhook } = require('./controllers/webhookController');
 const { setIo: setIoTicket } = require('./controllers/ticketController');
 const { setIo: setIoInternal } = require('./controllers/internalMessageController');
@@ -79,6 +80,7 @@ setIoCampaign(io);
 setIoBilling(io);
 setIoManagerCopy(io);
 setIoBillingDocuments(io);
+setIoSchedule(io);
 
 app.use(cors({ origin: frontendOrigin, credentials: true }));
 app.use(express.json({ limit: '100mb' }));
