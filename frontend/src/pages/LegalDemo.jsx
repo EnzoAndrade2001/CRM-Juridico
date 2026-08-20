@@ -21,7 +21,6 @@ import {
   MoreHorizontal,
   Paperclip,
   Plus,
-  Scale,
   Search,
   Send,
   ShieldCheck,
@@ -36,6 +35,7 @@ import LegalOverviewPanel from '../features/legal/LegalOverview';
 import LegalKnowledgeBase from '../features/legal/LegalKnowledgeBase';
 import LegalDocuments from '../features/legal/LegalDocuments';
 import useLegalWorkspace from '../features/legal/useLegalWorkspace';
+import pedroMonogram from '../assets/pedro-bastos-lund-monogram.png';
 import RealInbox from './Inbox';
 import Campaigns from './Campaigns';
 import ConnectionsPage from './Connections';
@@ -81,7 +81,7 @@ function Sidebar({ active, setActive, open, setOpen, demoMode = false }) {
       {open && <button className="jd-overlay" type="button" aria-label="Fechar menu" onClick={() => setOpen(false)} />}
       <aside className={`jd-sidebar ${open ? 'is-open' : ''}`}>
         <div className="jd-brand">
-          <span className="jd-brand__mark"><Scale size={21} strokeWidth={2.2} /></span>
+          <span className="jd-brand__mark jd-brand__mark--logo"><img src={pedroMonogram} alt="Pedro Bastos Lund" /></span>
           <span><strong>CRM Jurídico</strong><small>ATENDIMENTO PRO PEDRO LUND</small></span>
           <button className="jd-sidebar__close" type="button" onClick={() => setOpen(false)}><X size={20} /></button>
         </div>
