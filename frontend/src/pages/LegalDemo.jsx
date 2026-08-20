@@ -390,13 +390,13 @@ function LegalSettings({ demoMode }) {
 
           <div style={s.field}>
             <label style={s.label}>Chave OpenAI</label>
-            <input style={s.input} type="password" value={form.openaiKey || ''} onChange={e => setForm(f => ({ ...f, openaiKey: e.target.value }))} placeholder="sk-proj-..." />
+            <input style={s.input} type="password" autoComplete="new-password" value={form.openaiKey || ''} onChange={e => setForm(f => ({ ...f, openaiKey: e.target.value }))} placeholder="sk-proj-..." />
             <p style={s.hint}>Melhor para transcrição de áudio em PT-BR (Whisper) e respostas mais naturais. Gere em platform.openai.com/api-keys</p>
           </div>
 
           <div style={s.field}>
             <label style={s.label}>Chave Gemini (alternativa)</label>
-            <input style={s.input} type="password" value={form.geminiKey || ''} onChange={e => setForm(f => ({ ...f, geminiKey: e.target.value }))} placeholder="AIza..." />
+            <input style={s.input} type="password" autoComplete="new-password" value={form.geminiKey || ''} onChange={e => setForm(f => ({ ...f, geminiKey: e.target.value }))} placeholder="AIza..." />
             <p style={s.hint}>Chave do Google AI Studio. Usada quando o provedor for Gemini ou Auto sem chave OpenAI.</p>
           </div>
         </div>

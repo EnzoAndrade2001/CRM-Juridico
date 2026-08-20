@@ -404,6 +404,7 @@ export default function Settings() {
                     <input
                       style={s.input}
                       type="password"
+                      autoComplete="new-password"
                       value={form.evolutionKey}
                       onChange={(e) => setForm({ ...form, evolutionKey: e.target.value })}
                       placeholder="42-caracteres..."
@@ -460,6 +461,7 @@ export default function Settings() {
                 <input
                   style={s.input}
                   type="password"
+                  autoComplete="new-password"
                   value={form.openaiKey || ''}
                   onChange={(e) => setForm({ ...form, openaiKey: e.target.value })}
                   placeholder="sk-proj-..."
@@ -472,6 +474,7 @@ export default function Settings() {
                 <input
                   style={s.input}
                   type="password"
+                  autoComplete="new-password"
                   value={form.geminiKey}
                   onChange={(e) => setForm({ ...form, geminiKey: e.target.value })}
                   placeholder="AIza..."
@@ -483,6 +486,7 @@ export default function Settings() {
                 <input
                   style={s.input}
                   type="password"
+                  autoComplete="new-password"
                   value={form.serpApiKey}
                   onChange={(e) => setForm({ ...form, serpApiKey: e.target.value })}
                   placeholder="Cole aqui sua chave do serpapi.com"
@@ -993,6 +997,7 @@ export default function Settings() {
               <input
                 style={s.input}
                 type="password"
+                autoComplete="new-password"
                 value={profile.password}
                 onChange={(e) => setProfile({ ...profile, password: e.target.value })}
                 placeholder="******"
@@ -1034,6 +1039,7 @@ export default function Settings() {
                       <input
                         style={{ ...s.input, flex: 1 }}
                         type={showToken ? "text" : "password"}
+                        autoComplete="new-password"
                         value={form.firebirdClientToken}
                         onChange={(e) => setForm({ ...form, firebirdClientToken: e.target.value })}
                         placeholder="Gere um token e salve a integração"

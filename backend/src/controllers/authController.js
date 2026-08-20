@@ -2,12 +2,60 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../lib/prisma');
 
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_FAILURES = 10;
+const failedLogins = new Map();
+
+function getLoginKey(req, email) {
+  const address = req.ip || req.socket?.remoteAddress || 'unknown';
+  return `${address}|${email || '<missing>'}`;
+}
+
+function getLoginAttempt(key) {
+  const now = Date.now();
+  const current = failedLogins.get(key);
+  if (!current || current.resetAt <= now) {
+    failedLogins.delete(key);
+    return null;
+  }
+  return current;
+}
+
+function isLoginBlocked(key) {
+  const current = getLoginAttempt(key);
+  return current && current.failures >= LOGIN_MAX_FAILURES ? current : null;
+}
+
+function recordLoginFailure(key) {
+  const now = Date.now();
+  const current = getLoginAttempt(key) || { failures: 0, resetAt: now + LOGIN_WINDOW_MS };
+  current.failures += 1;
+  failedLogins.set(key, current);
+  return current;
+}
+
+function clearLoginFailures(key) {
+  failedLogins.delete(key);
+}
+
 async function login(req, res) {
   const { email, password, slug } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Email e senha obrigatórios' });
 
   // Normalize identifiers while preserving the password exactly as entered.
-  const normalizedEmail = String(email).trim().toLowerCase();
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const loginKey = getLoginKey(req, normalizedEmail);
+  const blocked = isLoginBlocked(loginKey);
+  if (blocked) {
+    const retryAfter = Math.max(1, Math.ceil((blocked.resetAt - Date.now()) / 1000));
+    res.setHeader('Retry-After', String(retryAfter));
+    return res.status(429).json({ error: 'Muitas tentativas. Tente novamente mais tarde.' });
+  }
+
+  if (!email || !password) {
+    recordLoginFailure(loginKey);
+    return res.status(400).json({ error: 'Email e senha obrigatórios' });
+  }
+
   const normalizedSlug = slug ? String(slug).trim().toLowerCase() : '';
 
   const user = await prisma.user.findFirst({
@@ -15,7 +63,10 @@ async function login(req, res) {
     include: { tenant: true },
   });
 
-  if (!user || !user.active) return res.status(401).json({ error: 'Credenciais inválidas' });
+  if (!user || !user.active) {
+    recordLoginFailure(loginKey);
+    return res.status(401).json({ error: 'Credenciais inválidas' });
+  }
 
   // Se o login for feito via portal de empresa, validar se o usuário pertence a ela
   if (normalizedSlug && user.tenant.slug !== normalizedSlug) {
@@ -28,7 +79,12 @@ async function login(req, res) {
   }
 
   const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(401).json({ error: 'Credenciais inválidas' });
+  if (!valid) {
+    recordLoginFailure(loginKey);
+    return res.status(401).json({ error: 'Credenciais inválidas' });
+  }
+
+  clearLoginFailures(loginKey);
 
   const token = jwt.sign(
     { userId: user.id, tenantId: user.tenantId, role: user.role },

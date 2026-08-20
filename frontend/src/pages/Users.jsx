@@ -249,6 +249,7 @@ export default function Users() {
                   <input
                     style={s.input}
                     type="password"
+                    autoComplete="new-password"
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     required={modal === 'new'}

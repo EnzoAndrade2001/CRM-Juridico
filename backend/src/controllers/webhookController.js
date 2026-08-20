@@ -678,6 +678,9 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
             delete pendingReplies[ticket.id];
           } catch (err) {
             console.error('[bot-media-debounce] erro:', err.message);
+            await handoffAfterBotFailure(tenant, waInstance, ticket, contact).catch((handoffError) => {
+              console.error('[bot-fallback] erro ao transferir atendimento:', handoffError.message);
+            });
             delete pendingReplies[ticket.id];
           }
         }, 12000);
@@ -713,6 +716,9 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
         delete pendingReplies[ticket.id];
       } catch (err) {
         console.error('[bot-debounce] erro fatal:', err.message);
+        await handoffAfterBotFailure(tenant, waInstance, ticket, contact).catch((handoffError) => {
+          console.error('[bot-fallback] erro ao transferir atendimento:', handoffError.message);
+        });
         delete pendingReplies[ticket.id];
       }
     }, 12000);
@@ -831,6 +837,64 @@ async function handleWebhook(req, res) {
 }
 
 const pendingReplies = {};
+
+// Se o provedor de IA falhar (sem créditos, timeout ou indisponibilidade), o
+// atendimento não pode ficar preso no modo robô. Abrimos a conversa para a
+// equipe humana e avisamos o cliente sem expor detalhes técnicos do erro.
+async function handoffAfterBotFailure(tenant, waInstance, ticket, contact) {
+  const fallbackMessage = 'No momento não consegui concluir sua resposta automaticamente. Sua mensagem foi encaminhada para nossa equipe, que continuará o atendimento.';
+  let sent;
+
+  try {
+    sent = await evolutionService.sendText(
+      tenant.settings?.evolutionUrl,
+      tenant.settings?.evolutionKey,
+      waInstance.instanceName,
+      contact.phone,
+      fallbackMessage
+    );
+  } catch (sendError) {
+    console.error('[bot-fallback] não foi possível avisar o cliente:', sendError.message);
+  }
+
+  const updatedTicket = await prisma.ticket.update({
+    where: { id: ticket.id },
+    data: { status: 'open', updatedAt: new Date(), lastMessageAt: new Date() },
+    include: { contact: true, agent: { select: { name: true } }, instance: { select: { instanceName: true } } },
+  });
+
+  await prisma.ticketEvent.create({
+    data: {
+      ticketId: ticket.id,
+      tenantId: tenant.id,
+      type: 'bot_error_handoff',
+      payload: JSON.stringify({ reason: 'provider_unavailable', notified: Boolean(sent) }),
+    },
+  });
+
+  if (sent) {
+    const fallbackMessageRecord = await prisma.message.create({
+      data: {
+        ticketId: ticket.id,
+        body: fallbackMessage,
+        fromMe: true,
+        fromBot: true,
+        externalId: sent?.key?.id || sent?.id,
+      },
+    });
+    if (io) io.to(tenant.id).emit('new_message', {
+      ticket: updatedTicket,
+      message: fallbackMessageRecord,
+      contact: updatedTicket.contact,
+    });
+  }
+
+  if (io) io.to(tenant.id).emit('ticket_updated', {
+    ticketId: ticket.id,
+    status: 'open',
+    reason: 'bot_error_handoff',
+  });
+}
 
 async function handleAutoTagging(tenant, ticket, contact) {
   try {

@@ -1,25 +1,52 @@
 const prisma = require('../lib/prisma');
 const { normalizePhoneNumber } = require('../services/evolutionService');
 
+const SECRET_MASK = '********';
+const SECRET_FIELDS = [
+  'evolutionKey',
+  'openaiKey',
+  'geminiKey',
+  'serpApiKey',
+  'firebirdClientToken',
+  'firebirdApiKey',
+];
+
+function maskSecret(value) {
+  return value ? SECRET_MASK : '';
+}
+
+function maskSettings(settings, defaults = {}) {
+  const response = { ...settings, ...defaults };
+  for (const field of SECRET_FIELDS) {
+    response[field] = maskSecret(response[field]);
+  }
+  return response;
+}
+
+function preserveMaskedSecret(value, currentValue) {
+  if (value === SECRET_MASK) return currentValue === undefined ? null : currentValue;
+  if (value === undefined) return undefined;
+  return value || null;
+}
+
 async function getSettings(req, res) {
   const settings = await prisma.tenantSettings.findUnique({
     where: { tenantId: req.user.tenantId },
   });
 
-  if (!settings) return res.json({
+  if (!settings) return res.json(maskSettings({}, {
     evolutionUrl: process.env.DEFAULT_EVOLUTION_URL || '',
     evolutionKey: process.env.DEFAULT_EVOLUTION_KEY || '',
-  });
+  }));
 
   // Injeta os padrões do servidor se o tenant não tiver configurado
-  res.json({
-    ...settings,
+  res.json(maskSettings(settings, {
     evolutionUrl: settings.evolutionUrl || process.env.DEFAULT_EVOLUTION_URL || '',
     evolutionKey: settings.evolutionKey || process.env.DEFAULT_EVOLUTION_KEY || '',
     systemPrompt: settings.botSystemPrompt,
     transferKeyword: settings.botTransferWord,
     outOfOfficeMessage: settings.outOfOfficeMessage
-  });
+  }));
 }
 
 async function saveSettings(req, res) {
@@ -44,6 +71,16 @@ async function saveSettings(req, res) {
     kpiContractValue, kpiServiceValue, kpiSlaLimitHours,
     billingMessageTemplate
   } = req.body;
+
+  const currentSettings = await prisma.tenantSettings.findUnique({
+    where: { tenantId: req.user.tenantId },
+  });
+  const savedEvolutionKey = preserveMaskedSecret(evolutionKey, currentSettings?.evolutionKey);
+  const savedOpenaiKey = preserveMaskedSecret(openaiKey, currentSettings?.openaiKey);
+  const savedGeminiKey = preserveMaskedSecret(geminiKey, currentSettings?.geminiKey);
+  const savedSerpApiKey = preserveMaskedSecret(serpApiKey, currentSettings?.serpApiKey);
+  const savedFirebirdClientToken = preserveMaskedSecret(firebirdClientToken, currentSettings?.firebirdClientToken);
+  const savedFirebirdApiKey = preserveMaskedSecret(firebirdApiKey, currentSettings?.firebirdApiKey);
 
   const parsedContractValue = kpiContractValue !== undefined && kpiContractValue !== '' ? parseFloat(kpiContractValue) : null;
   const parsedServiceValue = kpiServiceValue !== undefined && kpiServiceValue !== '' ? parseFloat(kpiServiceValue) : null;
@@ -78,14 +115,14 @@ async function saveSettings(req, res) {
     where: { tenantId: req.user.tenantId },
     update: { 
       botEnabled, 
-      geminiKey,
-      openaiKey,
+      geminiKey: savedGeminiKey,
+      openaiKey: savedOpenaiKey,
       aiProvider,
       botName,
       botSystemPrompt: systemPrompt,
       botTransferWord: transferKeyword,
       evolutionUrl,
-      evolutionKey,
+      evolutionKey: savedEvolutionKey,
       webhookUrl,
       outOfOfficeMessage,
       ratingEnabled,
@@ -103,10 +140,10 @@ async function saveSettings(req, res) {
       companyPhone,
       companyCity,
       companyState,
-      serpApiKey,
-      firebirdClientToken,
+      serpApiKey: savedSerpApiKey,
+      firebirdClientToken: savedFirebirdClientToken,
       firebirdApiUrl,
-      firebirdApiKey,
+      firebirdApiKey: savedFirebirdApiKey,
       firebirdAuthMode,
       firebirdHealthPath,
       firebirdContactsPath,
@@ -122,14 +159,14 @@ async function saveSettings(req, res) {
     create: { 
       tenantId: req.user.tenantId, 
       botEnabled, 
-      geminiKey,
-      openaiKey,
+      geminiKey: savedGeminiKey,
+      openaiKey: savedOpenaiKey,
       aiProvider,
       botName,
       botSystemPrompt: systemPrompt,
       botTransferWord: transferKeyword,
       evolutionUrl,
-      evolutionKey,
+      evolutionKey: savedEvolutionKey,
       webhookUrl,
       outOfOfficeMessage,
       ratingEnabled,
@@ -147,10 +184,10 @@ async function saveSettings(req, res) {
       companyPhone,
       companyCity,
       companyState,
-      serpApiKey,
-      firebirdClientToken,
+      serpApiKey: savedSerpApiKey,
+      firebirdClientToken: savedFirebirdClientToken,
       firebirdApiUrl,
-      firebirdApiKey,
+      firebirdApiKey: savedFirebirdApiKey,
       firebirdAuthMode,
       firebirdHealthPath,
       firebirdContactsPath,
@@ -165,7 +202,7 @@ async function saveSettings(req, res) {
     },
   });
 
-  res.json(settings);
+  res.json(maskSettings(settings));
 }
 
 async function getBusinessHours(req, res) {

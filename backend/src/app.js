@@ -41,6 +41,16 @@ const legalRoutes = require('./routes/legal');
 const publicCalculatorRoutes = require('./routes/publicCalculator');
 
 const app = express();
+app.disable('x-powered-by');
+
+// Headers básicos para reduzir exposição desnecessária e impedir que respostas
+// sejam interpretadas como outro tipo de conteúdo pelo navegador.
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
 app.use('/api/report', require('./routes/report'));
 
 const server = http.createServer(app);
@@ -60,13 +70,12 @@ function resolveFrontendOrigin(value) {
 }
 
 const frontendOrigin = resolveFrontendOrigin(process.env.FRONTEND_URL || 'http://localhost:5174');
+const corsOptions = frontendOrigin === '*'
+  ? { origin: false }
+  : { origin: frontendOrigin, credentials: true };
 
 const io = new Server(server, {
-  cors: { 
-    origin: frontendOrigin,
-    credentials: true,
-    methods: ["GET", "POST"]
-  },
+  cors: { ...corsOptions, methods: ['GET', 'POST'] },
   pingTimeout: 60000,
   pingInterval: 25000,
   connectTimeout: 45000,
@@ -82,9 +91,15 @@ setIoManagerCopy(io);
 setIoBillingDocuments(io);
 setIoSchedule(io);
 
-app.use(cors({ origin: frontendOrigin, credentials: true }));
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+app.use(cors(corsOptions));
+app.use(express.json({
+  limit: process.env.JSON_BODY_LIMIT || '10mb',
+}));
+app.use(express.urlencoded({
+  extended: false,
+  limit: process.env.URLENCODED_BODY_LIMIT || '1mb',
+  parameterLimit: 1000,
+}));
 
 // Endpoint usado pelo health check do EasyPanel e pelo monitoramento da VPS.
 // A consulta simples confirma que a API e o PostgreSQL estão respondendo.
@@ -152,6 +167,24 @@ app.use('/api/integrations/firebird', firebirdSyncRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/legal', legalRoutes);
 app.use('/api/public', publicCalculatorRoutes);
+
+// Respostas previsíveis para clientes que chamarem uma rota inexistente ou
+// enviarem uma requisição que falhe antes de chegar ao controller.
+app.use((req, res) => {
+  res.status(404).json({ error: 'Rota não encontrada' });
+});
+
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  const status = Number(err?.statusCode || err?.status) || 500;
+  const safeStatus = status >= 400 && status < 500 ? status : 500;
+  if (safeStatus >= 500) {
+    console.error('[http] erro não tratado:', err?.stack || err);
+  }
+  res.status(safeStatus).json({
+    error: safeStatus >= 500 ? 'Erro interno do servidor' : (err.message || 'Requisição inválida'),
+  });
+});
 
 const jwt = require('jsonwebtoken');
 
