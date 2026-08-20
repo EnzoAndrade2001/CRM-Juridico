@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { getSettings, saveSettings } from '../../services/api';
+import { getSettings, saveSettings } from '../services/api';
 import {
   ArrowUpRight,
   Bell,
@@ -241,7 +241,35 @@ function CampaignsDemo() {
     ['Documentos para revisão de benefício', 'Previdenciário · Qualificados', '386', 'Agendada · 19/08', '—', 'violet'],
     ['Pesquisa pós-consulta', 'Consultas realizadas', '214', 'Concluída', '89%', 'green'],
   ];
-  return <div className="jd-page"><div className="jd-section-intro"><div><h2>Campanhas</h2><p>Comunicação segmentada com revisão, limites e controle de descadastro.</p></div><button className="jd-primary" type="button" onClick={() => setCreated(true)}><Plus size={17} /> Nova campanha</button></div>{created && <div className="jd-demo-toast"><Check size={17} /> Rascunho criado. Nenhuma mensagem real será enviada neste ambiente.</div>}<section className="jd-campaign-stats"><article><Megaphone size={20} /><span><strong>3</strong> campanhas neste mês</span></article><article><Send size={20} /><span><strong>1.848</strong> mensagens entregues</span></article><article><MessageCircleMore size={20} /><span><strong>412</strong> respostas recebidas</span></article><article><ShieldCheck size={20} /><span><strong>99,2%</strong> entrega válida</span></article></section><section className="jd-card jd-campaign-table"><div className="jd-card__heading"><div><h3>Campanhas recentes</h3><p>Dados fictícios para demonstração</p></div><label className="jd-small-search"><Search size={15} /><input placeholder="Buscar campanha" /></label></div><div className="jd-table-head"><span>Campanha</span><span>Público</span><span>Contatos</span><span>Status</span><span>Entrega</span><span /></div>{campaigns.map(([name, audience, contacts, status, delivery, tone]) => <div className="jd-table-row" key={name}><span><b>{name}</b><small>Criada por Eduarda Andrade</small></span><span>{audience}</span><strong>{contacts}</strong><span><StatusPill tone={tone}>{status}</StatusPill></span><strong>{delivery}</strong><button type="button"><MoreHorizontal size={18} /></button>)}</section></div>;
+  return (
+    <div className="jd-page">
+      <div className="jd-section-intro">
+        <div><h2>Campanhas</h2><p>Comunicação segmentada com revisão, limites e controle de descadastro.</p></div>
+        <button className="jd-primary" type="button" onClick={() => setCreated(true)}><Plus size={17} /> Nova campanha</button>
+      </div>
+      {created && <div className="jd-demo-toast"><Check size={17} /> Rascunho criado. Nenhuma mensagem real será enviada neste ambiente.</div>}
+      <section className="jd-campaign-stats">
+        <article><Megaphone size={20} /><span><strong>3</strong> campanhas neste mês</span></article>
+        <article><Send size={20} /><span><strong>1.848</strong> mensagens entregues</span></article>
+        <article><MessageCircleMore size={20} /><span><strong>412</strong> respostas recebidas</span></article>
+        <article><ShieldCheck size={20} /><span><strong>99,2%</strong> entrega válida</span></article>
+      </section>
+      <section className="jd-card jd-campaign-table">
+        <div className="jd-card__heading"><div><h3>Campanhas recentes</h3><p>Dados fictícios para demonstração</p></div><label className="jd-small-search"><Search size={15} /><input placeholder="Buscar campanha" /></label></div>
+        <div className="jd-table-head"><span>Campanha</span><span>Público</span><span>Contatos</span><span>Status</span><span>Entrega</span><span /></div>
+        {campaigns.map(([name, audience, contacts, status, delivery, tone]) => (
+          <div className="jd-table-row" key={name}>
+            <span><b>{name}</b><small>Criada por Eduarda Andrade</small></span>
+            <span>{audience}</span>
+            <strong>{contacts}</strong>
+            <span><StatusPill tone={tone}>{status}</StatusPill></span>
+            <strong>{delivery}</strong>
+            <button type="button"><MoreHorizontal size={18} /></button>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
 }
 
 function LegalSettings({ demoMode }) {
@@ -440,6 +468,7 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
     <div className="legal-demo">
       <div className="jd-demo-ribbon"><span><Sparkles size={14} /> {demoMode ? 'DEMONSTRAÇÃO INTERATIVA' : 'AMBIENTE DO ESCRITÓRIO'}</span><p>{demoMode ? 'Dados fictícios · alterações salvas neste navegador' : 'Dados protegidos do escritório'}</p></div>
       <Sidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} demoMode={demoMode} />
+      <main className="jd-main">
         <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} />
         {active === 'visao-geral' && <LegalOverviewPanel workspace={legalWorkspace} onNavigate={setActive} />}
         {active === 'atendimentos' && (demoMode ? <InboxDemo /> : <RealInbox legalMode onOpenLegalClient={openLegalClient} onOpenLegalDocuments={openLegalDocuments} />)}
