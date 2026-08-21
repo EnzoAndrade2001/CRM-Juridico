@@ -2,6 +2,12 @@ const prisma = require('../lib/prisma');
 const historyService = require('../services/historyService');
 const geminiService = require('../services/geminiService');
 const evolutionService = require('../services/evolutionService');
+const {
+  LegalValidationError,
+  buildLegalLeadData,
+  validateLegalLeadState,
+  normalizedEnumToken,
+} = require('../domain/legalDomain');
 const path = require('path');
 const fs = require('fs');
 let io;
@@ -23,6 +29,51 @@ const legalLeadSummaryInclude = {
     },
   },
 };
+
+const legalLeadResolutionInclude = {
+  legalLead: {
+    select: {
+      ...legalLeadSummaryInclude.legalLead.select,
+      source: true,
+      summary: true,
+      lostReason: true,
+    },
+  },
+};
+
+const LEGAL_RESOLUTION_STAGES = new Set(['CONTRATADO', 'NAO_CONVERTIDO']);
+
+function buildResolutionLeadData(ticket, body = {}) {
+  if (body.legalOutcome === undefined || body.legalOutcome === null || body.legalOutcome === '') return null;
+
+  const stage = normalizedEnumToken(body.legalOutcome);
+  if (stage === 'NONE' || stage === 'SOMENTE_CONCLUIR') return null;
+  if (!LEGAL_RESOLUTION_STAGES.has(stage)) {
+    throw new LegalValidationError('Resultado jurídico inválido', [{
+      field: 'legalOutcome',
+      code: 'invalid_enum',
+      allowed: [...LEGAL_RESOLUTION_STAGES],
+    }]);
+  }
+
+  const currentLead = ticket.legalLead;
+  const contactLabel = ticket.contact?.name || ticket.contact?.phone || 'cliente';
+  const payload = {
+    contactId: ticket.contactId,
+    ticketId: ticket.id,
+    title: body.legalTitle || currentLead?.title || ticket.subject || `Atendimento jurídico — ${contactLabel}`,
+    area: body.legalArea || currentLead?.area || 'OUTRO',
+    stage,
+    urgency: currentLead?.urgency || 'MEDIA',
+    source: currentLead?.source || 'whatsapp',
+    summary: body.legalSummary !== undefined ? body.legalSummary : currentLead?.summary,
+    lostReason: stage === 'CONTRATADO'
+      ? null
+      : (body.lostReason !== undefined ? body.lostReason : currentLead?.lostReason),
+  };
+
+  return validateLegalLeadState(buildLegalLeadData(payload));
+}
 
 function hasMissingWhatsAppNumber(value) {
   if (Array.isArray(value)) return value.some(hasMissingWhatsAppNumber);
@@ -637,21 +688,70 @@ async function update(req, res) {
 
 async function resolve(req, res) {
   const { id } = req.params;
-  const existing = await prisma.ticket.findFirst({ where: { id, tenantId: req.user.tenantId } });
-  if (!existing) return res.status(404).json({ error: 'Ticket não encontrado' });
+  let ticket;
+  let legalOutcome = null;
 
-  const ticket = await prisma.ticket.update({
-    where: { id },
-    data: { status: 'resolved', resolvedAt: new Date() },
-    include: { contact: true, ...legalLeadSummaryInclude }
-  });
+  try {
+    ticket = await prisma.$transaction(async (tx) => {
+      const existing = await tx.ticket.findFirst({
+        where: { id, tenantId: req.user.tenantId },
+        include: { contact: true, ...legalLeadResolutionInclude },
+      });
+      if (!existing) return null;
+
+      const legalLeadData = buildResolutionLeadData(existing, req.body || {});
+      if (legalLeadData) {
+        legalOutcome = legalLeadData.stage;
+        const previousStage = existing.legalLead?.stage || null;
+        const lead = await tx.legalLead.upsert({
+          where: { ticketId: existing.id },
+          create: { ...legalLeadData, tenantId: req.user.tenantId },
+          update: legalLeadData,
+        });
+
+        await tx.legalActivity.create({
+          data: {
+            tenantId: req.user.tenantId,
+            actorId: req.user.userId || null,
+            entityType: 'lead',
+            entityId: lead.id,
+            type: existing.legalLead ? 'lead.updated' : 'lead.created',
+            payload: {
+              origin: 'ticket_resolution',
+              ticketId: existing.id,
+              fromStage: previousStage,
+              toStage: legalLeadData.stage,
+            },
+          },
+        });
+      }
+
+      return tx.ticket.update({
+        where: { id: existing.id },
+        data: { status: 'resolved', resolvedAt: new Date() },
+        include: { contact: true, ...legalLeadSummaryInclude },
+      });
+    });
+  } catch (error) {
+    if (error instanceof LegalValidationError) {
+      return res.status(400).json({ error: error.message, details: error.details });
+    }
+    console.error('[resolve] erro ao encerrar atendimento:', error);
+    return res.status(500).json({ error: 'Não foi possível encerrar o atendimento' });
+  }
+
+  if (!ticket) return res.status(404).json({ error: 'Ticket não encontrado' });
 
   // Auditoria
   await historyService.logEvent({
     ticketId: ticket.id,
     tenantId: req.user.tenantId,
     userId: req.user.userId,
-    type: 'resolved'
+    type: 'resolved',
+    payload: JSON.stringify({
+      legalOutcome,
+      legalLeadId: ticket.legalLead?.id || null,
+    }),
   });
 
   // Gatilho de Webhook Externo e Pesquisa de Satisfação
@@ -664,7 +764,13 @@ async function resolve(req, res) {
         const axios = require('axios');
         await axios.post(settings.webhookUrl, {
           event: 'ticket_resolved',
-          ticket: { id: ticket.id, contact: ticket.contact.phone, resolvedAt: ticket.resolvedAt }
+          ticket: {
+            id: ticket.id,
+            contact: ticket.contact.phone,
+            resolvedAt: ticket.resolvedAt,
+            legalOutcome,
+            legalLeadId: ticket.legalLead?.id || null,
+          }
         }, { timeout: 5000 }).catch(e => console.error('[webhook_external] erro:', e.message));
       }
 

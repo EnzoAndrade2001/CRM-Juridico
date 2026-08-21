@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const prisma = require('../src/lib/prisma');
-const { list } = require('../src/controllers/ticketController');
+const { list, resolve } = require('../src/controllers/ticketController');
 
 function responseRecorder() {
   return {
@@ -46,4 +46,148 @@ test('ticket list returns the linked legal opportunity summary', async (t) => {
   });
   assert.equal(res.payload.counts.all, 0);
   assert.equal(res.payload.counts.resolved, 0);
+});
+
+test('encerrar como contratado vincula a oportunidade ao mesmo contato e atendimento do WhatsApp', async (t) => {
+  const originals = {
+    transaction: prisma.$transaction,
+    settings: prisma.tenantSettings.findUnique,
+    eventCreate: prisma.ticketEvent.create,
+  };
+  t.after(() => {
+    prisma.$transaction = originals.transaction;
+    prisma.tenantSettings.findUnique = originals.settings;
+    prisma.ticketEvent.create = originals.eventCreate;
+  });
+
+  const calls = { activities: [] };
+  const tx = {
+    ticket: {
+      findFirst: async ({ where }) => ({
+        id: where.id,
+        tenantId: where.tenantId,
+        contactId: 'contact-whatsapp',
+        subject: null,
+        contact: { id: 'contact-whatsapp', name: 'Maria Cliente', phone: '5551999999999' },
+        legalLead: null,
+      }),
+      update: async ({ data }) => ({
+        id: 'ticket-1',
+        tenantId: 'tenant-a',
+        instanceId: 'instance-1',
+        contactId: 'contact-whatsapp',
+        contact: { id: 'contact-whatsapp', name: 'Maria Cliente', phone: '5551999999999' },
+        status: data.status,
+        resolvedAt: data.resolvedAt,
+        legalLead: { id: 'lead-1', stage: 'CONTRATADO', contactId: 'contact-whatsapp', ticketId: 'ticket-1' },
+      }),
+    },
+    legalLead: {
+      upsert: async (args) => {
+        calls.upsert = args;
+        return { id: 'lead-1', ...args.create };
+      },
+    },
+    legalActivity: {
+      create: async ({ data }) => {
+        calls.activities.push(data);
+        return data;
+      },
+    },
+  };
+  prisma.$transaction = async (handler) => handler(tx);
+  prisma.tenantSettings.findUnique = async () => null;
+  prisma.ticketEvent.create = async ({ data }) => data;
+
+  const req = {
+    params: { id: 'ticket-1' },
+    body: {
+      legalOutcome: 'CONTRATADO',
+      legalArea: 'CONSUMIDOR',
+      legalTitle: 'Revisão de contrato bancário',
+      legalSummary: 'Cliente confirmou a contratação pelo WhatsApp.',
+    },
+    user: { userId: 'user-1', tenantId: 'tenant-a' },
+  };
+  const res = responseRecorder();
+  await resolve(req, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(calls.upsert.where.ticketId, 'ticket-1');
+  assert.equal(calls.upsert.create.tenantId, 'tenant-a');
+  assert.equal(calls.upsert.create.contactId, 'contact-whatsapp');
+  assert.equal(calls.upsert.create.ticketId, 'ticket-1');
+  assert.equal(calls.upsert.create.stage, 'CONTRATADO');
+  assert.equal(calls.activities[0].type, 'lead.created');
+  assert.equal(calls.activities[0].payload.origin, 'ticket_resolution');
+  assert.equal(res.payload.legalLead.stage, 'CONTRATADO');
+});
+
+test('encerrar sem resultado jurídico não cria oportunidade', async (t) => {
+  const originals = {
+    transaction: prisma.$transaction,
+    settings: prisma.tenantSettings.findUnique,
+    eventCreate: prisma.ticketEvent.create,
+  };
+  t.after(() => {
+    prisma.$transaction = originals.transaction;
+    prisma.tenantSettings.findUnique = originals.settings;
+    prisma.ticketEvent.create = originals.eventCreate;
+  });
+
+  let upserted = false;
+  const tx = {
+    ticket: {
+      findFirst: async () => ({
+        id: 'ticket-1', tenantId: 'tenant-a', contactId: 'contact-1',
+        contact: { id: 'contact-1', name: 'Cliente', phone: '5551999999999' }, legalLead: null,
+      }),
+      update: async ({ data }) => ({
+        id: 'ticket-1', instanceId: 'instance-1', contactId: 'contact-1', status: data.status,
+        resolvedAt: data.resolvedAt, contact: { phone: '5551999999999' }, legalLead: null,
+      }),
+    },
+    legalLead: { upsert: async () => { upserted = true; } },
+    legalActivity: { create: async () => ({}) },
+  };
+  prisma.$transaction = async (handler) => handler(tx);
+  prisma.tenantSettings.findUnique = async () => null;
+  prisma.ticketEvent.create = async ({ data }) => data;
+
+  const res = responseRecorder();
+  await resolve({
+    params: { id: 'ticket-1' }, body: {}, user: { userId: 'user-1', tenantId: 'tenant-a' },
+  }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.payload.status, 'resolved');
+  assert.equal(upserted, false);
+});
+
+test('não convertido exige motivo e não encerra parcialmente o atendimento', async (t) => {
+  const originalTransaction = prisma.$transaction;
+  t.after(() => { prisma.$transaction = originalTransaction; });
+
+  let ticketUpdated = false;
+  const tx = {
+    ticket: {
+      findFirst: async () => ({
+        id: 'ticket-1', tenantId: 'tenant-a', contactId: 'contact-1', subject: null,
+        contact: { id: 'contact-1', name: 'Cliente', phone: '5551999999999' }, legalLead: null,
+      }),
+      update: async () => { ticketUpdated = true; },
+    },
+  };
+  prisma.$transaction = async (handler) => handler(tx);
+
+  const res = responseRecorder();
+  await resolve({
+    params: { id: 'ticket-1' },
+    body: { legalOutcome: 'NAO_CONVERTIDO', legalArea: 'OUTRO' },
+    user: { userId: 'user-1', tenantId: 'tenant-a' },
+  }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.match(res.payload.error, /lostReason/);
+  assert.equal(ticketUpdated, false);
 });

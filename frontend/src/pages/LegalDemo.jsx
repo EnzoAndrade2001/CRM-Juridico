@@ -579,7 +579,14 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
       <main className="jd-main">
         <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} currentUser={currentUser} onOpenSettings={() => setActive('configuracoes')} onSearch={searchClients} />
         {active === 'visao-geral' && <LegalOverviewPanel workspace={legalWorkspace} onNavigate={setActive} currentUser={currentUser} />}
-        {active === 'atendimentos' && (demoMode ? <InboxDemo /> : <RealInbox legalMode onOpenLegalClient={openLegalClient} onOpenLegalDocuments={openLegalDocuments} />)}
+        {active === 'atendimentos' && (demoMode ? <InboxDemo /> : (
+          <RealInbox
+            legalMode
+            onOpenLegalClient={openLegalClient}
+            onOpenLegalDocuments={openLegalDocuments}
+            onLegalWorkspaceChanged={legalWorkspace.refresh}
+          />
+        ))}
         {active === 'clientes' && <LegalClients workspace={legalWorkspace} onNavigate={setActive} initialSearch={clientSearch} />}
         {active === 'crm' && <CrmDemo workspace={legalWorkspace} />}
         {active === 'documentos' && (demoMode ? <PlaceholderPage type={active} /> : <LegalDocuments workspace={legalWorkspace} contactId={new URLSearchParams(window.location.search).get('contactId')} />)}

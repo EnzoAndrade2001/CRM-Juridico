@@ -26,10 +26,141 @@ import { useIsMobile } from '../hooks/useIsMobile';
 import CreateOsModal from '../components/CreateOsModal';
 import LinkContactModal from '../components/LinkContactModal';
 import InstanceSelectionModal from '../components/InstanceSelectionModal';
+import ModalShell from '../components/ui/ModalShell';
 import { CrmCustomerProfileModal } from './CRM';
 import { ChatHeader, ContactPanel, ForwardModal, MessageComposer, MessageList, TicketSidebar, TransferModal } from './inbox/components';
 import { Empty, sanitizeInternalBotText } from './inbox/helpers.jsx';
 import { useInboxMessages, useInboxRealtime, useInboxTickets } from './inbox/hooks';
+import { LEGAL_AREAS, labelFor } from '../features/legal/legalWorkspace';
+
+function LegalResolutionModal({ ticket, loading, onClose, onConfirm }) {
+  const existingLead = ticket?.legalLead;
+  const contactName = ticket?.contact?.name || ticket?.contact?.phone || 'Cliente';
+  const [outcome, setOutcome] = useState(existingLead?.stage === 'CONTRATADO' ? 'CONTRATADO' : '');
+  const [area, setArea] = useState(existingLead?.area || 'OUTRO');
+  const [title, setTitle] = useState(existingLead?.title || ticket?.subject || `Atendimento jurídico — ${contactName}`);
+  const [summary, setSummary] = useState('');
+  const [lostReason, setLostReason] = useState('');
+  const [error, setError] = useState('');
+
+  const outcomes = [
+    {
+      value: 'CONTRATADO',
+      title: 'Cliente contratou',
+      description: 'Vincula este contato do WhatsApp à coluna Contratado.',
+    },
+    {
+      value: 'NAO_CONVERTIDO',
+      title: 'Não convertido',
+      description: 'Encerra e registra o motivo na gestão jurídica.',
+    },
+    {
+      value: 'NONE',
+      title: 'Somente concluir',
+      description: 'Encerra a conversa sem alterar o funil jurídico.',
+    },
+  ];
+
+  async function submit(event) {
+    event.preventDefault();
+    if (!outcome) {
+      setError('Selecione o resultado deste atendimento.');
+      return;
+    }
+    if (outcome !== 'NONE' && !title.trim()) {
+      setError('Informe o assunto da oportunidade.');
+      return;
+    }
+    if (outcome === 'NAO_CONVERTIDO' && !lostReason.trim()) {
+      setError('Informe por que o atendimento não foi convertido.');
+      return;
+    }
+
+    setError('');
+    try {
+      await onConfirm(outcome === 'NONE' ? {} : {
+        legalOutcome: outcome,
+        legalArea: area,
+        legalTitle: title.trim(),
+        ...(summary.trim() ? { legalSummary: summary.trim() } : {}),
+        ...(outcome === 'NAO_CONVERTIDO' ? { lostReason: lostReason.trim() } : {}),
+      });
+    } catch {
+      setError('Não foi possível salvar o resultado. Revise os dados e tente novamente.');
+    }
+  }
+
+  return (
+    <ModalShell
+      kicker="Resultado do atendimento"
+      title={`Encerrar conversa com ${contactName}`}
+      onClose={loading ? undefined : onClose}
+      maxWidth="42rem"
+      contentStyle={{ overflowY: 'auto' }}
+    >
+      <form className="jd-resolution-form" onSubmit={submit}>
+        <p className="jd-resolution-form__intro">
+          Escolha o destino correto. Se houver contratação, o mesmo cliente e atendimento do WhatsApp aparecerão na coluna <strong>Contratado</strong>.
+        </p>
+
+        <fieldset className="jd-resolution-options">
+          <legend>Resultado</legend>
+          {outcomes.map((item) => (
+            <label key={item.value} className={outcome === item.value ? 'is-selected' : ''}>
+              <input
+                type="radio"
+                name="legal-outcome"
+                value={item.value}
+                checked={outcome === item.value}
+                onChange={() => { setOutcome(item.value); setError(''); }}
+              />
+              <span><strong>{item.title}</strong><small>{item.description}</small></span>
+            </label>
+          ))}
+        </fieldset>
+
+        {outcome && outcome !== 'NONE' ? (
+          <div className="jd-form-grid jd-resolution-details">
+            <label className="jd-form-field">
+              Área jurídica
+              <select value={area} onChange={(event) => setArea(event.target.value)}>
+                {LEGAL_AREAS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
+            <label className="jd-form-field">
+              Etapa de destino
+              <input value={outcome === 'CONTRATADO' ? 'Contratado' : 'Não convertido'} disabled />
+            </label>
+            <label className="jd-form-field jd-form-field--full">
+              Assunto da oportunidade
+              <input value={title} maxLength={180} onChange={(event) => setTitle(event.target.value)} />
+            </label>
+            <label className="jd-form-field jd-form-field--full">
+              Resumo para a gestão jurídica
+              <textarea value={summary} maxLength={10000} onChange={(event) => setSummary(event.target.value)} placeholder="Contexto, serviço de interesse e próximos passos." />
+            </label>
+            {outcome === 'NAO_CONVERTIDO' ? (
+              <label className="jd-form-field jd-form-field--full">
+                Motivo da não conversão
+                <textarea value={lostReason} maxLength={2000} onChange={(event) => setLostReason(event.target.value)} placeholder="Ex.: cliente desistiu, não houve aderência ou não retornou." />
+              </label>
+            ) : null}
+          </div>
+        ) : null}
+
+        {error ? <div className="jd-form-error" role="alert">{error}</div> : null}
+
+        <div className="jd-resolution-actions">
+          <span>{outcome && outcome !== 'NONE' ? `${labelFor(LEGAL_AREAS, area)} · ${contactName}` : 'Nenhuma oportunidade será criada.'}</span>
+          <button type="button" className="jd-secondary" onClick={onClose} disabled={loading}>Cancelar</button>
+          <button type="submit" className="jd-primary" disabled={loading}>
+            {loading ? 'Salvando...' : outcome === 'CONTRATADO' ? 'Concluir como contratado' : 'Concluir atendimento'}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
 
 class InboxSectionErrorBoundary extends React.Component {
   constructor(props) {
@@ -75,7 +206,13 @@ class InboxSectionErrorBoundary extends React.Component {
   }
 }
 
-export default function Inbox({ legalMode = false, instanceList = null, onOpenLegalClient, onOpenLegalDocuments }) {
+export default function Inbox({
+  legalMode = false,
+  instanceList = null,
+  onOpenLegalClient,
+  onOpenLegalDocuments,
+  onLegalWorkspaceChanged,
+}) {
   const MESSAGE_PAGE_SIZE = 60;
   const [selectedId, setSelectedId] = useState(null);
   const [text, setText] = useState('');
@@ -107,6 +244,8 @@ export default function Inbox({ legalMode = false, instanceList = null, onOpenLe
   const [showReopenInstanceModal, setShowReopenInstanceModal] = useState(false);
   const [reopening, setReopening] = useState(false);
   const [crmProfile, setCrmProfile] = useState(null);
+  const [legalResolutionTicket, setLegalResolutionTicket] = useState(null);
+  const [resolvingTicket, setResolvingTicket] = useState(false);
   const [isCompactDesktop, setIsCompactDesktop] = useState(() => window.innerWidth > 768 && window.innerWidth <= 1440);
   const openOsHandledRef = useRef(false);
   const isMobile = useIsMobile();
@@ -440,6 +579,12 @@ export default function Inbox({ legalMode = false, instanceList = null, onOpenLe
   }
 
   async function handleResolve() {
+    if (legalMode) {
+      const ticket = tickets.find((item) => item.id === selectedId);
+      if (ticket) setLegalResolutionTicket(ticket);
+      return;
+    }
+
     toast.confirm('Encerrar este atendimento?', async () => {
       try {
         await resolveTicket(selectedId);
@@ -448,6 +593,28 @@ export default function Inbox({ legalMode = false, instanceList = null, onOpenLe
         toast.success('Atendimento encerrado!');
       } catch (e) { toast.error('Erro ao encerrar: ' + (e.response?.data?.error || e.message)); }
     });
+  }
+
+  async function confirmLegalResolution(payload) {
+    const ticketId = legalResolutionTicket?.id;
+    if (!ticketId) return;
+    setResolvingTicket(true);
+    try {
+      const response = await resolveTicket(ticketId, payload);
+      const stage = response.data?.legalLead?.stage;
+      setLegalResolutionTicket(null);
+      setSelectedId(null);
+      await loadTickets();
+      await onLegalWorkspaceChanged?.();
+      if (stage === 'CONTRATADO') toast.success('Atendimento concluído e cliente enviado para Contratado.');
+      else if (stage === 'NAO_CONVERTIDO') toast.success('Atendimento concluído como não convertido.');
+      else toast.success('Atendimento encerrado.');
+    } catch (error) {
+      toast.error('Erro ao encerrar: ' + (error.response?.data?.error || error.message));
+      throw error;
+    } finally {
+      setResolvingTicket(false);
+    }
   }
 
   async function handleReturnToBot() {
@@ -893,6 +1060,16 @@ export default function Inbox({ legalMode = false, instanceList = null, onOpenLe
           }}
         />
       )}
+
+      {legalResolutionTicket ? (
+        <LegalResolutionModal
+          key={legalResolutionTicket.id}
+          ticket={legalResolutionTicket}
+          loading={resolvingTicket}
+          onClose={() => setLegalResolutionTicket(null)}
+          onConfirm={confirmLegalResolution}
+        />
+      ) : null}
 
     </div>
   );

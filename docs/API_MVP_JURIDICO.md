@@ -160,6 +160,34 @@ Quando enviado, `ticketId` precisa existir no mesmo escritório e pertencer ao `
 
 O painel do contato pode encaminhar `contactId` e `ticketId` para a área jurídica. A interface então abre a ficha do cliente, pré-preenche a criação da oportunidade e envia a origem como `whatsapp`. Depois da criação, `GET /api/legal/leads/:id` retorna o atendimento no campo `ticket`, permitindo confirmar o vínculo e consultar o histórico da oportunidade.
 
+#### Resultado ao encerrar um atendimento
+
+No CRM jurídico, `PATCH /api/tickets/:id/resolve` pode encerrar a conversa e registrar o resultado comercial na mesma transação. O contato original do WhatsApp é reutilizado; nenhum cliente duplicado é criado.
+
+Cliente contratado:
+
+```json
+{
+  "legalOutcome": "CONTRATADO",
+  "legalArea": "CONSUMIDOR",
+  "legalTitle": "Revisão de contrato bancário",
+  "legalSummary": "Cliente confirmou a contratação pelo WhatsApp."
+}
+```
+
+Atendimento não convertido:
+
+```json
+{
+  "legalOutcome": "NAO_CONVERTIDO",
+  "legalArea": "CONSUMIDOR",
+  "legalTitle": "Revisão de contrato bancário",
+  "lostReason": "Cliente optou por não prosseguir."
+}
+```
+
+Sem `legalOutcome`, somente o atendimento é encerrado. Quando já existe uma oportunidade vinculada ao `ticketId`, ela é atualizada; caso contrário, a API cria uma única oportunidade ligada ao mesmo cliente e atendimento. Repetir a operação não duplica a oportunidade porque `ticketId` é único.
+
 ### `GET /api/legal/leads/:id`
 
 Retorna a oportunidade, contato, atendimento, responsável, caso, tarefas e histórico de atividades.

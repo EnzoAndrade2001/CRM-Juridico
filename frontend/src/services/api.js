@@ -81,7 +81,7 @@ export const getMessages = (ticketId, params = {}) => api.get(`/tickets/${ticket
 export const sendMessage = (ticketId, body, quotedMsgId = null) => api.post(`/tickets/${ticketId}/messages`, { body, quotedMsgId });
 export const deleteMessage = (ticketId, messageId) => api.delete(`/tickets/${ticketId}/messages/${messageId}`);
 export const assignTicket = (ticketId, agentId, teamId) => api.patch(`/tickets/${ticketId}/assign`, { agentId, teamId });
-export const resolveTicket = (ticketId) => api.patch(`/tickets/${ticketId}/resolve`);
+export const resolveTicket = (ticketId, resolution = {}) => api.patch(`/tickets/${ticketId}/resolve`, resolution);
 export const createTicket = (contactId, instanceId) => api.post('/tickets', { contactId, instanceId });
 export const summarizeTicket = (id) => api.post(`/tickets/${id}/summarize`);
 export const createTicketNote = (ticketId, body) => api.post(`/tickets/${ticketId}/notes`, { body });
