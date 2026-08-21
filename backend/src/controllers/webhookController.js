@@ -1116,8 +1116,8 @@ ${legalInstructions}`;
 
   let botReply;
   if (mustWelcomeNow) {
-    botReply = buildWelcomeServicesReply({ crmName: contact.name });
-    console.log(`[bot] Apresentacao inicial imediata para ticket ${ticket.id}: menu geral exibido.`);
+    botReply = buildWelcomeServicesReply();
+    console.log(`[bot] Apresentacao inicial imediata para ticket ${ticket.id}: menu geral exibido; solicitando nome.`);
   } else if (mustAskNameNow) {
     botReply = buildInitialSubjectReply(currentUserTurn);
     console.log(`[bot] Triagem inicial imediata para ticket ${ticket.id}: assunto reconhecido; solicitando nome.`);

@@ -1,7 +1,7 @@
 const GREETING_ONLY = /^(oi+|ola+|olá+|bom dia|boa tarde|boa noite|tudo bem|opa|e ai|e aí)[!.?\s]*$/i;
 const VAGUE_MESSAGE = /^(oi+|ola+|olá+|bom dia|boa tarde|boa noite|tudo bem|opa|e ai|e aí|quero ajuda|preciso de (?:um |uma )?advogad[oa]|quero informa[cç][oõ]es|tenho um problema|preciso de ajuda(?: com (?:meu|o) caso)?)[!.?\s]*$/i;
 const HUMAN_HANDOFF = /^(atendente|advogad[oa]|humano|atendimento humano|falar com atendente|falar com (?:um |uma )?advogad[oa]|quero falar com algu[eé]m|quero atendimento humano)[!.?\s]*$/i;
-const LEGAL_SUBJECT_TERMS = /banco|financi|juros|contrato|cobran|divida|dívida|apreens|veiculo|veículo|imposto|renda|autismo|tea|beneficio|benefício|aposent|consum|trabalh|fam[ií]lia|div[oó]rcio|pens[aã]o|invent[aá]rio|heran[cç]a|processo|jurid|advog/i;
+const LEGAL_SUBJECT_TERMS = /banco|financi|juros|parcela|contrato|cobran|divida|dívida|negativ|protesto|apreens|veiculo|veículo|carro|imposto|renda|autismo|tea|beneficio|benefício|aposent|consum|produto|servi[cç]o|fraude|golpe|trabalh|demit|rescis|sal[aá]rio|ass[eé]dio|fam[ií]lia|div[oó]rcio|pens[aã]o|guarda|invent[aá]rio|heran[cç]a|herdeir|processo|cita[cç][aã]o|intima[cç][aã]o|jurid|advog/i;
 const NON_NAME_TERMS = /\b(preciso|quero|gostaria|ajuda|orienta[cç][aã]o|tenho|meu|minha|sobre|problema|duvida|dúvida|direito)\b/i;
 
 const LEGAL_SERVICES = [
@@ -107,7 +107,14 @@ function isGreetingOnly(message = '') {
 }
 
 function isVagueMessage(message = '') {
-  return VAGUE_MESSAGE.test(String(message).trim());
+  const normalized = String(message).trim();
+  if (!normalized) return false;
+  if (VAGUE_MESSAGE.test(normalized)) return true;
+  if (LEGAL_SUBJECT_TERMS.test(normalized)) return false;
+
+  // Saudações acompanhadas apenas de cortesia ou pedido genérico continuam vagas.
+  // Se houver um tema jurídico reconhecível, a verificação acima preserva o fluxo específico.
+  return /^(?:oi+|ola+|olá+|bom dia|boa tarde|boa noite|tudo bem|opa|e ai|e aí)(?=[\s,!.?]|$)/i.test(normalized);
 }
 
 function isHumanHandoffRequest(message = '', configuredKeyword = '') {
@@ -183,12 +190,12 @@ function buildInitialSubjectReply(message = '') {
   return `Entendi que você busca orientação sobre ${subject}. O escritório pode realizar uma análise inicial do caso. Qual é o seu nome?`;
 }
 
-function buildWelcomeServicesReply({ crmName = '' } = {}) {
-  const services = LEGAL_SERVICES.map((service) => `• ${service}`).join('\n');
-  const question = isReliableCrmName(crmName)
-    ? 'Para direcionarmos você ao especialista correto, qual desses assuntos precisa resolver?'
-    : 'Qual é o seu nome?';
-  return `Olá${isReliableCrmName(crmName) ? `, ${crmName}` : ''}! Seja bem-vindo(a) à PBL Advocacia e Consultoria Jurídica.\n\nÁreas de atendimento:\n${services}\n\n${question}`;
+function buildWelcomeServicesReply() {
+  const services = LEGAL_SERVICES.map((service, index) => {
+    const number = index === LEGAL_SERVICES.length - 1 ? 0 : index + 1;
+    return `${number}. ${service}`;
+  }).join('\n');
+  return `Olá! Seja bem-vindo(a) à PBL Advocacia e Consultoria Jurídica. 👋\n\nÁreas de atendimento:\n${services}\n\nQual é o seu nome?`;
 }
 
 function hasSubjectInConversation(history = [], currentUserTurn = '') {

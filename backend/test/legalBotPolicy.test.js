@@ -70,17 +70,22 @@ test('saudacao inicial apresenta todos os servicos e pergunta somente o nome', (
   assert.equal((reply.match(/\?/g) || []).length, 1);
 });
 
-test('nome valido no CRM nao e perguntado novamente na saudacao', () => {
+test('primeira saudacao vaga sempre apresenta os servicos e pergunta o nome', () => {
   const reply = buildWelcomeServicesReply({ crmName: 'Eduarda Marranghello' });
 
-  assert.match(reply, /Olá, Eduarda Marranghello!/);
-  assert.doesNotMatch(reply, /qual é o seu nome/i);
-  assert.match(reply, /qual desses assuntos precisa resolver\?/i);
+  assert.doesNotMatch(reply, /Olá, Eduarda Marranghello!/);
+  assert.match(reply, /1\. Bancos e Financiamentos/);
+  assert.match(reply, /0\. Falar com um atendente/);
+  assert.match(reply, /qual é o seu nome\?/i);
   assert.equal(shouldAskNameForSubject([], 'quero revisar meu financiamento', 'Eduarda Marranghello'), false);
 });
 
 test('mensagens vagas e pedidos humanos seguem fluxos diferentes', () => {
   assert.equal(isVagueMessage('Preciso de um advogado'), true);
+  assert.equal(isVagueMessage('Boa noite, tudo bem com vocês?'), true);
+  assert.equal(isVagueMessage('Olá, gostaria de mais informações'), true);
+  assert.equal(isVagueMessage('Bom dia, meu carro foi apreendido'), false);
+  assert.equal(isVagueMessage('Boa tarde, fui demitido ontem'), false);
   assert.equal(isVagueMessage('isenção de imposto de renda'), false);
   assert.equal(isHumanHandoffRequest('advogado'), true);
   assert.equal(isHumanHandoffRequest('quero falar com alguém'), true);
