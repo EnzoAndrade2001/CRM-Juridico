@@ -10,7 +10,8 @@ const {
   buildLegalBotInstructions,
   buildWelcomeServicesReply,
   hasConfirmedName,
-  isGreetingOnly,
+  isHumanHandoffRequest,
+  isVagueMessage,
   limitReplyToOneQuestion,
   replaceFarewellWithSpecialistHandoff,
   shouldAskNameForSubject,
@@ -945,6 +946,54 @@ async function handoffAfterBotFailure(tenant, waInstance, ticket, contact) {
   });
 }
 
+async function handoffAtCustomerRequest(tenant, waInstance, ticket, contact) {
+  const reply = 'Claro! Vou encaminhar você para nossa equipe.';
+  const teams = await getTeamsCached(tenant.id);
+  const targetTeam = teams.find((team) => team.name.toLowerCase().includes('atendimento'));
+  const sent = await evolutionService.sendText(
+    tenant.settings?.evolutionUrl,
+    tenant.settings?.evolutionKey,
+    waInstance.instanceName,
+    contact.phone,
+    reply
+  );
+
+  const updatedTicket = await prisma.ticket.update({
+    where: { id: ticket.id },
+    data: {
+      status: 'pending',
+      teamId: targetTeam?.id,
+      updatedAt: new Date(),
+      lastMessageAt: new Date(),
+    },
+    include: { contact: true, agent: { select: { name: true } }, instance: { select: { instanceName: true } } },
+  });
+
+  const message = await prisma.message.create({
+    data: {
+      ticketId: ticket.id,
+      body: reply,
+      fromMe: true,
+      fromBot: true,
+      externalId: sent?.key?.id || sent?.id,
+    },
+  });
+
+  await prisma.ticketEvent.create({
+    data: {
+      ticketId: ticket.id,
+      tenantId: tenant.id,
+      type: 'customer_requested_handoff',
+      payload: JSON.stringify({ teamId: targetTeam?.id || null }),
+    },
+  });
+
+  if (io) {
+    io.to(tenant.id).emit('new_message', { ticket: updatedTicket, message, contact: updatedTicket.contact });
+    io.to(tenant.id).emit('ticket_updated', { ticketId: ticket.id, status: 'pending' });
+  }
+}
+
 async function handleAutoTagging(tenant, ticket, contact) {
   try {
     const history = await prisma.message.findMany({
@@ -973,9 +1022,8 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
   const currentNotes = contact.notes || '';
   const currentUserTurn = describeMessageForAi(incomingMessage, userMessage);
 
-  if (currentUserTurn.toLowerCase().includes(transferWord.toLowerCase())) {
-    await prisma.ticket.update({ where: { id: ticket.id }, data: { status: 'pending' } });
-    if (io) io.to(tenant.id).emit('ticket_updated', { ticketId: ticket.id, status: 'pending' });
+  if (isHumanHandoffRequest(currentUserTurn, transferWord)) {
+    await handoffAtCustomerRequest(tenant, waInstance, ticket, contact);
     return;
   }
 
@@ -1008,11 +1056,13 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
     currentUserTurn,
     history: reversedHistory,
     profileName: contact.name,
+    source: contact.externalSource,
+    tags: contact.tags,
   });
-  const nameConfirmedNow = hasConfirmedName(reversedHistory, currentUserTurn);
-  const mustAskNameNow = shouldAskNameForSubject(reversedHistory, currentUserTurn);
+  const nameConfirmedNow = hasConfirmedName(reversedHistory, currentUserTurn, contact.name);
+  const mustAskNameNow = shouldAskNameForSubject(reversedHistory, currentUserTurn, contact.name);
   const currentTicketHasHistory = reversedHistory.some((historyMessage) => historyMessage.ticketId === ticket.id);
-  const mustWelcomeNow = isGreetingOnly(currentUserTurn) && !currentTicketHasHistory;
+  const mustWelcomeNow = isVagueMessage(currentUserTurn) && !currentTicketHasHistory;
 
   // Busca semântica de conhecimento
   let knowledgeContext = "";
@@ -1066,8 +1116,8 @@ ${legalInstructions}`;
 
   let botReply;
   if (mustWelcomeNow) {
-    botReply = buildWelcomeServicesReply();
-    console.log(`[bot] Apresentacao inicial imediata para ticket ${ticket.id}: servicos exibidos; solicitando nome.`);
+    botReply = buildWelcomeServicesReply({ crmName: contact.name });
+    console.log(`[bot] Apresentacao inicial imediata para ticket ${ticket.id}: menu geral exibido.`);
   } else if (mustAskNameNow) {
     botReply = buildInitialSubjectReply(currentUserTurn);
     console.log(`[bot] Triagem inicial imediata para ticket ${ticket.id}: assunto reconhecido; solicitando nome.`);
@@ -1104,14 +1154,20 @@ ${legalInstructions}`;
 
   // 4. LÓGICA DE ROTEAMENTO E SALVAMENTO
   const routeMatch = botReply.match(/\[\[ROUTE:\s*(.*?)\]\]/);
+  const shouldHandoff = /\[\[HANDOFF\]\]/i.test(botReply);
   const category = autoCategory || (routeMatch ? routeMatch[1].toUpperCase() : 'ATENDIMENTO');
   
-  const cleanBotReply = botReply.replace(/\[\[ROUTE:.*?\]\]/g, '').trim();
-  botReply = limitReplyToOneQuestion(replaceFarewellWithSpecialistHandoff(cleanBotReply));
+  const cleanBotReply = botReply
+    .replace(/\[\[ROUTE:.*?\]\]/g, '')
+    .replace(/\[\[HANDOFF\]\]/gi, '')
+    .trim();
+  botReply = shouldHandoff
+    ? 'Perfeito! Vou encaminhar você ao setor especializado. 👍'
+    : limitReplyToOneQuestion(replaceFarewellWithSpecialistHandoff(cleanBotReply));
 
-  // Adiciona o nome do Robô na mensagem do WhatsApp
+  // Durante a triagem, identifica o robô. No encaminhamento, envia somente a frase oficial.
   const botName = settings.botName || 'ROBÔ';
-  const finalMessageBody = `*${botName}*\n${botReply}`;
+  const finalMessageBody = shouldHandoff ? botReply : `*${botName}*\n${botReply}`;
 
   // Executa o Roteamento
   const teams = await getTeamsCached(tenant.id);
@@ -1124,9 +1180,21 @@ ${legalInstructions}`;
     where: { id: ticket.id },
     data: { 
       teamId: targetTeam?.id,
-      priority: category === 'SUPORTE' ? 'high' : 'medium'
+      priority: 'medium',
+      ...(shouldHandoff ? { status: 'pending' } : {}),
     }
   });
+
+  if (shouldHandoff) {
+    await prisma.ticketEvent.create({
+      data: {
+        ticketId: ticket.id,
+        tenantId: tenant.id,
+        type: 'bot_triage_handoff',
+        payload: JSON.stringify({ category, teamId: targetTeam?.id || null }),
+      },
+    });
+  }
 
   // Atualização de tags automáticas DESATIVADA
   /*
@@ -1173,7 +1241,7 @@ ${legalInstructions}`;
       include: { contact: true }
     });
     io.to(tenant.id).emit('new_message', { ticket: freshTicket, message: botMessage, contact });
-    io.to(tenant.id).emit('ticket_updated', { ticketId: ticket.id });
+    io.to(tenant.id).emit('ticket_updated', { ticketId: ticket.id, ...(shouldHandoff ? { status: 'pending' } : {}) });
   }
 }
 
