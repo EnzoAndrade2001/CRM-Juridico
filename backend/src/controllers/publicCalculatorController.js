@@ -135,7 +135,7 @@ async function upsertLandingContact(tenant, submission, landing, instance) {
 
   await ensureLandingTag(tenant.id, landing);
   const phoneCandidates = evolutionService.buildPhoneLookupCandidates(submission.phone);
-  const existing = await prisma.contact.findFirst({
+  const matchingContacts = await prisma.contact.findMany({
     where: {
       tenantId: tenant.id,
       OR: [
@@ -145,6 +145,19 @@ async function upsertLandingContact(tenant, submission, landing, instance) {
     },
     orderBy: { createdAt: 'asc' },
   });
+  const candidateSet = new Set(phoneCandidates);
+  const existing = matchingContacts
+    .map((candidate) => {
+      const sameInstance = instance?.id && candidate.instanceId === instance.id ? 100 : 0;
+      const exactPhone = candidateSet.has(candidate.phone) ? 10 : 0;
+      const exactWhatsapp = candidateSet.has(candidate.whatsapp) ? 5 : 0;
+      const sameSource = candidate.externalSource === landing.contactSource ? 3 : 0;
+      const hasName = candidate.name && candidate.name !== '.' ? 2 : 0;
+      return { candidate, score: sameInstance + exactPhone + exactWhatsapp + sameSource + hasName };
+    })
+    .sort((left, right) => right.score - left.score
+      || new Date(left.candidate.createdAt).getTime() - new Date(right.candidate.createdAt).getTime())
+    .at(0)?.candidate || null;
   const tags = Array.from(new Set([...(parseTags(existing?.tags)), landing.tag]));
   const data = {
     tenantId: tenant.id,
@@ -231,7 +244,11 @@ async function ensureCalculatorTicket(tenant, contact, instance) {
   return { ticket, created: true };
 }
 
-async function recordCalculatorMessage(tenant, contact, instance, body, sendResult) {
+function getExternalMessageId(sendResult) {
+  return sendResult?.key?.id || sendResult?.message?.key?.id || null;
+}
+
+async function createCalculatorMessage(tenant, contact, instance, body) {
   const ensuredTicket = await ensureCalculatorTicket(tenant, contact, instance);
   if (!ensuredTicket) {
     console.warn(`[calculator] CRM: nenhum contato disponivel para registrar a mensagem (tenant=${tenant.id})`);
@@ -239,19 +256,11 @@ async function recordCalculatorMessage(tenant, contact, instance, body, sendResu
   }
   const { ticket } = ensuredTicket;
 
-  const externalId = sendResult?.key?.id || sendResult?.message?.key?.id || null;
+  const externalId = null;
   // A Evolution pode entregar o webhook da mensagem enviada antes deste
   // controlador terminar. Reutilizamos a mensagem já criada para não gerar
   // duplicata e, principalmente, para manter o envio visível no Inbox.
-  const alreadyRecorded = externalId
-    ? await prisma.message.findFirst({
-        where: {
-          externalId,
-          ticket: { tenantId: tenant.id },
-        },
-      })
-    : null;
-  const message = alreadyRecorded || await prisma.message.create({
+  const message = await prisma.message.create({
     data: {
       ticketId: ticket.id,
       body,
@@ -263,7 +272,7 @@ async function recordCalculatorMessage(tenant, contact, instance, body, sendResu
 
   console.info(
     `[calculator] CRM: mensagem registrada (contact=${contact.id}, ticket=${message.ticketId}, message=${message.id}, `
-    + `externalId=${externalId || 'none'}, reused=${Boolean(alreadyRecorded)})`,
+    + 'externalId=pending, stage=before_whatsapp)',
   );
 
   if (io) {
@@ -273,6 +282,37 @@ async function recordCalculatorMessage(tenant, contact, instance, body, sendResu
   }
 
   return { ticket, message };
+}
+
+async function finalizeCalculatorMessage(tenant, draft, sendResult) {
+  if (!draft?.message?.id) return null;
+  const externalId = getExternalMessageId(sendResult);
+  if (!externalId) return draft;
+
+  const alreadyRecorded = await prisma.message.findFirst({
+    where: {
+      externalId,
+      ticket: { tenantId: tenant.id },
+    },
+  });
+  let message = alreadyRecorded;
+  if (alreadyRecorded && alreadyRecorded.id !== draft.message.id) {
+    if (prisma.message.delete) {
+      await prisma.message.delete({ where: { id: draft.message.id } });
+    }
+  } else {
+    message = await prisma.message.update({
+      where: { id: draft.message.id },
+      data: { externalId },
+    });
+  }
+
+  console.info(
+    `[calculator] CRM: mensagem vinculada ao WhatsApp (message=${message?.id || draft.message.id}, `
+    + `externalId=${externalId}, reused=${Boolean(alreadyRecorded && alreadyRecorded.id !== draft.message.id)})`,
+  );
+  if (io && message) io.to(tenant.id).emit('message_updated', { message });
+  return { ...draft, message };
 }
 
 async function resolveTenant() {
@@ -350,19 +390,39 @@ async function createCalculatorSubmission(req, res) {
       crm: 'not_recorded',
     };
     const errors = [];
+    const settings = tenant.settings || {};
+    const whatsappConfigured = Boolean(
+      (settings.evolutionUrl || process.env.DEFAULT_EVOLUTION_URL)
+      && (settings.evolutionKey || process.env.DEFAULT_EVOLUTION_KEY)
+      && instance
+      && submission.phone,
+    );
+    let crmDraft = null;
+    if (whatsappConfigured) {
+      try {
+        crmDraft = await createCalculatorMessage(tenant, contactResult.contact, instance, message);
+        if (crmDraft) notifications.crm = 'queued';
+        else {
+          notifications.crm = 'failed';
+          errors.push('CRM: contato indisponível para registrar a mensagem');
+        }
+      } catch (error) {
+        notifications.crm = 'failed';
+        console.error(`[calculator] CRM: falha antes do WhatsApp na submissão ${submission.id}:`, error);
+        errors.push(`CRM: ${error.message || 'falha ao registrar a mensagem'}`);
+      }
+    }
     const [whatsappResult, emailResult] = await Promise.allSettled([
-      sendWhatsApp(tenant, submission, message),
+      crmDraft ? sendWhatsApp(tenant, submission, message) : Promise.resolve(false),
       sendEmail(submission, message),
     ]);
 
     if (whatsappResult.status === 'fulfilled' && whatsappResult.value) {
       notifications.whatsapp = 'sent';
       try {
-        const crmRecord = await recordCalculatorMessage(
+        const crmRecord = await finalizeCalculatorMessage(
           tenant,
-          contactResult.contact,
-          whatsappResult.value.instance,
-          message,
+          crmDraft,
           whatsappResult.value.result,
         );
         if (crmRecord) notifications.crm = 'sent';

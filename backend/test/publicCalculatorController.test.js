@@ -22,12 +22,15 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
     tagFindFirst: prisma.tag.findFirst,
     tagCreate: prisma.tag.create,
     contactFindFirst: prisma.contact.findFirst,
+    contactFindMany: prisma.contact.findMany,
     contactCreate: prisma.contact.create,
     ticketFindFirst: prisma.ticket.findFirst,
     ticketCreate: prisma.ticket.create,
     ticketUpdate: prisma.ticket.update,
     messageFindFirst: prisma.message.findFirst,
     messageCreate: prisma.message.create,
+    messageUpdate: prisma.message.update,
+    messageDelete: prisma.message.delete,
     sendText: evolutionService.sendText,
     tenantSlug: process.env.PUBLIC_CALCULATOR_TENANT_SLUG,
   };
@@ -38,12 +41,15 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
     prisma.tag.findFirst = originals.tagFindFirst;
     prisma.tag.create = originals.tagCreate;
     prisma.contact.findFirst = originals.contactFindFirst;
+    prisma.contact.findMany = originals.contactFindMany;
     prisma.contact.create = originals.contactCreate;
     prisma.ticket.findFirst = originals.ticketFindFirst;
     prisma.ticket.create = originals.ticketCreate;
     prisma.ticket.update = originals.ticketUpdate;
     prisma.message.findFirst = originals.messageFindFirst;
     prisma.message.create = originals.messageCreate;
+    prisma.message.update = originals.messageUpdate;
+    prisma.message.delete = originals.messageDelete;
     evolutionService.sendText = originals.sendText;
     if (originals.tenantSlug === undefined) delete process.env.PUBLIC_CALCULATOR_TENANT_SLUG;
     else process.env.PUBLIC_CALCULATOR_TENANT_SLUG = originals.tenantSlug;
@@ -56,6 +62,7 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
   let sentMessage;
   let ticketData;
   let messageData;
+  let messageUpdateData;
 
   prisma.tenant.findUnique = async () => ({
     id: 'tenant-eduarda',
@@ -73,6 +80,7 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
   prisma.tag.findFirst = async () => null;
   prisma.tag.create = async ({ data }) => data;
   prisma.contact.findFirst = async () => null;
+  prisma.contact.findMany = async () => [];
   prisma.contact.create = async ({ data }) => {
     contactData = data;
     return { id: 'contact-1', ...data };
@@ -86,6 +94,10 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
   prisma.message.create = async ({ data }) => {
     messageData = data;
     return { id: 'message-1', ...data };
+  };
+  prisma.message.update = async ({ data }) => {
+    messageUpdateData = data;
+    return { id: 'message-1', ...messageData, ...data };
   };
   evolutionService.sendText = async (_url, _key, instanceName, phone, message) => {
     sentMessage = { instanceName, phone, message };
@@ -132,7 +144,8 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
   assert.equal(messageData.ticketId, 'ticket-1');
   assert.equal(messageData.fromBot, true);
   assert.equal(messageData.fromMe, true);
-  assert.equal(messageData.externalId, 'message-1');
+  assert.equal(messageData.externalId, null);
+  assert.equal(messageUpdateData.externalId, 'message-1');
 });
 
 test('calculadora recusa origem que não foi autorizada pelo backend', async () => {
