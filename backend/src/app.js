@@ -69,10 +69,31 @@ function resolveFrontendOrigin(value) {
   }
 }
 
-const frontendOrigin = resolveFrontendOrigin(process.env.FRONTEND_URL || 'http://localhost:5174');
-const corsOptions = frontendOrigin === '*'
-  ? { origin: false }
-  : { origin: frontendOrigin, credentials: true };
+// O CRM e a landing podem estar em hosts diferentes (por exemplo, o CRM no
+// EasyPanel e a landing no GitHub Pages). FRONTEND_URLS aceita uma lista
+// separada por vírgulas, preservando FRONTEND_URL para instalações antigas.
+const configuredFrontendOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URLS,
+]
+  .flatMap((value) => String(value || '').split(','))
+  .map(resolveFrontendOrigin)
+  .filter(Boolean);
+const frontendOrigins = configuredFrontendOrigins.length
+  ? Array.from(new Set(configuredFrontendOrigins))
+  : ['http://localhost:5174'];
+const allowAnyFrontendOrigin = frontendOrigins.includes('*');
+const corsOptions = {
+  origin: (requestOrigin, callback) => {
+    // Navegadores sem Origin (health checks, curl e integrações servidor a
+    // servidor) continuam funcionando sem abrir o CORS para qualquer site.
+    if (!requestOrigin || (allowAnyFrontendOrigin && process.env.CORS_ALLOW_ANY === 'true')) {
+      return callback(null, true);
+    }
+    return callback(null, frontendOrigins.includes(requestOrigin));
+  },
+  credentials: true,
+};
 
 const io = new Server(server, {
   cors: { ...corsOptions, methods: ['GET', 'POST'] },

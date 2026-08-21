@@ -33,6 +33,24 @@ Quando o WhatsApp é informado, o backend:
 O envio só ocorre após o consentimento do formulário e nunca usa uma origem
 recebida fora da lista autorizada no backend.
 
+### Hospedagem no GitHub Pages
+
+A landing não precisa de container nem de domínio próprio para funcionar. O
+build estático recebe `VITE_API_URL` e faz `POST` HTTPS diretamente para a API
+do EasyPanel. No serviço `crm-juridico-api`, configure:
+
+```text
+FRONTEND_URL=https://crm-juriditico-crm-juridico-web.kna79u.easypanel.host
+FRONTEND_URLS=https://enzoandrade2001.github.io
+PUBLIC_CALCULATOR_TENANT_SLUG=eduarda
+```
+
+Se o repositório for publicado com outro usuário ou nome, use a origem real do
+GitHub Pages em `FRONTEND_URLS` (somente protocolo e host, sem `/CRM-Juridico`
+ou outra rota). O workflow já usa a URL pública da API como fallback; também é
+possível cadastrar `VITE_API_URL` em **Settings → Secrets and variables →
+Actions → Variables** para evitar endereço fixo no workflow.
+
 Exemplo mínimo:
 
 ```json
