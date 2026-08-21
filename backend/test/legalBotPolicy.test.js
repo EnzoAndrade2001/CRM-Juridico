@@ -3,8 +3,10 @@ const assert = require('node:assert/strict');
 const {
   buildInitialSubjectReply,
   buildLegalBotInstructions,
+  buildWelcomeServicesReply,
   hasConfirmedName,
   limitReplyToOneQuestion,
+  replaceFarewellWithSpecialistHandoff,
   shouldAskNameForSubject,
 } = require('../src/domain/legalBotPolicy');
 
@@ -49,4 +51,25 @@ test('limita a resposta final a somente uma pergunta', () => {
   assert.match(limited, /Qual é o seu nome\?/);
   assert.doesNotMatch(limited, /qual cidade/i);
   assert.doesNotMatch(limited, /Possui documentos/i);
+});
+
+test('saudacao inicial apresenta todos os servicos e pergunta somente o nome', () => {
+  const reply = buildWelcomeServicesReply();
+
+  assert.match(reply, /Revisão de contratos bancários/);
+  assert.match(reply, /Empréstimos e consignados/);
+  assert.match(reply, /Financiamentos de veículos e imóveis/);
+  assert.match(reply, /Cobranças, dívidas e contratos/);
+  assert.match(reply, /Busca e apreensão de veículos/);
+  assert.match(reply, /isenção de imposto de renda relacionada ao autismo/i);
+  assert.match(reply, /qual é o seu nome completo\?/i);
+  assert.equal((reply.match(/\?/g) || []).length, 1);
+});
+
+test('despedida e substituida pela espera do especialista', () => {
+  const reply = replaceFarewellWithSpecialistHandoff('Obrigado pelas informações. Até mais!');
+
+  assert.doesNotMatch(reply, /até mais/i);
+  assert.match(reply, /encaminhadas ao especialista responsável/i);
+  assert.match(reply, /aguarde o retorno da equipe/i);
 });

@@ -8,8 +8,11 @@ const businessHourService = require('../services/businessHourService');
 const {
   buildInitialSubjectReply,
   buildLegalBotInstructions,
+  buildWelcomeServicesReply,
   hasConfirmedName,
+  isGreetingOnly,
   limitReplyToOneQuestion,
+  replaceFarewellWithSpecialistHandoff,
   shouldAskNameForSubject,
 } = require('../domain/legalBotPolicy');
 
@@ -1008,6 +1011,8 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
   });
   const nameConfirmedNow = hasConfirmedName(reversedHistory, currentUserTurn);
   const mustAskNameNow = shouldAskNameForSubject(reversedHistory, currentUserTurn);
+  const currentTicketHasHistory = reversedHistory.some((historyMessage) => historyMessage.ticketId === ticket.id);
+  const mustWelcomeNow = isGreetingOnly(currentUserTurn) && !currentTicketHasHistory;
 
   // Busca semântica de conhecimento
   let knowledgeContext = "";
@@ -1015,7 +1020,7 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
   let topContent = null;
   let found = false;
 
-  if (!mustAskNameNow && aiService.hasAiConfigured(settings) && shouldUseKnowledgeSearch(currentUserTurn)) {
+  if (!mustWelcomeNow && !mustAskNameNow && aiService.hasAiConfigured(settings) && shouldUseKnowledgeSearch(currentUserTurn)) {
     try {
       const userEmbedding = await aiService.getEmbedding(settings, currentUserTurn);
       if (userEmbedding) {
@@ -1060,7 +1065,10 @@ ${legalInstructions}`;
   console.log(`[bot] Ticket ${ticket.id} | Turno atual normalizado:\n${currentUserTurn}`);
 
   let botReply;
-  if (mustAskNameNow) {
+  if (mustWelcomeNow) {
+    botReply = buildWelcomeServicesReply();
+    console.log(`[bot] Apresentacao inicial imediata para ticket ${ticket.id}: servicos exibidos; solicitando nome.`);
+  } else if (mustAskNameNow) {
     botReply = buildInitialSubjectReply(currentUserTurn);
     console.log(`[bot] Triagem inicial imediata para ticket ${ticket.id}: assunto reconhecido; solicitando nome.`);
   } else {
@@ -1098,7 +1106,8 @@ ${legalInstructions}`;
   const routeMatch = botReply.match(/\[\[ROUTE:\s*(.*?)\]\]/);
   const category = autoCategory || (routeMatch ? routeMatch[1].toUpperCase() : 'ATENDIMENTO');
   
-  botReply = limitReplyToOneQuestion(botReply.replace(/\[\[ROUTE:.*?\]\]/g, '').trim());
+  const cleanBotReply = botReply.replace(/\[\[ROUTE:.*?\]\]/g, '').trim();
+  botReply = limitReplyToOneQuestion(replaceFarewellWithSpecialistHandoff(cleanBotReply));
 
   // Adiciona o nome do Robô na mensagem do WhatsApp
   const botName = settings.botName || 'ROBÔ';
