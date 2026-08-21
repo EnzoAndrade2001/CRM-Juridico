@@ -104,7 +104,8 @@ test('prompt mestre inclui menus especificos, mensagens oficiais e origem do lea
   assert.match(prompt, /Parcelas muito altas/);
   assert.match(prompt, /Recebi notificação ou ordem de busca e apreensão/);
   assert.match(prompt, /landing-revisional/);
-  assert.match(prompt, /Perfeito! Vou encaminhar você ao setor especializado\. 👍/);
+  assert.match(prompt, /Perfeito! Vou encaminhar você ao setor especializado\./);
+  assert.match(prompt, /Nao use emojis em nenhuma mensagem/);
   assert.match(prompt, /Essa possibilidade precisa ser analisada pela nossa equipe jurídica\./);
 });
 

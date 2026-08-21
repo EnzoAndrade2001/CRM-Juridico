@@ -513,7 +513,7 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
         }
       });
       
-      await evolutionService.sendText(tenant.settings.evolutionUrl, tenant.settings.evolutionKey, instance, phone, "Obrigado por sua avaliação! 🙏 Sua nota é muito importante para nós.");
+      await evolutionService.sendText(tenant.settings.evolutionUrl, tenant.settings.evolutionKey, instance, phone, "Obrigado por sua avaliação. Sua nota é muito importante para nós.");
       return;
     }
   }
@@ -1162,7 +1162,7 @@ ${legalInstructions}`;
     .replace(/\[\[HANDOFF\]\]/gi, '')
     .trim();
   botReply = shouldHandoff
-    ? 'Perfeito! Vou encaminhar você ao setor especializado. 👍'
+    ? 'Perfeito! Vou encaminhar você ao setor especializado.'
     : limitReplyToOneQuestion(replaceFarewellWithSpecialistHandoff(cleanBotReply));
 
   // Durante a triagem, identifica o robô. No encaminhamento, envia somente a frase oficial.
