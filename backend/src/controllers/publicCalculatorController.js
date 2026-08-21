@@ -224,11 +224,25 @@ async function ensureCalculatorTicket(tenant, contact, instance) {
 
 async function recordCalculatorMessage(tenant, contact, instance, body, sendResult) {
   const ensuredTicket = await ensureCalculatorTicket(tenant, contact, instance);
-  if (!ensuredTicket) return null;
+  if (!ensuredTicket) {
+    console.warn(`[calculator] CRM: nenhum contato disponivel para registrar a mensagem (tenant=${tenant.id})`);
+    return null;
+  }
   const { ticket } = ensuredTicket;
 
   const externalId = sendResult?.key?.id || sendResult?.message?.key?.id || null;
-  const message = await prisma.message.create({
+  // A Evolution pode entregar o webhook da mensagem enviada antes deste
+  // controlador terminar. Reutilizamos a mensagem já criada para não gerar
+  // duplicata e, principalmente, para manter o envio visível no Inbox.
+  const alreadyRecorded = externalId
+    ? await prisma.message.findFirst({
+        where: {
+          externalId,
+          ticket: { tenantId: tenant.id },
+        },
+      })
+    : null;
+  const message = alreadyRecorded || await prisma.message.create({
     data: {
       ticketId: ticket.id,
       body,
@@ -238,9 +252,14 @@ async function recordCalculatorMessage(tenant, contact, instance, body, sendResu
     },
   });
 
+  console.info(
+    `[calculator] CRM: mensagem registrada (contact=${contact.id}, ticket=${message.ticketId}, message=${message.id}, `
+    + `externalId=${externalId || 'none'}, reused=${Boolean(alreadyRecorded)})`,
+  );
+
   if (io) {
     if (ensuredTicket.created) io.to(tenant.id).emit('new_ticket', ticket);
-    io.to(tenant.id).emit('new_message', { message, ticket });
+    io.to(tenant.id).emit('new_message', { message, ticket, contact });
     io.to(tenant.id).emit('ticket_updated', { ticketId: ticket.id });
   }
 
@@ -316,7 +335,11 @@ async function createCalculatorSubmission(req, res) {
     const contactResult = await upsertLandingContact(tenant, submission, landing, instance);
 
     const message = buildMessage(submission, landing);
-    const notifications = { whatsapp: 'not_configured', email: 'not_configured' };
+    const notifications = {
+      whatsapp: 'not_configured',
+      email: 'not_configured',
+      crm: 'not_recorded',
+    };
     const errors = [];
     const [whatsappResult, emailResult] = await Promise.allSettled([
       sendWhatsApp(tenant, submission, message),
@@ -326,14 +349,21 @@ async function createCalculatorSubmission(req, res) {
     if (whatsappResult.status === 'fulfilled' && whatsappResult.value) {
       notifications.whatsapp = 'sent';
       try {
-        await recordCalculatorMessage(
+        const crmRecord = await recordCalculatorMessage(
           tenant,
           contactResult.contact,
           whatsappResult.value.instance,
           message,
           whatsappResult.value.result,
         );
+        if (crmRecord) notifications.crm = 'sent';
+        else {
+          notifications.crm = 'failed';
+          errors.push('CRM: contato indisponível para registrar a mensagem');
+        }
       } catch (error) {
+        notifications.crm = 'failed';
+        console.error(`[calculator] CRM: falha ao registrar mensagem da submissão ${submission.id}:`, error);
         errors.push(`CRM: ${error.message || 'falha ao registrar a mensagem'}`);
       }
     }
@@ -341,7 +371,11 @@ async function createCalculatorSubmission(req, res) {
     if (emailResult.status === 'fulfilled' && emailResult.value) notifications.email = 'sent';
     else if (emailResult.status === 'rejected') { notifications.email = 'failed'; errors.push(`E-mail: ${emailResult.reason?.message || 'falha'}`); }
 
-    const sentCount = Object.values(notifications).filter((status) => status === 'sent').length;
+    // O status da submissão representa os canais de notificação ao cliente.
+    // O registro interno no CRM não deve transformar um envio parcial em
+    // "sent" quando e-mail/WhatsApp ainda não foram entregues.
+    const sentCount = [notifications.whatsapp, notifications.email]
+      .filter((status) => status === 'sent').length;
     const updated = await prisma.calculatorSubmission.update({
       where: { id: submission.id },
       data: {

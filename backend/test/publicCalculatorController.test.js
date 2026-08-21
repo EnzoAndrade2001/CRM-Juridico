@@ -26,6 +26,7 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
     ticketFindFirst: prisma.ticket.findFirst,
     ticketCreate: prisma.ticket.create,
     ticketUpdate: prisma.ticket.update,
+    messageFindFirst: prisma.message.findFirst,
     messageCreate: prisma.message.create,
     sendText: evolutionService.sendText,
     tenantSlug: process.env.PUBLIC_CALCULATOR_TENANT_SLUG,
@@ -41,6 +42,7 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
     prisma.ticket.findFirst = originals.ticketFindFirst;
     prisma.ticket.create = originals.ticketCreate;
     prisma.ticket.update = originals.ticketUpdate;
+    prisma.message.findFirst = originals.messageFindFirst;
     prisma.message.create = originals.messageCreate;
     evolutionService.sendText = originals.sendText;
     if (originals.tenantSlug === undefined) delete process.env.PUBLIC_CALCULATOR_TENANT_SLUG;
@@ -80,6 +82,7 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
     ticketData = data;
     return { id: 'ticket-1', ...data };
   };
+  prisma.message.findFirst = async () => null;
   prisma.message.create = async ({ data }) => {
     messageData = data;
     return { id: 'message-1', ...data };
@@ -124,6 +127,7 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
   assert.match(sentMessage.message, /preencheu a calculadora de revisão bancária/);
   assert.equal(updatedData.status, 'partial');
   assert.equal(res.payload.notifications.whatsapp, 'sent');
+  assert.equal(res.payload.notifications.crm, 'sent');
   assert.equal(ticketData.status, 'pending');
   assert.equal(messageData.ticketId, 'ticket-1');
   assert.equal(messageData.fromBot, true);
