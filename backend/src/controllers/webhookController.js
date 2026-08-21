@@ -519,7 +519,13 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
 
   const bodyTrim = (body || '').trim();
   const isRating = /^[1-5]$/.test(bodyTrim);
-  if (!isGroup && !fromMe && isRating && !isHistorical && ticket?.status === 'resolved' && !ticket.rating) {
+  if (tenant.settings?.ratingEnabled === true
+    && !isGroup
+    && !fromMe
+    && isRating
+    && !isHistorical
+    && ticket?.status === 'resolved'
+    && !ticket.rating) {
     const lastResolved = ticket;
 
     // Se foi encerrado nas últimas 24h, gravamos a nota
