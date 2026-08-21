@@ -351,6 +351,15 @@ export function useInboxRealtime({
       }
     });
 
+    // Leads criados por integrações externas (como a calculadora pública)
+    // podem abrir um ticket sem que o usuário esteja olhando a conversa.
+    // O evento dedicado garante que o atendimento apareça imediatamente na
+    // fila correta, já com o contato carregado.
+    socket.on('new_ticket', (ticket) => {
+      if (ticket?.id) upsertTicket(ticket);
+      else debouncedLoadTickets();
+    });
+
     socket.on('message_updated', ({ message }) => {
       if (!message || typeof message !== 'object') {
         console.error('[inbox] message_updated invalida ignorada:', message);
