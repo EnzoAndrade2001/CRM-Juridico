@@ -25,11 +25,12 @@ function checkRateLimit(req) {
   const key = clientIp(req);
   const now = Date.now();
   const previous = recentRequests.get(key) || 0;
-  recentRequests.set(key, now);
   for (const [storedKey, timestamp] of recentRequests) {
     if (now - timestamp > 15 * 60 * 1000) recentRequests.delete(storedKey);
   }
-  return now - previous < 30 * 1000;
+  if (previous && now - previous < 30 * 1000) return true;
+  recentRequests.set(key, now);
+  return false;
 }
 
 function text(value, field, { required = false, max = 160 } = {}) {
@@ -190,7 +191,10 @@ async function resolveTenant() {
 }
 
 async function createCalculatorSubmission(req, res) {
-  if (checkRateLimit(req)) return res.status(429).json({ stored: false, error: 'Aguarde alguns segundos antes de enviar novamente.' });
+  if (checkRateLimit(req)) {
+    res.set('Retry-After', '30');
+    return res.status(429).json({ stored: false, error: 'Aguarde 30 segundos antes de enviar novamente.', retryAfterSeconds: 30 });
+  }
   if (req.body?.website) return res.status(202).json({ stored: false, accepted: true });
 
   try {

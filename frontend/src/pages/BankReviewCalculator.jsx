@@ -141,7 +141,9 @@ export default function BankReviewCalculator({ whatsappUrl }) {
         remainingInstallments,
       });
       setSubmissionState(response.data?.stored ? 'received' : 'unavailable');
-    } catch {
+    } catch (requestError) {
+      const backendError = requestError?.response?.data?.error;
+      if (backendError) setError(backendError);
       // O resultado local continua disponível mesmo quando o backend ainda não
       // tem um tenant ou provedor de mensagens configurado.
       setSubmissionState('unavailable');
