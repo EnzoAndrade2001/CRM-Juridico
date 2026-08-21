@@ -10,26 +10,12 @@ import {
   Search,
   ShieldCheck,
   Trash2,
-  X,
 } from 'lucide-react';
 import { createKnowledge, deleteKnowledge, getKnowledge, updateKnowledge } from '../../services/api';
 import { toast } from '../../utils/toast';
+import LegalModal from './LegalModal';
 
 const EMPTY_FORM = { question: '', answer: '', tags: '' };
-
-function Modal({ children, title, subtitle, onClose }) {
-  return (
-    <div className="jd-modal-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="jd-modal jd-modal--wide" role="dialog" aria-modal="true" aria-label={title}>
-        <header>
-          <div><h3>{title}</h3><p>{subtitle}</p></div>
-          <button type="button" onClick={onClose} aria-label="Fechar"><X size={19} /></button>
-        </header>
-        {children}
-      </section>
-    </div>
-  );
-}
 
 function errorMessage(error) {
   return error?.response?.data?.error || error?.message || 'Não foi possível concluir a operação.';
@@ -137,7 +123,7 @@ export default function LegalKnowledgeBase() {
       </section>
 
       <section className="jd-card jd-knowledge-card">
-        <header><div><h3>Conteúdo jurídico aprovado</h3><p>{visibleItems.length} registro(s) encontrado(s)</p></div><label><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar pergunta, resposta ou tag" /></label></header>
+        <header><div><h3>Conteúdo jurídico aprovado</h3><p>{visibleItems.length} registro(s) encontrado(s)</p></div><label><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar pergunta, resposta ou tag" aria-label="Buscar na base da IA" /></label></header>
         {loading ? <div className="jd-workspace-loading"><BrainCircuit size={22} /> Carregando base da IA...</div> : (
           <div className="jd-knowledge-grid">
             {visibleItems.map((item) => (
@@ -154,7 +140,7 @@ export default function LegalKnowledgeBase() {
         )}
       </section>
 
-      {modalOpen && <Modal title={editing ? 'Editar orientação' : 'Nova orientação'} subtitle="Apenas conteúdo aprovado deve ficar ativo para a IA." onClose={() => setModalOpen(false)}><form onSubmit={save}><div className="jd-form-grid"><label className="jd-form-field jd-form-field--full"><span>Pergunta ou tópico</span><input required maxLength={500} value={form.question} onChange={(event) => setForm((current) => ({ ...current, question: event.target.value }))} placeholder="Ex.: Quais documentos solicitar em uma revisão bancária?" /></label><label className="jd-form-field jd-form-field--full"><span>Resposta orientadora</span><textarea required rows="8" maxLength={10000} value={form.answer} onChange={(event) => setForm((current) => ({ ...current, answer: event.target.value }))} placeholder="Escreva a orientação jurídica aprovada pelo escritório." /></label><label className="jd-form-field jd-form-field--full"><span>Tags</span><input maxLength={300} value={form.tags} onChange={(event) => setForm((current) => ({ ...current, tags: event.target.value }))} placeholder="revisional, documentos, triagem" /></label></div><div className="jd-modal__actions"><button type="button" className="jd-secondary" onClick={() => setModalOpen(false)}>Cancelar</button><button type="submit" className="jd-primary" disabled={saving}>{saving ? 'Salvando...' : <><Check size={16} /> Salvar orientação</>}</button></div></form></Modal>}
+      {modalOpen && <LegalModal title={editing ? 'Editar orientação' : 'Nova orientação'} subtitle="Apenas conteúdo aprovado deve ficar ativo para a IA." onClose={() => setModalOpen(false)} wide><form onSubmit={save}><div className="jd-form-grid"><label className="jd-form-field jd-form-field--full"><span>Pergunta ou tópico</span><input required maxLength={500} value={form.question} onChange={(event) => setForm((current) => ({ ...current, question: event.target.value }))} placeholder="Ex.: Quais documentos solicitar em uma revisão bancária?" /></label><label className="jd-form-field jd-form-field--full"><span>Resposta orientadora</span><textarea required rows="8" maxLength={10000} value={form.answer} onChange={(event) => setForm((current) => ({ ...current, answer: event.target.value }))} placeholder="Escreva a orientação jurídica aprovada pelo escritório." /></label><label className="jd-form-field jd-form-field--full"><span>Tags</span><input maxLength={300} value={form.tags} onChange={(event) => setForm((current) => ({ ...current, tags: event.target.value }))} placeholder="revisional, documentos, triagem" /></label></div><div className="jd-modal__actions"><button type="button" className="jd-secondary" onClick={() => setModalOpen(false)}>Cancelar</button><button type="submit" className="jd-primary" disabled={saving}>{saving ? 'Salvando...' : <><Check size={16} /> Salvar orientação</>}</button></div></form></LegalModal>}
     </div>
   );
 }

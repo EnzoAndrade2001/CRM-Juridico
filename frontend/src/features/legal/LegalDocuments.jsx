@@ -13,7 +13,6 @@ import {
   Search,
   ShieldCheck,
   Upload,
-  X,
 } from 'lucide-react';
 import {
   createLegalDocument,
@@ -22,6 +21,7 @@ import {
   updateLegalDocument,
   uploadLegalDocumentFile,
 } from '../../services/api';
+import LegalModal from './LegalModal';
 
 const DOCUMENT_KINDS = [
   ['IDENTIDADE', 'Documento de identidade'],
@@ -85,20 +85,6 @@ function formatFileSize(size) {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function Modal({ title, subtitle, children, onClose }) {
-  return (
-    <div className="jd-modal-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className="jd-modal jd-modal--wide" role="dialog" aria-modal="true" aria-label={title}>
-        <header>
-          <div><h3>{title}</h3>{subtitle && <p>{subtitle}</p>}</div>
-          <button type="button" onClick={onClose} aria-label="Fechar"><X size={19} /></button>
-        </header>
-        {children}
-      </section>
-    </div>
-  );
-}
-
 function DocumentStatus({ status }) {
   const [, label, tone] = statusMeta(status);
   return <span className={`jd-document-status jd-document-status--${tone}`}>{label}</span>;
@@ -107,7 +93,7 @@ function DocumentStatus({ status }) {
 function DocumentForm({ form, setForm, contacts, fixedContactId, saving, error, onClose, onSubmit }) {
   const update = (field) => (event) => setForm((current) => ({ ...current, [field]: event.target.value }));
   return (
-    <Modal title="Solicitar documento" subtitle="Registre a pendência ou já anexe o arquivo recebido." onClose={onClose}>
+    <LegalModal title="Solicitar documento" subtitle="Registre a pendência ou já anexe o arquivo recebido." onClose={onClose} wide>
       <form onSubmit={onSubmit}>
         <div className="jd-form-grid">
           {!fixedContactId && (
@@ -128,13 +114,13 @@ function DocumentForm({ form, setForm, contacts, fixedContactId, saving, error, 
         {error && <div className="jd-form-error"><CircleAlert size={16} />{error}</div>}
         <footer className="jd-modal__actions"><button type="button" className="jd-secondary" onClick={onClose}>Cancelar</button><button type="submit" className="jd-primary" disabled={saving}>{saving ? <><LoaderCircle size={16} className="jd-spin-icon" /> Salvando...</> : <><Check size={16} /> {form.file ? 'Registrar documento' : 'Solicitar documento'}</>}</button></footer>
       </form>
-    </Modal>
+    </LegalModal>
   );
 }
 
 function ReviewForm({ document, status, setStatus, notes, setNotes, saving, error, onClose, onSubmit }) {
   return (
-    <Modal title="Revisar documento" subtitle={document.title} onClose={onClose}>
+    <LegalModal title="Revisar documento" subtitle={document.title} onClose={onClose} wide>
       <form onSubmit={onSubmit}>
         <div className="jd-form-grid">
           <label className="jd-form-field jd-form-field--full"><span>Situação</span><select value={status} onChange={(event) => setStatus(event.target.value)}>{DOCUMENT_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -143,7 +129,7 @@ function ReviewForm({ document, status, setStatus, notes, setNotes, saving, erro
         {error && <div className="jd-form-error"><CircleAlert size={16} />{error}</div>}
         <footer className="jd-modal__actions"><button type="button" className="jd-secondary" onClick={onClose}>Cancelar</button><button type="submit" className="jd-primary" disabled={saving}>{saving ? 'Salvando...' : <><ShieldCheck size={16} /> Atualizar situação</>}</button></footer>
       </form>
-    </Modal>
+    </LegalModal>
   );
 }
 
@@ -298,7 +284,7 @@ export default function LegalDocuments({ workspace, contactId = null, leadId = n
       {error && <div className="jd-workspace-error"><CircleAlert size={17} /><span>{error}</span><button type="button" onClick={load}>Tentar novamente</button></div>}
       <div className="jd-document-stats"><article><FileText size={20} /><span><strong>{stats.total}</strong> documentos</span></article><article><Clock3 size={20} /><span><strong>{stats.pending}</strong> aguardando envio</span></article><article><Upload size={20} /><span><strong>{stats.received}</strong> recebidos / em análise</span></article><article><FileCheck2 size={20} /><span><strong>{stats.approved}</strong> aprovados</span></article></div>
       <section className="jd-card jd-document-card">
-        <header><div><h3>{compact ? 'Dossiê documental' : 'Dossiê do escritório'}</h3><p>{visibleDocuments.length} registro(s) encontrado(s)</p></div><div className="jd-document-filters"><label><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar documento ou cliente" /></label><label><Filter size={14} /><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="">Todas as situações</option>{DOCUMENT_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><select value={kindFilter} onChange={(event) => setKindFilter(event.target.value)} aria-label="Filtrar por tipo"><option value="">Todos os tipos</option>{DOCUMENT_KINDS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div></header>
+        <header><div><h3>{compact ? 'Dossiê documental' : 'Dossiê do escritório'}</h3><p>{visibleDocuments.length} registro(s) encontrado(s)</p></div><div className="jd-document-filters"><label><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar documento ou cliente" aria-label="Buscar documento ou cliente" /></label><label><Filter size={14} /><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filtrar por situação"><option value="">Todas as situações</option>{DOCUMENT_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><select value={kindFilter} onChange={(event) => setKindFilter(event.target.value)} aria-label="Filtrar por tipo"><option value="">Todos os tipos</option>{DOCUMENT_KINDS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div></header>
         {loading ? <div className="jd-workspace-loading"><LoaderCircle size={23} /> Carregando documentos...</div> : visibleDocuments.length ? <div className="jd-document-list">{visibleDocuments.map((document) => <article className="jd-document-row" key={document.id}><div className="jd-document-row__icon"><FileText size={19} /></div><div className="jd-document-row__main"><strong>{document.title}</strong><span>{labelFor(DOCUMENT_KINDS, document.kind)}{document.contact?.name ? ` · ${document.contact.name}` : ''}</span>{document.description && <small>{document.description}</small>}</div><div className="jd-document-row__meta"><DocumentStatus status={document.status} /><span>{document.dueAt ? `Prazo: ${formatDate(document.dueAt)}` : formatDate(document.createdAt)}</span>{document.fileName && <small>{document.fileName}{document.fileSize ? ` · ${formatFileSize(document.fileSize)}` : ''}</small>}</div><div className="jd-document-row__actions">{document.hasFile && <button type="button" className="jd-icon-button jd-document-action" onClick={() => download(document)} title="Baixar arquivo"><Download size={16} /></button>}<button type="button" className="jd-icon-button jd-document-action" onClick={() => selectUpload(document)} disabled={uploadingId === document.id} title="Anexar ou substituir arquivo">{uploadingId === document.id ? <LoaderCircle size={16} className="jd-spin-icon" /> : <Upload size={16} />}</button><button type="button" className="jd-secondary jd-document-review-button" onClick={() => openReview(document)}><ShieldCheck size={14} /> Revisar</button></div></article>)}</div> : <div className="jd-document-empty"><FileText size={28} /><strong>{search || statusFilter || kindFilter ? 'Nenhum documento encontrado' : 'Nenhum documento cadastrado'}</strong><span>{search || statusFilter || kindFilter ? 'Altere os filtros para ver outros registros.' : 'Solicite o primeiro documento para começar o dossiê jurídico.'}</span>{!search && !statusFilter && !kindFilter && <button type="button" className="jd-primary" onClick={openCreate}><Plus size={16} /> Solicitar documento</button>}</div>}
       </section>
       {createOpen && <DocumentForm form={form} setForm={setForm} contacts={contacts} fixedContactId={fixedContactId} saving={saving} error={error} onClose={() => setCreateOpen(false)} onSubmit={submitCreate} />}

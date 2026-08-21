@@ -36,6 +36,7 @@ import LegalClients from '../features/legal/LegalClients';
 import LegalOverviewPanel from '../features/legal/LegalOverview';
 import LegalKnowledgeBase from '../features/legal/LegalKnowledgeBase';
 import LegalDocuments from '../features/legal/LegalDocuments';
+import LegalSettingsPanel from '../features/legal/LegalSettings';
 import useLegalWorkspace from '../features/legal/useLegalWorkspace';
 import pedroMonogram from '../assets/pedro-bastos-lund-monogram.png';
 import RealInbox from './Inbox';
@@ -111,19 +112,20 @@ function Sidebar({
   return (
     <>
       {open && <button className="jd-overlay" type="button" aria-label="Fechar menu" onClick={() => setOpen(false)} />}
-      <aside className={`jd-sidebar ${open ? 'is-open' : ''}`}>
+      <aside id="jd-primary-navigation" className={`jd-sidebar ${open ? 'is-open' : ''}`} aria-label="Navegação principal">
         <div className="jd-brand">
           <span className="jd-brand__mark jd-brand__mark--logo"><img src={pedroMonogram} alt="Pedro Bastos Lund" /></span>
           <span><strong>CRM Jurídico</strong><small>ATENDIMENTO PRO PEDRO LUND</small></span>
-          <button className="jd-sidebar__close" type="button" onClick={() => setOpen(false)}><X size={20} /></button>
+          <button className="jd-sidebar__close" type="button" aria-label="Fechar navegação" onClick={() => setOpen(false)}><X size={20} /></button>
         </div>
         <p className="jd-nav-label">ESCRITÓRIO</p>
-        <nav className="jd-nav">
+        <nav className="jd-nav" aria-label="Módulos do escritório">
           {navigation.map(({ id, label, icon: Icon, badge }) => (
             <button
               key={id}
               type="button"
               className={active === id ? 'active' : ''}
+              aria-current={active === id ? 'page' : undefined}
               onClick={() => { setActive(id); setOpen(false); }}
             >
               <Icon size={18} /><span>{label}</span>{badge && <b>{badge}</b>}
@@ -156,7 +158,7 @@ function Sidebar({
   );
 }
 
-function Header({ title, subtitle, setMenuOpen, currentUser, onOpenSettings, onSearch }) {
+function Header({ title, subtitle, menuOpen, setMenuOpen, currentUser, onOpenSettings, onSearch }) {
   const [query, setQuery] = useState('');
 
   function submitSearch(event) {
@@ -167,7 +169,7 @@ function Header({ title, subtitle, setMenuOpen, currentUser, onOpenSettings, onS
 
   return (
     <header className="jd-header">
-      <button className="jd-menu-button" type="button" onClick={() => setMenuOpen(true)}><Menu size={22} /></button>
+      <button className="jd-menu-button" type="button" aria-label="Abrir navegação" aria-controls="jd-primary-navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}><Menu size={22} /></button>
       <div className="jd-header__title"><h1>{title}</h1><p>{subtitle}</p></div>
       <form className="jd-search" role="search" onSubmit={submitSearch}>
         <Search size={17} />
@@ -512,6 +514,16 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
     loadShellState();
   }, [loadShellState]);
 
+  useEffect(() => {
+    function closeTemporaryNavigation(event) {
+      if (event.key !== 'Escape') return;
+      setMenuOpen(false);
+      setProfileMenuOpen(false);
+    }
+    window.addEventListener('keydown', closeTemporaryNavigation);
+    return () => window.removeEventListener('keydown', closeTemporaryNavigation);
+  }, []);
+
   function handleLogout() {
     const slug = currentUser?.tenant?.slug;
     localStorage.clear();
@@ -563,6 +575,7 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
   }[active]), [active]);
   return (
     <div className={`legal-demo ${demoMode ? 'legal-demo--demo' : ''}`}>
+      <a className="jd-skip-link" href="#jd-main-content">Ir para o conteúdo principal</a>
       {demoMode && <div className="jd-demo-ribbon"><span><Sparkles size={14} /> DEMONSTRAÇÃO INTERATIVA</span><p>Dados fictícios · alterações salvas neste navegador</p></div>}
       <Sidebar
         active={active}
@@ -576,8 +589,8 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
         setProfileMenuOpen={setProfileMenuOpen}
         onLogout={handleLogout}
       />
-      <main className="jd-main">
-        <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} currentUser={currentUser} onOpenSettings={() => setActive('configuracoes')} onSearch={searchClients} />
+      <main id="jd-main-content" className="jd-main">
+        <Header title={header[0]} subtitle={header[1]} menuOpen={menuOpen} setMenuOpen={setMenuOpen} currentUser={currentUser} onOpenSettings={() => setActive('configuracoes')} onSearch={searchClients} />
         {active === 'visao-geral' && <LegalOverviewPanel workspace={legalWorkspace} onNavigate={setActive} currentUser={currentUser} />}
         {active === 'atendimentos' && (demoMode ? <InboxDemo /> : (
           <RealInbox
@@ -593,7 +606,7 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
         {active === 'campanhas' && (demoMode ? <CampaignsDemo /> : <Campaigns embedded />)}
         {active === 'conhecimento' && (demoMode ? <PlaceholderPage type={active} /> : <LegalKnowledgeBase />)}
         {active === 'conexoes' && (demoMode ? <PlaceholderPage type={active} /> : <div className="jd-connections-shell"><ConnectionsPage embedded /></div>)}
-        {active === 'configuracoes' && <LegalSettings demoMode={demoMode} onSettingsChanged={loadShellState} />}
+        {active === 'configuracoes' && <LegalSettingsPanel demoMode={demoMode} onSettingsChanged={loadShellState} />}
       </main>
     </div>
   );

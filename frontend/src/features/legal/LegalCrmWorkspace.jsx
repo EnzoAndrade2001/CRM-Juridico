@@ -15,7 +15,6 @@ import {
   Search,
   Save,
   Sparkles,
-  X,
 } from 'lucide-react';
 import {
   initialsFor,
@@ -27,6 +26,7 @@ import {
   TASK_TYPES,
 } from './legalWorkspace';
 import LegalDocuments from './LegalDocuments';
+import LegalModal from './LegalModal';
 
 const PIPELINE_COLUMNS = [
   { id: 'NOVO_CONTATO', title: 'Novo contato', color: '#4f7cff', stages: ['NOVO_CONTATO'] },
@@ -75,20 +75,6 @@ function Pill({ children, tone = 'neutral' }) {
   return <span className={`jd-pill jd-pill--${tone}`}>{children}</span>;
 }
 
-function Modal({ title, subtitle, children, onClose, wide = false }) {
-  return (
-    <div className="jd-modal-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className={`jd-modal ${wide ? 'jd-modal--wide' : ''}`} role="dialog" aria-modal="true" aria-label={title}>
-        <header>
-          <div><h3>{title}</h3>{subtitle && <p>{subtitle}</p>}</div>
-          <button type="button" onClick={onClose} aria-label="Fechar"><X size={19} /></button>
-        </header>
-        {children}
-      </section>
-    </div>
-  );
-}
-
 function Field({ label, children, full = false }) {
   return <label className={full ? 'jd-form-field jd-form-field--full' : 'jd-form-field'}><span>{label}</span>{children}</label>;
 }
@@ -114,7 +100,7 @@ function OpportunityForm({ workspace, initialStage, initialContactId = '', initi
   }
 
   return (
-    <Modal title="Nova oportunidade" subtitle="Cadastre o contato e a demanda jurídica inicial." onClose={onClose} wide>
+    <LegalModal title="Nova oportunidade" subtitle="Cadastre o contato e a demanda jurídica inicial." onClose={onClose} wide>
       <form onSubmit={submit}>
         <div className="jd-form-grid">
           {!workspace.demoMode && (
@@ -141,7 +127,7 @@ function OpportunityForm({ workspace, initialStage, initialContactId = '', initi
         {formError && <div className="jd-form-error"><CircleAlert size={16} />{formError}</div>}
         <footer className="jd-modal__actions"><button type="button" className="jd-secondary" onClick={onClose}>Cancelar</button><button className="jd-primary" disabled={workspace.saving}><Plus size={16} />{workspace.saving ? 'Salvando...' : 'Criar oportunidade'}</button></footer>
       </form>
-    </Modal>
+    </LegalModal>
   );
 }
 
@@ -167,7 +153,7 @@ function TaskForm({ workspace, lead, matter, onClose }) {
   }
 
   return (
-    <Modal title="Nova tarefa" subtitle={`Vinculada a ${matter?.title || lead?.title || 'o fluxo jurídico'}.`} onClose={onClose}>
+    <LegalModal title="Nova tarefa" subtitle={`Vinculada a ${matter?.title || lead?.title || 'o fluxo jurídico'}.`} onClose={onClose}>
       <form onSubmit={submit}>
         <div className="jd-form-grid">
           <Field label="Tarefa" full><input required value={form.title} onChange={update('title')} placeholder="Ex.: Revisar documentos recebidos" /></Field>
@@ -179,7 +165,7 @@ function TaskForm({ workspace, lead, matter, onClose }) {
         {formError && <div className="jd-form-error"><CircleAlert size={16} />{formError}</div>}
         <footer className="jd-modal__actions"><button type="button" className="jd-secondary" onClick={onClose}>Cancelar</button><button className="jd-primary" disabled={workspace.saving}><CalendarClock size={16} />{workspace.saving ? 'Salvando...' : 'Criar tarefa'}</button></footer>
       </form>
-    </Modal>
+    </LegalModal>
   );
 }
 
@@ -250,7 +236,7 @@ function LeadDetail({ workspace, lead, onClose, onTask }) {
   }
 
   return (
-    <Modal title={detail.contact?.name || 'Oportunidade'} subtitle={detail.title} onClose={onClose} wide>
+    <LegalModal title={detail.contact?.name || 'Oportunidade'} subtitle={detail.title} onClose={onClose} wide>
       <div className="jd-lead-detail">
         <div className="jd-lead-detail__summary">
           <Avatar name={detail.contact?.name} />
@@ -277,7 +263,7 @@ function LeadDetail({ workspace, lead, onClose, onTask }) {
         {!matter && <button type="button" className="jd-secondary jd-secondary--green" disabled={workspace.saving} onClick={convert}><BriefcaseBusiness size={16} /> Converter em caso</button>}
         <button type="button" className="jd-primary" disabled={workspace.saving} onClick={save}>{workspace.saving ? 'Salvando...' : 'Salvar etapa'}</button>
       </footer>
-    </Modal>
+    </LegalModal>
   );
 }
 
@@ -303,10 +289,12 @@ function Pipeline({ workspace, search, area, onCreate, onSelect }) {
             <header><i style={{ background: column.color }} /><strong>{column.title}</strong><span>{cards.length}</span></header>
             <div>
               {cards.map((lead) => (
-                <article key={lead.id} role="button" tabIndex="0" onClick={() => onSelect(lead)} onKeyDown={(event) => event.key === 'Enter' && onSelect(lead)}>
-                  <div className="jd-kanban__tag"><span>{labelFor(LEGAL_AREAS, lead.area)}</span>{lead.stage === 'QUALIFICACAO_IA' && <b><Sparkles size={12} /> IA ativa</b>}</div>
-                  <h3>{lead.contact?.name || 'Cliente sem nome'}</h3>
-                  <p>{lead.title}</p>
+                <article key={lead.id}>
+                  <button type="button" className="jd-kanban__open" aria-label={`Abrir oportunidade de ${lead.contact?.name || 'cliente sem nome'}: ${lead.title}`} onClick={() => onSelect(lead)}>
+                    <span className="jd-kanban__tag"><span>{labelFor(LEGAL_AREAS, lead.area)}</span>{lead.stage === 'QUALIFICACAO_IA' && <b><Sparkles size={12} /> IA ativa</b>}</span>
+                    <strong>{lead.contact?.name || 'Cliente sem nome'}</strong>
+                    <span className="jd-kanban__subject">{lead.title}</span>
+                  </button>
                   <footer><Avatar name={lead.contact?.name} /><time><Clock3 size={13} /> {labelFor(PRIORITIES, lead.urgency)}</time>{NEXT_STAGE[lead.stage] && <button type="button" title="Avançar etapa" onClick={(event) => advance(event, lead)}><ArrowRight size={15} /></button>}</footer>
                 </article>
               ))}
@@ -369,7 +357,7 @@ function MatterDetail({ workspace, matter, onClose, onTask }) {
   }
 
   return (
-    <Modal title={detail.contact?.name || 'Caso jurídico'} subtitle={detail.title} onClose={onClose} wide>
+    <LegalModal title={detail.contact?.name || 'Caso jurídico'} subtitle={detail.title} onClose={onClose} wide>
       <div className="jd-lead-detail jd-matter-detail">
         <div className="jd-lead-detail__summary"><Avatar name={detail.contact?.name} /><dl><div><dt>Área</dt><dd>{labelFor(LEGAL_AREAS, detail.area)}</dd></div><div><dt>Situação</dt><dd>{labelFor(MATTER_STATUSES, detail.status)}</dd></div><div><dt>Cliente</dt><dd>{detail.contact?.name}</dd></div><div><dt>Tarefas</dt><dd>{detail.tasks?.length ?? 0}</dd></div></dl></div>
         <div className="jd-form-grid jd-matter-form">
@@ -384,7 +372,7 @@ function MatterDetail({ workspace, matter, onClose, onTask }) {
         {formError && <div className="jd-form-error"><CircleAlert size={16} />{formError}</div>}
       </div>
       <footer className="jd-modal__actions jd-modal__actions--spread"><button type="button" className="jd-secondary" onClick={() => onTask(null, detail)}><CalendarClock size={16} /> Nova tarefa</button><span /><button type="button" className="jd-primary" disabled={workspace.saving} onClick={save}><Save size={16} />{workspace.saving ? 'Salvando...' : 'Salvar caso'}</button></footer>
-    </Modal>
+    </LegalModal>
   );
 }
 
@@ -472,7 +460,7 @@ export default function LegalCrmWorkspace({ workspace }) {
           <button type="button" className={tab === 'matters' ? 'active' : ''} onClick={() => setTab('matters')}>Casos <b>{workspace.matters.length}</b></button>
           <button type="button" className={tab === 'tasks' ? 'active' : ''} onClick={() => setTab('tasks')}>Tarefas <b>{workspace.tasks.filter((task) => !['CONCLUIDA', 'CANCELADA'].includes(task.status)).length}</b></button>
         </nav>
-        {tab === 'pipeline' && <div className="jd-workspace-filters"><label><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar cliente ou assunto" /></label><label><Filter size={14} /><select value={area} onChange={(event) => setArea(event.target.value)}><option value="">Todas as áreas</option>{LEGAL_AREAS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div>}
+        {tab === 'pipeline' && <div className="jd-workspace-filters"><label><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar cliente ou assunto" aria-label="Buscar cliente ou assunto no funil" /></label><label><Filter size={14} /><select value={area} onChange={(event) => setArea(event.target.value)} aria-label="Filtrar oportunidades por área"><option value="">Todas as áreas</option>{LEGAL_AREAS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div>}
       </div>
 
       {workspace.loading ? <div className="jd-workspace-loading"><LoaderCircle size={25} /> Carregando dados jurídicos...</div> : (

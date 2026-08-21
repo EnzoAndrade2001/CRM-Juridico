@@ -12,26 +12,15 @@ import {
   Search,
   UserRound,
   UsersRound,
-  X,
 } from 'lucide-react';
 import { initialsFor, labelFor, LEGAL_AREAS, LEAD_STAGES, MATTER_STATUSES } from './legalWorkspace';
 import LegalDocuments from './LegalDocuments';
+import LegalModal from './LegalModal';
 
 const EMPTY_CLIENT = { name: '', phone: '', email: '', cpfCnpj: '', city: '', state: '', notes: '' };
 
 function Avatar({ name, large = false }) {
   return <span className={`jd-avatar ${large ? 'jd-avatar--lg' : 'jd-avatar--sm'}`}>{initialsFor(name)}</span>;
-}
-
-function Modal({ title, subtitle, children, onClose, wide = false }) {
-  return (
-    <div className="jd-modal-layer" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section className={`jd-modal ${wide ? 'jd-modal--wide' : ''}`} role="dialog" aria-modal="true" aria-label={title}>
-        <header><div><h3>{title}</h3>{subtitle && <p>{subtitle}</p>}</div><button type="button" onClick={onClose} aria-label="Fechar"><X size={19} /></button></header>
-        {children}
-      </section>
-    </div>
-  );
 }
 
 function Field({ label, children, full = false }) {
@@ -59,7 +48,7 @@ function ClientForm({ workspace, client, onClose }) {
   }
 
   return (
-    <Modal title={client ? 'Editar cliente' : 'Novo cliente'} subtitle="Dados centrais utilizados em todos os atendimentos e casos." onClose={onClose} wide>
+    <LegalModal title={client ? 'Editar cliente' : 'Novo cliente'} subtitle="Dados centrais utilizados em todos os atendimentos e casos." onClose={onClose} wide>
       <form onSubmit={submit}>
         <div className="jd-form-grid">
           <Field label="Nome completo" full><input required value={form.name} onChange={update('name')} placeholder="Nome do cliente" /></Field>
@@ -74,7 +63,7 @@ function ClientForm({ workspace, client, onClose }) {
         {formError && <div className="jd-form-error"><CircleAlert size={16} />{formError}</div>}
         <footer className="jd-modal__actions"><button type="button" className="jd-secondary" onClick={onClose}>Cancelar</button><button className="jd-primary" disabled={workspace.saving}>{client ? <Pencil size={16} /> : <Plus size={16} />}{workspace.saving ? 'Salvando...' : client ? 'Salvar alterações' : 'Cadastrar cliente'}</button></footer>
       </form>
-    </Modal>
+    </LegalModal>
   );
 }
 
@@ -85,7 +74,7 @@ function ClientDetail({ workspace, client, onClose, onEdit, onOpenCrm }) {
   const leadIds = new Set(leads.map((lead) => lead.id));
   const tasks = client.tasks || workspace.tasks.filter((task) => matterIds.has(task.matterId) || leadIds.has(task.leadId));
   return (
-    <Modal title={client.name || 'Cliente'} subtitle="Perfil jurídico e vínculos do CRM." onClose={onClose} wide>
+    <LegalModal title={client.name || 'Cliente'} subtitle="Perfil jurídico e vínculos do CRM." onClose={onClose} wide>
       <div className="jd-client-detail">
         <section className="jd-client-detail__identity">
           <Avatar name={client.name} large />
@@ -107,7 +96,7 @@ function ClientDetail({ workspace, client, onClose, onEdit, onOpenCrm }) {
         {client.activities?.length > 0 && <section className="jd-history"><h4>Histórico cadastral</h4>{client.activities.slice(0, 8).map((item) => <article key={item.id}><i /><span><strong>{item.type === 'client.created' ? 'Cliente cadastrado' : 'Dados do cliente atualizados'}</strong><small>{item.actor?.name || 'Sistema'} · {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.createdAt))}</small></span></article>)}</section>}
         {!workspace.demoMode && <LegalDocuments workspace={workspace} contactId={client.id} compact />}
       </div>
-    </Modal>
+    </LegalModal>
   );
 }
 
@@ -158,7 +147,7 @@ export default function LegalClients({ workspace, onNavigate, initialSearch = ''
         <article><MessageCircleMore size={20} /><span><strong>{whatsappCount}</strong> vinculados ao WhatsApp</span></article>
       </section>
       <section className="jd-card jd-client-table">
-        <header><div><h3>Base de clientes</h3><p>{clients.length} registro(s) encontrado(s)</p></div><label><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar nome, telefone, e-mail ou documento" /></label></header>
+        <header><div><h3>Base de clientes</h3><p>{clients.length} registro(s) encontrado(s)</p></div><label><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar nome, telefone, e-mail ou documento" aria-label="Buscar na base de clientes" /></label></header>
         <div className="jd-client-table__head"><span>Cliente</span><span>Contato</span><span>Localização</span><span>Oportunidades</span><span>Casos</span><span /></div>
         {clients.map((client) => {
           const leadCount = workspace.leads.filter((lead) => lead.contactId === client.id).length;
