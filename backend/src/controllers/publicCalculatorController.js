@@ -4,6 +4,11 @@ const evolutionService = require('../services/evolutionService');
 
 const recentRequests = new Map();
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+let io;
+
+function setIo(socketIo) {
+  io = socketIo;
+}
 
 // As origens da captação são deliberadamente mantidas no backend. Assim, a
 // landing page não consegue inventar uma campanha/tag e cada novo site pode
@@ -177,8 +182,69 @@ async function sendWhatsApp(tenant, submission, message) {
   const key = settings.evolutionKey || process.env.DEFAULT_EVOLUTION_KEY;
   const instance = tenant.instances?.find(isConnectedInstance);
   if (!url || !key || !instance || !submission.phone) return false;
-  await evolutionService.sendText(url, key, instance.instanceName, submission.phone, message);
-  return true;
+  const result = await evolutionService.sendText(url, key, instance.instanceName, submission.phone, message);
+  return { result, instance };
+}
+
+async function ensureCalculatorTicket(tenant, contact, instance) {
+  if (!contact) return null;
+
+  const latestTicket = await prisma.ticket.findFirst({
+    where: { tenantId: tenant.id, contactId: contact.id },
+    orderBy: { updatedAt: 'desc' },
+  });
+  const now = new Date();
+
+  if (latestTicket) {
+    const ticket = await prisma.ticket.update({
+      where: { id: latestTicket.id },
+      data: {
+        ...(instance?.id ? { instanceId: instance.id } : {}),
+        updatedAt: now,
+        lastMessageAt: now,
+        ...(latestTicket.status === 'resolved' || latestTicket.status === 'closed'
+          ? { status: 'pending', resolvedAt: null }
+          : {}),
+      },
+    });
+    return { ticket, created: false };
+  }
+
+  const ticket = await prisma.ticket.create({
+    data: {
+      tenantId: tenant.id,
+      instanceId: instance?.id || null,
+      contactId: contact.id,
+      status: 'pending',
+      lastMessageAt: now,
+    },
+  });
+  return { ticket, created: true };
+}
+
+async function recordCalculatorMessage(tenant, contact, instance, body, sendResult) {
+  const ensuredTicket = await ensureCalculatorTicket(tenant, contact, instance);
+  if (!ensuredTicket) return null;
+  const { ticket } = ensuredTicket;
+
+  const externalId = sendResult?.key?.id || sendResult?.message?.key?.id || null;
+  const message = await prisma.message.create({
+    data: {
+      ticketId: ticket.id,
+      body,
+      fromMe: true,
+      fromBot: true,
+      externalId,
+    },
+  });
+
+  if (io) {
+    if (ensuredTicket.created) io.to(tenant.id).emit('new_ticket', ticket);
+    io.to(tenant.id).emit('new_message', { message, ticket });
+    io.to(tenant.id).emit('ticket_updated', { ticketId: ticket.id });
+  }
+
+  return { ticket, message };
 }
 
 async function resolveTenant() {
@@ -257,7 +323,20 @@ async function createCalculatorSubmission(req, res) {
       sendEmail(submission, message),
     ]);
 
-    if (whatsappResult.status === 'fulfilled' && whatsappResult.value) notifications.whatsapp = 'sent';
+    if (whatsappResult.status === 'fulfilled' && whatsappResult.value) {
+      notifications.whatsapp = 'sent';
+      try {
+        await recordCalculatorMessage(
+          tenant,
+          contactResult.contact,
+          whatsappResult.value.instance,
+          message,
+          whatsappResult.value.result,
+        );
+      } catch (error) {
+        errors.push(`CRM: ${error.message || 'falha ao registrar a mensagem'}`);
+      }
+    }
     else if (whatsappResult.status === 'rejected') { notifications.whatsapp = 'failed'; errors.push(`WhatsApp: ${whatsappResult.reason?.message || 'falha'}`); }
     if (emailResult.status === 'fulfilled' && emailResult.value) notifications.email = 'sent';
     else if (emailResult.status === 'rejected') { notifications.email = 'failed'; errors.push(`E-mail: ${emailResult.reason?.message || 'falha'}`); }
@@ -287,4 +366,4 @@ async function createCalculatorSubmission(req, res) {
   }
 }
 
-module.exports = { createCalculatorSubmission };
+module.exports = { createCalculatorSubmission, setIo };

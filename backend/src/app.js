@@ -29,6 +29,7 @@ const { setIo: setIoCampaign } = require('./controllers/campaignController');
 const { setIo: setIoBilling } = require('./controllers/billingController');
 const { setIo: setIoManagerCopy } = require('./services/serviceOrderManagerCopyService');
 const { setIo: setIoBillingDocuments } = require('./services/billingDocumentService');
+const { setIo: setIoPublicCalculator } = require('./controllers/publicCalculatorController');
 const tagRoutes = require('./routes/tagRoutes');
 const uploadRoutes = require('./routes/upload');
 const osRoutes = require('./routes/osRoutes');
@@ -110,6 +111,7 @@ setIoCampaign(io);
 setIoBilling(io);
 setIoManagerCopy(io);
 setIoBillingDocuments(io);
+setIoPublicCalculator(io);
 setIoSchedule(io);
 
 app.use(cors(corsOptions));

@@ -23,6 +23,10 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
     tagCreate: prisma.tag.create,
     contactFindFirst: prisma.contact.findFirst,
     contactCreate: prisma.contact.create,
+    ticketFindFirst: prisma.ticket.findFirst,
+    ticketCreate: prisma.ticket.create,
+    ticketUpdate: prisma.ticket.update,
+    messageCreate: prisma.message.create,
     sendText: evolutionService.sendText,
     tenantSlug: process.env.PUBLIC_CALCULATOR_TENANT_SLUG,
   };
@@ -34,6 +38,10 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
     prisma.tag.create = originals.tagCreate;
     prisma.contact.findFirst = originals.contactFindFirst;
     prisma.contact.create = originals.contactCreate;
+    prisma.ticket.findFirst = originals.ticketFindFirst;
+    prisma.ticket.create = originals.ticketCreate;
+    prisma.ticket.update = originals.ticketUpdate;
+    prisma.message.create = originals.messageCreate;
     evolutionService.sendText = originals.sendText;
     if (originals.tenantSlug === undefined) delete process.env.PUBLIC_CALCULATOR_TENANT_SLUG;
     else process.env.PUBLIC_CALCULATOR_TENANT_SLUG = originals.tenantSlug;
@@ -44,6 +52,8 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
   let updatedData;
   let contactData;
   let sentMessage;
+  let ticketData;
+  let messageData;
 
   prisma.tenant.findUnique = async () => ({
     id: 'tenant-eduarda',
@@ -64,6 +74,15 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
   prisma.contact.create = async ({ data }) => {
     contactData = data;
     return { id: 'contact-1', ...data };
+  };
+  prisma.ticket.findFirst = async () => null;
+  prisma.ticket.create = async ({ data }) => {
+    ticketData = data;
+    return { id: 'ticket-1', ...data };
+  };
+  prisma.message.create = async ({ data }) => {
+    messageData = data;
+    return { id: 'message-1', ...data };
   };
   evolutionService.sendText = async (_url, _key, instanceName, phone, message) => {
     sentMessage = { instanceName, phone, message };
@@ -105,6 +124,11 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
   assert.match(sentMessage.message, /preencheu a calculadora de revisão bancária/);
   assert.equal(updatedData.status, 'partial');
   assert.equal(res.payload.notifications.whatsapp, 'sent');
+  assert.equal(ticketData.status, 'pending');
+  assert.equal(messageData.ticketId, 'ticket-1');
+  assert.equal(messageData.fromBot, true);
+  assert.equal(messageData.fromMe, true);
+  assert.equal(messageData.externalId, 'message-1');
 });
 
 test('calculadora recusa origem que não foi autorizada pelo backend', async () => {
