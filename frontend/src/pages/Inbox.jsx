@@ -12,20 +12,6 @@ import api, {
   getTeams,
   summarizeTicket,
   reopenTicket,
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useOutletContext, useNavigate } from 'react-router-dom';
-import api, {
-  getTickets,
-  getMessages,
-  sendMessage,
-  sendMediaMessage,
-  assignTicket,
-  resolveTicket,
-  getMe,
-  getUsers,
-  getTeams,
-  summarizeTicket,
-  reopenTicket,
   getQuickResponses,
   scheduleMessage,
   sendAudioMessage,
@@ -593,6 +579,62 @@ export default function Inbox({ legalMode = false, instanceList = null, onOpenLe
 
   return (
     <div className={legalMode ? 'inbox-embedded inbox-embedded--legal' : 'inbox-embedded'} style={{ ...s.layout, ...(legalMode ? s.embeddedLayout : {}) }}>
+      <style>{`
+        @keyframes pulse {
+          0% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.2); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        .inbox-control { transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease; }
+        .inbox-control:hover:not(:disabled) { border-color: var(--accent-border) !important; color: var(--text-main) !important; }
+        .inbox-control:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .inbox-control:active:not(:disabled) { transform: translateY(1px); }
+      `}</style>
+      <TicketSidebar
+        counts={counts}
+        filters={filters}
+        isMobile={isMobile}
+        search={search}
+        selectedId={selectedId}
+        selectTicket={selectTicket}
+        setFilters={setFilters}
+        setSearch={setSearch}
+        setTab={setTab}
+        styles={s}
+        tab={tab}
+        teams={teams}
+        tickets={tickets}
+        users={users}
+        view={view}
+      />
+
+      {/* Main Chat */}
+      <main 
+        style={{ 
+          ...s.main,
+          display: (isMobile && view === 'list') ? 'none' : 'flex'
+        }}
+        onDragOver={e => e.preventDefault()}
+        onDrop={e => {
+          e.preventDefault();
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
+          }
+        }}
+      >
+        {selectedTicket ? (
+          <>
+            <InboxSectionErrorBoundary key={`header-${selectedTicket.id}`} label="cabecalho da conversa">
+              <ChatHeader
+                botName={botName}
+                handleReopen={handleReopen}
+                handleResolve={handleResolve}
+                handleReturnToBot={handleReturnToBot}
+                handleSummarize={handleSummarize}
+                isMobile={isMobile}
+                isCompactDesktop={isCompactDesktop}
+                legalMode={legalMode}
+                onImageClick={openPreviewImage}
                 selectedTicket={selectedTicket}
                 setShowInfo={setShowInfo}
                 setShowOsModal={setShowOsModal}

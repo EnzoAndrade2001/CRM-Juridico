@@ -1534,173 +1534,6 @@ export const TicketSidebar = React.memo(function TicketSidebar({
         {filteredTickets.length === 0 && <Empty>Nenhuma conversa encontrada</Empty>}
       </div>
     </aside>
-              {counts[tabId] > 0 && <span style={styles.badge}>{counts[tabId]}</span>}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div style={styles.searchWrap}>
-        <div style={styles.searchRow}>
-          <div style={styles.searchShell}>
-            <Search size={15} strokeWidth={2.2} style={styles.searchIcon} />
-            <input
-              style={styles.search}
-              placeholder="Buscar cliente ou telefone"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              aria-label="Buscar cliente ou telefone"
-            />
-            {search ? (
-              <button type="button" className="inbox-control" style={styles.searchClearIcon} onClick={() => setSearch('')} aria-label="Limpar busca" title="Limpar busca">
-                <X size={14} />
-              </button>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            className="inbox-control"
-            onClick={() => setFiltersOpen((current) => !current)}
-            style={{ ...styles.filterToggleBtn, ...(activeFilterCount ? styles.filterToggleActive : {}) }}
-            aria-expanded={filtersOpen}
-            aria-label="Exibir filtros da lista"
-            title="Filtrar conversas"
-          >
-            <SlidersHorizontal size={15} />
-            {activeFilterCount ? <span>{activeFilterCount}</span> : null}
-          </button>
-        </div>
-
-        {filtersOpen ? <div style={{ ...styles.filterBar, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-          <select
-            style={{ ...styles.filterSelect, minWidth: isMobile ? 'calc(50% - 3px)' : undefined }}
-            value={filters.priority}
-            onChange={(event) => setFilters({ ...filters, priority: event.target.value })}
-          >
-            <option value="">Prioridade</option>
-            <option value="urgent">Urgente</option>
-            <option value="high">Alta</option>
-            <option value="medium">Normal</option>
-            <option value="low">Baixa</option>
-          </select>
-
-          <select
-            style={{ ...styles.filterSelect, minWidth: isMobile ? 'calc(50% - 3px)' : undefined }}
-            value={filters.agentId}
-            onChange={(event) => setFilters({ ...filters, agentId: event.target.value })}
-          >
-            <option value="">Atendente</option>
-            {users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
-          </select>
-
-          <select
-            style={{ ...styles.filterSelect, minWidth: isMobile ? '100%' : undefined }}
-            value={filters.teamId}
-            onChange={(event) => setFilters({ ...filters, teamId: event.target.value })}
-          >
-            <option value="">Equipe</option>
-            {teams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
-          </select>
-          {activeFilterCount ? (
-            <button
-              type="button"
-              className="inbox-control"
-              style={styles.filtersClearBtn}
-              onClick={() => setFilters({ priority: '', agentId: '', teamId: '' })}
-            >
-              Limpar
-            </button>
-          ) : null}
-        </div> : null}
-      </div>
-
-      <div style={styles.list}>
-        {filteredTickets.map((ticket) => {
-          const priorityMeta = getPriorityMeta(ticket.priority);
-          const statusMeta = getStatusMeta(ticket.status);
-          const phoneLabel = getContactPhone(ticket.contact, 'Sem telefone');
-          const ownerLabel = ticket.agent?.name || ticket.team?.name || 'Sem responsavel';
-          const tags = getSafeTags(ticket.contact?.tags).slice(0, 2);
-
-          return (
-          <div
-            key={ticket.id}
-            onClick={() => selectTicket(ticket.id)}
-            role="button"
-            tabIndex={0}
-            aria-label={`Abrir conversa com ${getContactDisplayName(ticket.contact)}`}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                selectTicket(ticket.id);
-              }
-            }}
-            style={{ ...styles.row, ...(selectedId === ticket.id ? styles.rowActive : {}) }}
-          >
-            <Avatar
-              name={getContactDisplayName(ticket.contact)}
-              src={ticket.contact?.avatarUrl}
-              size={36}
-            />
-            <div style={styles.rowInfo}>
-              <div style={styles.rowTop}>
-                <span style={styles.rowName}>{getContactDisplayName(ticket.contact)}</span>
-                <span style={styles.rowTime}>{formatTicketTimestamp(ticket.updatedAt)}</span>
-              </div>
-
-              <div style={styles.rowPreview}>{phoneLabel}</div>
-
-              <div style={styles.rowSub}>
-                <span
-                  style={{
-                    ...styles.rowStatusPill,
-                    background: statusMeta.background,
-                    color: statusMeta.color,
-                    border: statusMeta.border,
-                  }}
-                >
-                  <span style={{ ...styles.dot, background: statusMeta.color, color: statusMeta.color, boxShadow: 'none' }} />
-                  {getInstanceLabel(ticket)} - {statusMeta.label}
-                </span>
-                {priorityMeta ? (
-                  <span
-                    style={{
-                      ...styles.priorityPill,
-                      background: priorityMeta.background,
-                      color: priorityMeta.color,
-                      border: priorityMeta.border,
-                    }}
-                  >
-                    {priorityMeta.label}
-                  </span>
-                ) : null}
-                {ticket.unreadCount > 0 ? <div style={styles.unreadBadge}>{ticket.unreadCount}</div> : null}
-              </div>
-
-              <div style={styles.rowMetaLine}>
-                <span style={styles.rowOwner}>{ownerLabel}</span>
-                {tags.length > 0 ? (
-                  <div style={styles.rowTags}>
-                    {tags.map((tag, tagIndex) => {
-                      const safeTag = getSafeText(tag, 'Tag');
-                      return (
-                        <span key={`${safeTag}-${tagIndex}`} style={styles.rowTag}>
-                          {safeTag}
-                        </span>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <span style={styles.rowMetaSpacer} />
-                )}
-              </div>
-            </div>
-          </div>
-        );
-        })}
-        {filteredTickets.length === 0 && <Empty>Nenhuma conversa encontrada</Empty>}
-      </div>
-    </aside>
   );
 });
 
@@ -1818,6 +1651,75 @@ export const ChatHeader = React.memo(function ChatHeader({
           <ClipboardList size={16} strokeWidth={2.2} />
           {isMobile || isCompactDesktop ? null : 'Gerar O.S.'}
         </button>}
+
+        {selectedTicket.status !== 'resolved' ? (
+          <button className="inbox-control" style={styles.resolveBtn} onClick={handleResolve} aria-label="Encerrar atendimento" title="Encerrar atendimento">
+            <CheckCheck size={16} strokeWidth={2.2} />
+            {isMobile || isCompactDesktop ? null : 'Encerrar'}
+          </button>
+        ) : (
+          <button
+            className="inbox-control"
+            style={{ ...styles.resolveBtn, background: 'var(--bg-panel)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'none' }}
+            onClick={handleReopen}
+            aria-label="Reabrir atendimento"
+            title="Reabrir atendimento"
+          >
+            {isMobile || isCompactDesktop ? 'Abrir' : 'Reabrir'}
+          </button>
+        )}
+
+        <button
+          type="button"
+          className="inbox-control"
+          style={styles.headerGhostIconBtn}
+          onClick={() => setShowInfo(!showInfo)}
+          title={showInfo ? 'Fechar ficha do cliente' : 'Abrir ficha do cliente'}
+          aria-label={showInfo ? 'Fechar ficha do cliente' : 'Abrir ficha do cliente'}
+          aria-pressed={showInfo}
+        >
+          {showInfo ? <PanelRightClose size={16} strokeWidth={2.2} /> : <PanelRightOpen size={16} strokeWidth={2.2} />}
+        </button>
+
+        <div style={styles.messageMenuRoot} data-header-menu-root="true">
+          <button
+            type="button"
+            className="inbox-control"
+            style={styles.headerGhostIconBtn}
+            onClick={(event) => {
+              event.stopPropagation();
+              setActionsOpen((current) => !current);
+            }}
+            title="Mais acoes"
+            aria-label="Mais acoes da conversa"
+            aria-expanded={actionsOpen}
+          >
+            <MoreVertical size={16} strokeWidth={2.3} />
+          </button>
+
+          {actionsOpen ? (
+            <div style={styles.headerMenuPanel}>
+              <button type="button" className="inbox-control" style={styles.headerMenuItem} onClick={() => { handleSummarize(); setActionsOpen(false); }} disabled={summarizing}>
+                <Sparkles size={15} strokeWidth={2.2} />
+                {summarizing ? 'Gerando resumo...' : 'Resumo IA'}
+              </button>
+              {selectedTicket.status !== 'resolved' ? (
+                <button type="button" className="inbox-control" style={styles.headerMenuItem} onClick={() => { setTransferModal(true); setActionsOpen(false); }}>
+                  <ArrowRightLeft size={15} strokeWidth={2.2} />
+                  Transferir conversa
+                </button>
+              ) : null}
+              {selectedTicket.status !== 'bot' && selectedTicket.status !== 'resolved' ? (
+                <button type="button" className="inbox-control" style={styles.headerMenuItem} onClick={() => { handleReturnToBot(); setActionsOpen(false); }}>
+                  <Bot size={15} strokeWidth={2.2} />
+                  Devolver para IA
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </header>
   );
 });
 
