@@ -10,7 +10,7 @@ import SurfaceCard from '../components/ui/SurfaceCard';
 import EmptyState from '../components/ui/EmptyState';
 import ModalShell from '../components/ui/ModalShell';
 
-export default function Campaigns() {
+export default function Campaigns({ embedded = false }) {
   const [tag, setTag] = useState('');
   const [availableTags, setAvailableTags] = useState([]);
   const [message, setMessage] = useState('');
@@ -18,6 +18,7 @@ export default function Campaigns() {
   const [status, setStatus] = useState('idle');
   const [progress, setProgress] = useState({ sent: 0, errors: 0, total: 0 });
   const [loading, setLoading] = useState(false);
+  const [catalogLoading, setCatalogLoading] = useState(true);
 
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -31,8 +32,7 @@ export default function Campaigns() {
     const token = localStorage.getItem('token');
     const socket = io(SOCKET_URL, { auth: { token } });
 
-    loadTags();
-    loadTemplates();
+    Promise.allSettled([loadTags(), loadTemplates()]).finally(() => setCatalogLoading(false));
 
     socket.on('bulk_progress', (data) => {
       setProgress(data);
@@ -48,7 +48,7 @@ export default function Campaigns() {
       const { data } = await getTags();
       setAvailableTags(data.map((item) => item.name));
     } catch {
-      // erro silencioso
+      toast.error('Não foi possível carregar os públicos por etiqueta.');
     }
   }
 
@@ -57,15 +57,20 @@ export default function Campaigns() {
       const { data } = await getQuickResponses();
       setTemplates(data);
     } catch {
-      // erro silencioso
+      toast.error('Não foi possível carregar os modelos de mensagem.');
     }
   }
 
   async function searchContacts(query) {
     setSearch(query);
     if (query.length < 2) return setSearchResults([]);
-    const { data } = await getContacts(query);
-    setSearchResults(data);
+    try {
+      const { data } = await getContacts(query);
+      setSearchResults(Array.isArray(data) ? data : []);
+    } catch {
+      setSearchResults([]);
+      toast.error('Não foi possível buscar os contatos.');
+    }
   }
 
   function addContact(contact) {
@@ -114,20 +119,18 @@ export default function Campaigns() {
     }
   }
 
-  async function handleStart() {
-    if (!tag && selectedContacts.length === 0) return toast.info('Selecione uma tag ou adicione contatos');
-    if (!message) return toast.info('Escreva uma mensagem');
-
+  async function startCampaign() {
     setLoading(true);
     try {
-      await sendCampaign({
+      const { data } = await sendCampaign({
         tag: tag || null,
         contactIds: selectedContacts.length > 0 ? selectedContacts.map((contact) => contact.id) : null,
         message,
-        delay: delay * 1000,
+        delay: Number(delay) * 1000,
       });
       setStatus('processing');
-      setProgress({ sent: 0, errors: 0, total: 0 });
+      setProgress({ sent: 0, errors: 0, total: Number(data?.total || 0) });
+      toast.success('Campanha iniciada. Acompanhe o progresso nesta tela.');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Erro ao iniciar disparo');
     } finally {
@@ -135,19 +138,31 @@ export default function Campaigns() {
     }
   }
 
+  function handleStart() {
+    if (!tag && selectedContacts.length === 0) return toast.info('Selecione uma tag ou adicione contatos');
+    if (!message.trim()) return toast.info('Escreva uma mensagem');
+    if (Number(delay) < 3) return toast.info('Use um intervalo mínimo de 3 segundos entre os envios.');
+    const audience = selectedContacts.length > 0
+      ? `${selectedContacts.length} contato(s) selecionado(s)`
+      : `o público da etiqueta “${tag}”`;
+    toast.confirm(`Confirma o envio desta campanha para ${audience}?`, startCampaign);
+  }
+
   const processed = progress.sent + progress.errors;
   const percentage = progress.total > 0 ? (processed / progress.total) * 100 : 0;
 
   return (
-    <div style={s.container}>
-      <PageHeader
+    <div className={embedded ? 'jd-page jd-campaign-compose' : ''} style={embedded ? undefined : s.container}>
+      {!embedded && <PageHeader
         kicker="Automacao comercial"
         title="Disparo em massa"
         subtitle="Envie campanhas para grupos de clientes com mais controle sobre publico, mensagem e progresso."
-      />
+      />}
 
-      <SurfaceCard style={s.card}>
-        <div style={s.twoCols}>
+      {embedded && <div className="jd-section-intro"><div><h2>Nova campanha</h2><p>Defina o público, revise a mensagem e acompanhe cada envio em tempo real.</p></div></div>}
+
+      <SurfaceCard className={embedded ? 'jd-campaign-compose__card' : ''} style={s.card}>
+        <div className="campaign-two-cols" style={s.twoCols}>
           <div>
             <label style={s.label}>Publico por tag</label>
             <select
@@ -157,7 +172,7 @@ export default function Campaigns() {
                 setTag(e.target.value);
                 setSelectedContacts([]);
               }}
-              disabled={status === 'processing'}
+              disabled={status === 'processing' || catalogLoading}
             >
               <option value="">Selecione uma tag...</option>
               {availableTags.map((item) => (
@@ -180,7 +195,7 @@ export default function Campaigns() {
                   searchContacts(e.target.value);
                   setTag('');
                 }}
-                disabled={status === 'processing'}
+                disabled={status === 'processing' || catalogLoading}
               />
               {searchResults.length > 0 ? (
                 <div style={s.results}>
@@ -221,7 +236,7 @@ export default function Campaigns() {
 
         <div style={{ marginBottom: '1.2rem' }}>
           <label style={s.label}>Modelo de mensagem (opcional)</label>
-          <select style={s.input} onChange={(e) => setMessage(e.target.value)} disabled={status === 'processing'}>
+          <select style={s.input} onChange={(e) => setMessage(e.target.value)} disabled={status === 'processing' || catalogLoading}>
             <option value="">Selecione um modelo pronto...</option>
             {templates.map((template) => (
               <option key={template.id} value={template.message}>
@@ -259,7 +274,7 @@ export default function Campaigns() {
           style={{ width: '100%', marginTop: '0.4rem', opacity: status === 'processing' || loading ? 0.65 : 1 }}
         >
           {status === 'processing' ? <Sparkles size={18} /> : <Megaphone size={18} />}
-          {status === 'processing' ? 'Processando disparo...' : 'Iniciar disparo agora'}
+          {loading ? 'Iniciando campanha...' : status === 'processing' ? 'Processando disparo...' : 'Revisar e iniciar campanha'}
         </ActionButton>
 
         {status !== 'idle' ? (

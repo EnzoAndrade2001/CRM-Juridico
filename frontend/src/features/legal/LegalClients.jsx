@@ -111,8 +111,8 @@ function ClientDetail({ workspace, client, onClose, onEdit, onOpenCrm }) {
   );
 }
 
-export default function LegalClients({ workspace, onNavigate }) {
-  const [search, setSearch] = useState('');
+export default function LegalClients({ workspace, onNavigate, initialSearch = '' }) {
+  const [search, setSearch] = useState(() => initialSearch || new URLSearchParams(window.location.search).get('q') || '');
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(null);
@@ -122,6 +122,10 @@ export default function LegalClients({ workspace, onNavigate }) {
   }, [search, workspace.contacts]);
   const linkedIds = new Set([...workspace.leads.map((lead) => lead.contactId), ...workspace.matters.map((matter) => matter.contactId)]);
   const whatsappCount = workspace.contacts.filter((client) => client.instanceId).length;
+
+  useEffect(() => {
+    if (initialSearch) setSearch(initialSearch);
+  }, [initialSearch]);
 
   async function openClient(client) {
     setSelected(client);

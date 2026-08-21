@@ -7,7 +7,7 @@ import { SOCKET_URL } from '../services/socket';
 import PageHeader from '../components/ui/PageHeader';
 import ActionButton from '../components/ui/ActionButton';
 
-export default function Connections() {
+export default function Connections({ embedded = false }) {
   const [instances, setInstances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // 'new' | 'qrcode'
@@ -104,14 +104,16 @@ export default function Connections() {
   }
 
   return (
-    <div style={s.container}>
-      <PageHeader
+    <div className={embedded ? 'jd-page jd-connections-page' : ''} style={embedded ? undefined : s.container}>
+      {!embedded && <PageHeader
         kicker="Canais"
         title="Conexões WhatsApp"
         subtitle="Gerencie números, setores e o estado de cada canal em um único lugar."
         actions={<ActionButton onClick={() => { setName(''); setModal('new'); }}><Plus size={18} /> Nova conexão</ActionButton>}
         compact
-      />
+      />}
+
+      {embedded && <div className="jd-section-intro"><div><h2>Canais conectados</h2><p>Gerencie o número, o pareamento e o estado do WhatsApp do escritório.</p></div><button type="button" className="jd-primary" onClick={() => { setName(''); setModal('new'); }}><Plus size={17} /> Nova conexão</button></div>}
 
       {loading ? (
         <div style={s.empty}>Sincronizando instancias...</div>

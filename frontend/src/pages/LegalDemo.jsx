@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { getMe, getSettings, saveSettings } from '../services/api';
 import {
   ArrowUpRight,
-  Bell,
   Bot,
   BrainCircuit,
   BriefcaseBusiness,
@@ -157,13 +156,24 @@ function Sidebar({
   );
 }
 
-function Header({ title, subtitle, setMenuOpen, currentUser, onOpenSettings }) {
+function Header({ title, subtitle, setMenuOpen, currentUser, onOpenSettings, onSearch }) {
+  const [query, setQuery] = useState('');
+
+  function submitSearch(event) {
+    event.preventDefault();
+    const normalized = query.trim();
+    if (normalized) onSearch(normalized);
+  }
+
   return (
     <header className="jd-header">
       <button className="jd-menu-button" type="button" onClick={() => setMenuOpen(true)}><Menu size={22} /></button>
       <div className="jd-header__title"><h1>{title}</h1><p>{subtitle}</p></div>
-      <label className="jd-search"><Search size={17} /><input placeholder="Buscar cliente, atendimento..." /></label>
-      <button className="jd-icon-button" type="button" aria-label="Notificações"><Bell size={19} /><span /></button>
+      <form className="jd-search" role="search" onSubmit={submitSearch}>
+        <Search size={17} />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar cliente, telefone..." aria-label="Buscar cliente ou telefone" />
+        <button type="submit" aria-label="Executar busca" title="Buscar"><ArrowUpRight size={15} /></button>
+      </form>
       <button className="jd-profile" type="button" onClick={onOpenSettings} aria-label="Abrir configurações da conta"><Avatar initials={initialsForUser(currentUser?.name)} size="xs" /><span>{currentUser?.name || 'Usuário'}</span><ChevronDown size={15} /></button>
     </header>
   );
@@ -468,6 +478,7 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [clientSearch, setClientSearch] = useState('');
   const [currentUser, setCurrentUser] = useState(() => demoMode
     ? { name: 'Dra. Eduarda', role: 'admin', tenant: { slug: 'demonstracao' } }
     : { name: '', role: localStorage.getItem('role') || 'agent', tenant: null });
@@ -524,6 +535,14 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
     window.history.replaceState({}, '', url);
     setActive('documentos');
   }
+  function searchClients(query) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tela', 'clientes');
+    url.searchParams.set('q', query);
+    window.history.replaceState({}, '', url);
+    setClientSearch(query);
+    setActive('clientes');
+  }
   useEffect(() => {
     document.title = 'CRM Jurídico — Atendimento PRO Pedro Lund';
     const url = new URL(window.location.href);
@@ -558,15 +577,15 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
         onLogout={handleLogout}
       />
       <main className="jd-main">
-        <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} currentUser={currentUser} onOpenSettings={() => setActive('configuracoes')} />
+        <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} currentUser={currentUser} onOpenSettings={() => setActive('configuracoes')} onSearch={searchClients} />
         {active === 'visao-geral' && <LegalOverviewPanel workspace={legalWorkspace} onNavigate={setActive} currentUser={currentUser} />}
         {active === 'atendimentos' && (demoMode ? <InboxDemo /> : <RealInbox legalMode onOpenLegalClient={openLegalClient} onOpenLegalDocuments={openLegalDocuments} />)}
-        {active === 'clientes' && <LegalClients workspace={legalWorkspace} onNavigate={setActive} />}
+        {active === 'clientes' && <LegalClients workspace={legalWorkspace} onNavigate={setActive} initialSearch={clientSearch} />}
         {active === 'crm' && <CrmDemo workspace={legalWorkspace} />}
         {active === 'documentos' && (demoMode ? <PlaceholderPage type={active} /> : <LegalDocuments workspace={legalWorkspace} contactId={new URLSearchParams(window.location.search).get('contactId')} />)}
-        {active === 'campanhas' && (demoMode ? <CampaignsDemo /> : <Campaigns />)}
+        {active === 'campanhas' && (demoMode ? <CampaignsDemo /> : <Campaigns embedded />)}
         {active === 'conhecimento' && (demoMode ? <PlaceholderPage type={active} /> : <LegalKnowledgeBase />)}
-        {active === 'conexoes' && (demoMode ? <PlaceholderPage type={active} /> : <div className="jd-connections-shell"><ConnectionsPage /></div>)}
+        {active === 'conexoes' && (demoMode ? <PlaceholderPage type={active} /> : <div className="jd-connections-shell"><ConnectionsPage embedded /></div>)}
         {active === 'configuracoes' && <LegalSettings demoMode={demoMode} onSettingsChanged={loadShellState} />}
       </main>
     </div>
