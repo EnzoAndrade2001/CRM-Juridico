@@ -95,6 +95,8 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
   assert.equal(res.payload.stored, true);
   assert.equal(res.payload.source, 'landing:revisional-bancario');
   assert.equal(res.payload.tag, 'VEIO PELA LANDING PAGE REVISAO BANCARIA');
+  assert.equal(res.payload.contactCreated, true);
+  assert.equal(res.payload.contactId, 'contact-1');
   assert.equal(submissionData.source, 'landing:revisional-bancario');
   assert.equal(contactData.externalSource, 'landing:revisional-bancario');
   assert.deepEqual(JSON.parse(contactData.tags), ['VEIO PELA LANDING PAGE REVISAO BANCARIA']);

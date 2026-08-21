@@ -125,7 +125,7 @@ async function ensureLandingTag(tenantId, landing) {
 }
 
 async function upsertLandingContact(tenant, submission, landing, instance) {
-  if (!submission.phone) return null;
+  if (!submission.phone) return { contact: null, created: false };
 
   await ensureLandingTag(tenant.id, landing);
   const phoneCandidates = evolutionService.buildPhoneLookupCandidates(submission.phone);
@@ -152,7 +152,7 @@ async function upsertLandingContact(tenant, submission, landing, instance) {
   };
 
   if (existing) {
-    return prisma.contact.update({
+    const contact = await prisma.contact.update({
       where: { id: existing.id },
       data: {
         ...(data.instanceId ? { instanceId: data.instanceId } : {}),
@@ -164,8 +164,10 @@ async function upsertLandingContact(tenant, submission, landing, instance) {
         tags: data.tags,
       },
     });
+    return { contact, created: false };
   }
-  return prisma.contact.create({ data });
+  const contact = await prisma.contact.create({ data });
+  return { contact, created: true };
 }
 
 async function sendWhatsApp(tenant, submission, message) {
@@ -241,7 +243,7 @@ async function createCalculatorSubmission(req, res) {
     });
 
     const instance = tenant.instances?.find(isConnectedInstance);
-    await upsertLandingContact(tenant, submission, landing, instance);
+    const contactResult = await upsertLandingContact(tenant, submission, landing, instance);
 
     const message = buildMessage(submission, landing);
     const notifications = { whatsapp: 'not_configured', email: 'not_configured' };
@@ -272,7 +274,8 @@ async function createCalculatorSubmission(req, res) {
       submissionId: updated.id,
       source: landing.contactSource,
       tag: landing.tag,
-      contactCreated: Boolean(submission.phone),
+      contactId: contactResult.contact?.id || null,
+      contactCreated: contactResult.created,
       notifications,
     });
   } catch (error) {
