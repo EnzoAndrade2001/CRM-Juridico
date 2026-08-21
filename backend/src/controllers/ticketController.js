@@ -446,14 +446,18 @@ async function list(req, res) {
     take: 200,
   });
 
-  if (status === 'all') {
+  // A aba de concluídos representa clientes, não cada ciclo histórico do
+  // atendimento. Ao reabrir e encerrar novamente, mantenha apenas o ticket
+  // concluído mais recente na lista operacional (o histórico continua salvo
+  // e pode ser consultado dentro da conversa).
+  if (status === 'all' || status === 'resolved') {
     tickets = dedupeTicketsByContact(tickets);
   }
 
   refreshVisibleTicketAvatars(tickets);
 
   // Busca as contagens globais para os badges
-  const [countMine, countPending, countResolved, countAllGroups] = await Promise.all([
+  const [countMine, countPending, countResolvedGroups, countAllGroups] = await Promise.all([
     prisma.ticket.count({ where: { tenantId: req.user.tenantId, agentId: req.user.userId, status: 'open' } }),
     prisma.ticket.count({
       where: buildWhere([
@@ -462,7 +466,8 @@ async function list(req, res) {
         pendingCondition
       ])
     }),
-    prisma.ticket.count({
+    prisma.ticket.groupBy({
+      by: ['contactId'],
       where: buildWhere([
         { tenantId: req.user.tenantId },
         visibilityFilter,
@@ -484,7 +489,7 @@ async function list(req, res) {
     counts: {
       mine: countMine,
       pending: countPending,
-      resolved: countResolved,
+      resolved: countResolvedGroups.length,
       all: countAllGroups.length
     }
   });

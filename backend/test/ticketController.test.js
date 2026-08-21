@@ -48,6 +48,36 @@ test('ticket list returns the linked legal opportunity summary', async (t) => {
   assert.equal(res.payload.counts.resolved, 0);
 });
 
+test('concluidos exibem apenas o atendimento mais recente de cada contato', async (t) => {
+  const originals = {
+    findMany: prisma.ticket.findMany,
+    count: prisma.ticket.count,
+    groupBy: prisma.ticket.groupBy,
+  };
+  t.after(() => {
+    prisma.ticket.findMany = originals.findMany;
+    prisma.ticket.count = originals.count;
+    prisma.ticket.groupBy = originals.groupBy;
+  });
+
+  prisma.ticket.findMany = async () => [
+    { id: 'ticket-old', contactId: 'contact-1', status: 'resolved', updatedAt: new Date('2026-08-20T10:00:00Z'), lastMessageAt: new Date('2026-08-20T10:00:00Z'), contact: { id: 'contact-1', phone: '5551999999999' } },
+    { id: 'ticket-latest', contactId: 'contact-1', status: 'resolved', updatedAt: new Date('2026-08-21T10:00:00Z'), lastMessageAt: new Date('2026-08-21T10:00:00Z'), contact: { id: 'contact-1', phone: '5551999999999' } },
+  ];
+  prisma.ticket.count = async () => 0;
+  prisma.ticket.groupBy = async () => [{ contactId: 'contact-1' }];
+
+  const res = responseRecorder();
+  await list({
+    query: { status: 'resolved' },
+    user: { userId: 'user-1', tenantId: 'tenant-a' },
+  }, res);
+
+  assert.equal(res.payload.tickets.length, 1);
+  assert.equal(res.payload.tickets[0].id, 'ticket-latest');
+  assert.equal(res.payload.counts.resolved, 1);
+});
+
 test('encerrar como contratado vincula a oportunidade ao mesmo contato e atendimento do WhatsApp', async (t) => {
   const originals = {
     transaction: prisma.$transaction,

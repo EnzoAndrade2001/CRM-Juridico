@@ -35,7 +35,7 @@ function isTicketPreferred(candidate, current) {
 }
 
 function normalizeTicketsForTab(items, currentTab) {
-  if (currentTab !== 'all' || !Array.isArray(items)) {
+  if (!['all', 'resolved'].includes(currentTab) || !Array.isArray(items)) {
     return Array.isArray(items) ? items : [];
   }
 
