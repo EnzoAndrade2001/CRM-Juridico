@@ -43,6 +43,11 @@ const legalLeadResolutionInclude = {
 
 const LEGAL_RESOLUTION_STAGES = new Set(['CONTRATADO', 'NAO_CONVERTIDO']);
 
+function isConnectedInstance(instance) {
+  const status = String(instance?.status || '').toLowerCase();
+  return ['connected', 'open', 'ready', 'online', 'authenticated'].includes(status);
+}
+
 function buildResolutionLeadData(ticket, body = {}) {
   if (body.legalOutcome === undefined || body.legalOutcome === null || body.legalOutcome === '') return null;
 
@@ -1187,7 +1192,7 @@ async function reopen(req, res) {
   });
   if (!contact) return res.status(404).json({ error: 'Contato não encontrado' });
 
-  const selectedInstance = await prisma.waInstance.findFirst({
+  let selectedInstance = await prisma.waInstance.findFirst({
     where: {
       id: instanceId,
       tenantId: req.user.tenantId,
@@ -1197,7 +1202,33 @@ async function reopen(req, res) {
   if (!selectedInstance) {
     return res.status(400).json({ error: 'Instancia invalida ou nao pertence a esta empresa.' });
   }
-  if (String(selectedInstance.status).toLowerCase() !== 'connected') {
+  // A lista do frontend pode ter sido carregada antes do ultimo evento da
+  // Evolution. Confirme a sessao no momento da reabertura para nao bloquear a
+  // LUND por um status persistido desatualizado.
+  if (!isConnectedInstance(selectedInstance)) {
+    const settings = await prisma.tenantSettings.findUnique({ where: { tenantId: req.user.tenantId } });
+    const evolutionUrl = settings?.evolutionUrl || process.env.DEFAULT_EVOLUTION_URL;
+    const evolutionKey = settings?.evolutionKey || process.env.DEFAULT_EVOLUTION_KEY;
+    if (evolutionUrl && evolutionKey) {
+      try {
+        const stateData = await evolutionService.getConnectionState(
+          evolutionUrl,
+          evolutionKey,
+          selectedInstance.instanceName,
+        );
+        const state = String(stateData?.instance?.state || stateData?.state || '').toLowerCase();
+        if (['open', 'connected', 'ready', 'online', 'authenticated'].includes(state)) {
+          selectedInstance = await prisma.waInstance.update({
+            where: { id: selectedInstance.id },
+            data: { status: 'connected' },
+          });
+        }
+      } catch (error) {
+        console.warn('[tickets/reopen] nao foi possivel confirmar a instancia na Evolution:', error.message);
+      }
+    }
+  }
+  if (!isConnectedInstance(selectedInstance)) {
     return res.status(400).json({ error: 'A instancia selecionada nao esta conectada.' });
   }
 

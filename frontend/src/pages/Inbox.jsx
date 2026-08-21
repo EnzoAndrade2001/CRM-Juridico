@@ -20,6 +20,7 @@ import api, {
   forwardMessage,
   createTicketNote,
   updateTicket,
+  getInstances,
 } from '../services/api';
 import { toast } from '../utils/toast';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -246,12 +247,38 @@ export default function Inbox({
   const [crmProfile, setCrmProfile] = useState(null);
   const [legalResolutionTicket, setLegalResolutionTicket] = useState(null);
   const [resolvingTicket, setResolvingTicket] = useState(false);
+  const [localInstances, setLocalInstances] = useState([]);
   const [isCompactDesktop, setIsCompactDesktop] = useState(() => window.innerWidth > 768 && window.innerWidth <= 1440);
   const openOsHandledRef = useRef(false);
   const isMobile = useIsMobile();
   const outletContext = useOutletContext() || {};
-  const instances = instanceList ?? outletContext.instances ?? [];
+  const contextInstances = outletContext.instances;
+  const hasProvidedInstances = Array.isArray(instanceList) || Array.isArray(contextInstances);
+  const instances = Array.isArray(instanceList)
+    ? instanceList
+    : (Array.isArray(contextInstances) ? contextInstances : localInstances);
   const navigate = useNavigate();
+
+  // O Inbox Juridico tambem e montado fora do Layout tradicional. Nesse caso
+  // nao existe outlet context e precisamos carregar as instancias diretamente
+  // para que a reabertura possa oferecer a LUND conectada.
+  const refreshLocalInstances = useCallback(async () => {
+    if (hasProvidedInstances) return [];
+    try {
+      const { data } = await getInstances();
+      if (Array.isArray(data)) {
+        setLocalInstances(data);
+        return data;
+      }
+    } catch (error) {
+      console.warn('[inbox] nao foi possivel atualizar instancias para reabertura:', error.message);
+    }
+    return [];
+  }, [hasProvidedInstances]);
+
+  useEffect(() => {
+    refreshLocalInstances();
+  }, [refreshLocalInstances]);
 
   useEffect(() => {
     const updateViewportMode = () => setIsCompactDesktop(window.innerWidth > 768 && window.innerWidth <= 1440);
@@ -629,6 +656,9 @@ export default function Inbox({
   }
 
   async function handleReopen() {
+    // Atualiza o estado real antes de abrir o seletor: o status do banco pode
+    // ficar atrasado por alguns segundos durante uma reconexao da Evolution.
+    await refreshLocalInstances();
     setShowReopenInstanceModal(true);
   }
 
