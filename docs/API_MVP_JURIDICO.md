@@ -15,6 +15,44 @@ Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
+## Captação da landing page revisional
+
+### `POST /api/public/calculator-leads`
+
+Endpoint público usado pela calculadora da landing page. Não exige JWT, mas
+valida consentimento, telefone/e-mail, limites de envio e a origem informada.
+No momento, a única origem autorizada é `revisional-bancario`.
+
+Quando o WhatsApp é informado, o backend:
+
+1. grava a submissão com a origem auditável `landing:revisional-bancario`;
+2. cria ou atualiza o contato na aba **Clientes**;
+3. aplica a tag `VEIO PELA LANDING PAGE REVISAO BANCARIA` sem duplicá-lo;
+4. envia a mensagem inicial pela primeira instância Evolution conectada.
+
+O envio só ocorre após o consentimento do formulário e nunca usa uma origem
+recebida fora da lista autorizada no backend.
+
+Exemplo mínimo:
+
+```json
+{
+  "source": "revisional-bancario",
+  "name": "Maria Aparecida Silva",
+  "phone": "(51) 99999-8888",
+  "installment": 1250,
+  "totalInstallments": 48,
+  "paidInstallments": 12,
+  "contractType": "Financiamento veicular",
+  "consent": true
+}
+```
+
+O retorno informa `submissionId`, `source`, `tag` e o estado de cada canal em
+`notifications.whatsapp` e `notifications.email`. Para cadastrar outra
+landing page, primeiro é necessário registrar sua origem, tag e mensagem no
+mapa de origens do backend.
+
 ## Clientes do escritório
 
 O CRM jurídico reutiliza a entidade central de contatos do sistema, mas expõe endpoints próprios em `/api/legal/clients` com validação jurídica, contadores do funil e auditoria. Um cliente pode ser cadastrado antes de possuir conversa ou conexão no WhatsApp.

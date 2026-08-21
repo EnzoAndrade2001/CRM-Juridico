@@ -124,6 +124,7 @@ export default function BankReviewCalculator({ whatsappUrl }) {
     setSubmissionState('sending');
     try {
       const response = await submitPublicCalculatorLead({
+        source: 'revisional-bancario',
         name: form.name.trim(),
         email: normalizedEmail || null,
         phone: form.phone || null,

@@ -5,6 +5,17 @@ const evolutionService = require('../services/evolutionService');
 const recentRequests = new Map();
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// As origens da captação são deliberadamente mantidas no backend. Assim, a
+// landing page não consegue inventar uma campanha/tag e cada novo site pode
+// ser incluído com uma mensagem própria e auditável.
+const LANDING_SOURCES = Object.freeze({
+  'revisional-bancario': Object.freeze({
+    tag: 'VEIO PELA LANDING PAGE REVISAO BANCARIA',
+    contactSource: 'landing:revisional-bancario',
+    opening: 'Vi que você preencheu a calculadora de revisão bancária e quer entender melhor seus direitos.',
+  }),
+});
+
 function clientIp(req) {
   const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
   return forwarded || req.ip || req.socket?.remoteAddress || 'unknown';
@@ -47,9 +58,10 @@ function positiveInteger(value, field, { required = true, max = 600 } = {}) {
   return parsed;
 }
 
-function buildMessage(submission) {
+function buildMessage(submission, landing) {
   return [
-    `Olá, ${submission.name}! Recebemos sua simulação revisional.`,
+    `Olá, ${submission.name}. ${landing.opening}`,
+    'Recebemos seus dados e nossa equipe fará a orientação inicial sobre o seu contrato.',
     '',
     `Parcela informada: ${formatCurrency(submission.installment)}`,
     `Estimativa de nova parcela: ${formatCurrency(submission.estimatedInstallment)}`,
@@ -90,11 +102,77 @@ async function sendEmail(submission, message) {
   return true;
 }
 
+function parseTags(value) {
+  try {
+    const parsed = JSON.parse(value || '[]');
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((tag) => String(tag || '').trim()).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function isConnectedInstance(instance) {
+  return ['connected', 'open'].includes(String(instance?.status || '').toLowerCase());
+}
+
+async function ensureLandingTag(tenantId, landing) {
+  const existing = await prisma.tag.findFirst({ where: { tenantId, name: landing.tag } });
+  if (existing) return existing;
+  return prisma.tag.create({
+    data: { tenantId, name: landing.tag, color: '#C59B45' },
+  });
+}
+
+async function upsertLandingContact(tenant, submission, landing, instance) {
+  if (!submission.phone) return null;
+
+  await ensureLandingTag(tenant.id, landing);
+  const phoneCandidates = evolutionService.buildPhoneLookupCandidates(submission.phone);
+  const existing = await prisma.contact.findFirst({
+    where: {
+      tenantId: tenant.id,
+      OR: [
+        { phone: { in: phoneCandidates } },
+        { whatsapp: { in: phoneCandidates } },
+      ],
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+  const tags = Array.from(new Set([...(parseTags(existing?.tags)), landing.tag]));
+  const data = {
+    tenantId: tenant.id,
+    instanceId: instance?.id || existing?.instanceId || null,
+    phone: submission.phone,
+    whatsapp: submission.phone,
+    name: submission.name,
+    ...(submission.email ? { email: submission.email } : {}),
+    externalSource: landing.contactSource,
+    tags: JSON.stringify(tags),
+  };
+
+  if (existing) {
+    return prisma.contact.update({
+      where: { id: existing.id },
+      data: {
+        ...(data.instanceId ? { instanceId: data.instanceId } : {}),
+        phone: data.phone,
+        whatsapp: data.whatsapp,
+        ...(data.name ? { name: data.name } : {}),
+        ...(data.email ? { email: data.email } : {}),
+        externalSource: data.externalSource,
+        tags: data.tags,
+      },
+    });
+  }
+  return prisma.contact.create({ data });
+}
+
 async function sendWhatsApp(tenant, submission, message) {
   const settings = tenant.settings || {};
   const url = settings.evolutionUrl || process.env.DEFAULT_EVOLUTION_URL;
   const key = settings.evolutionKey || process.env.DEFAULT_EVOLUTION_KEY;
-  const instance = tenant.instances?.[0];
+  const instance = tenant.instances?.find(isConnectedInstance);
   if (!url || !key || !instance || !submission.phone) return false;
   await evolutionService.sendText(url, key, instance.instanceName, submission.phone, message);
   return true;
@@ -105,7 +183,7 @@ async function resolveTenant() {
   if (!slug) return null;
   return prisma.tenant.findUnique({
     where: { slug },
-    include: { settings: true, instances: { where: { status: 'connected' } } },
+    include: { settings: true, instances: true },
   });
 }
 
@@ -124,6 +202,9 @@ async function createCalculatorSubmission(req, res) {
     const paidInstallments = positiveInteger(req.body?.paidInstallments || 0, 'Parcelas pagas', { required: false });
     const bank = text(req.body?.bank, 'Banco', { max: 120 });
     const contractType = text(req.body?.contractType, 'Tipo de contrato', { max: 80 });
+    const source = text(req.body?.source || req.body?.landingSource, 'Origem da landing page', { required: true, max: 80 });
+    const landing = LANDING_SOURCES[String(source).toLowerCase()];
+    if (!landing) throw new Error('Origem da landing page não reconhecida');
 
     if (email && !EMAIL_PATTERN.test(email)) throw new Error('E-mail inválido');
     if (!email && !phone) throw new Error('Informe um WhatsApp ou e-mail');
@@ -141,6 +222,7 @@ async function createCalculatorSubmission(req, res) {
     const submission = await prisma.calculatorSubmission.create({
       data: {
         tenantId: tenant.id,
+        source: landing.contactSource,
         name,
         email: email ? email.toLowerCase() : null,
         phone,
@@ -158,7 +240,10 @@ async function createCalculatorSubmission(req, res) {
       },
     });
 
-    const message = buildMessage(submission);
+    const instance = tenant.instances?.find(isConnectedInstance);
+    await upsertLandingContact(tenant, submission, landing, instance);
+
+    const message = buildMessage(submission, landing);
     const notifications = { whatsapp: 'not_configured', email: 'not_configured' };
     const errors = [];
     const [whatsappResult, emailResult] = await Promise.allSettled([
@@ -182,7 +267,14 @@ async function createCalculatorSubmission(req, res) {
       },
     });
 
-    return res.status(202).json({ stored: true, submissionId: updated.id, notifications });
+    return res.status(202).json({
+      stored: true,
+      submissionId: updated.id,
+      source: landing.contactSource,
+      tag: landing.tag,
+      contactCreated: Boolean(submission.phone),
+      notifications,
+    });
   } catch (error) {
     return res.status(400).json({ stored: false, error: error.message || 'Não foi possível registrar a simulação.' });
   }
