@@ -509,18 +509,18 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
   }
 
   // --- Lógica de Avaliação de Atendimento (CSAT) ---
+  // Busca o atendimento atual antes de interpretar respostas numéricas.
+  // Assim, uma opção como "3" durante a triagem não vira nota CSAT de um
+  // atendimento antigo.
+  let ticket = await prisma.ticket.findFirst({
+    where: { contactId: contact.id, tenantId: tenant.id },
+    orderBy: { updatedAt: 'desc' },
+  });
+
   const bodyTrim = (body || '').trim();
   const isRating = /^[1-5]$/.test(bodyTrim);
-  if (!isGroup && isRating && !isHistorical) {
-    const lastResolved = await prisma.ticket.findFirst({
-      where: { 
-        contactId: contact.id, 
-        status: 'resolved',
-        rating: null,
-        tenantId: tenant.id
-      },
-      orderBy: { resolvedAt: 'desc' }
-    });
+  if (!isGroup && !fromMe && isRating && !isHistorical && ticket?.status === 'resolved' && !ticket.rating) {
+    const lastResolved = ticket;
 
     // Se foi encerrado nas últimas 24h, gravamos a nota
     if (lastResolved && (new Date() - new Date(lastResolved.resolvedAt) < 24 * 60 * 60 * 1000)) {
@@ -538,11 +538,6 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
   }
 
   // 2. BUSCA OU CRIAÇÃO DE TICKET (Lógica Anti-Duplicação)
-  let ticket = await prisma.ticket.findFirst({
-    where: { contactId: contact.id },
-    orderBy: { createdAt: 'desc' }
-  });
-
   if (!ticket) {
     const useBotForInstance = shouldUseBotForInstance(instance, tenant.settings);
     ticket = await prisma.ticket.create({
