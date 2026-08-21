@@ -189,6 +189,13 @@ async function sendWhatsApp(tenant, submission, message) {
 async function ensureCalculatorTicket(tenant, contact, instance) {
   if (!contact) return null;
 
+  const ticketInclude = {
+    contact: true,
+    instance: { select: { id: true, instanceName: true, status: true, phone: true } },
+    agent: { select: { id: true, name: true } },
+    team: true,
+  };
+
   const latestTicket = await prisma.ticket.findFirst({
     where: { tenantId: tenant.id, contactId: contact.id },
     orderBy: { updatedAt: 'desc' },
@@ -206,6 +213,7 @@ async function ensureCalculatorTicket(tenant, contact, instance) {
           ? { status: 'pending', resolvedAt: null }
           : {}),
       },
+      include: ticketInclude,
     });
     return { ticket, created: false };
   }
@@ -218,6 +226,7 @@ async function ensureCalculatorTicket(tenant, contact, instance) {
       status: 'pending',
       lastMessageAt: now,
     },
+    include: ticketInclude,
   });
   return { ticket, created: true };
 }
@@ -260,7 +269,7 @@ async function recordCalculatorMessage(tenant, contact, instance, body, sendResu
   if (io) {
     if (ensuredTicket.created) io.to(tenant.id).emit('new_ticket', ticket);
     io.to(tenant.id).emit('new_message', { message, ticket, contact });
-    io.to(tenant.id).emit('ticket_updated', { ticketId: ticket.id });
+    io.to(tenant.id).emit('ticket_updated', { ticket });
   }
 
   return { ticket, message };
