@@ -39,7 +39,7 @@ jobs:
         working-directory: frontend
         env:
           GITHUB_PAGES: "true"
-          VITE_LANDING_WHATSAPP: ${{ vars.LANDING_WHATSAPP }}
+          VITE_LANDING_WHATSAPP: "555193665581"
           # A landing é estática, mas a calculadora envia os dados para a API
           # pública hospedada no EasyPanel.
           VITE_API_URL: ${{ vars.VITE_API_URL || 'https://crm-juriditico-crm-juridico-api.kna79u.easypanel.host' }}

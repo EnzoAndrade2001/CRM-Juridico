@@ -17,10 +17,10 @@ import BankReviewCalculator from './BankReviewCalculator';
 import './bank-review-landing.css';
 
 const whatsappMessage = 'Olá, vim pela página de Revisional Bancário e gostaria de solicitar uma análise do meu contrato.';
-const whatsappNumber = (import.meta.env.VITE_LANDING_WHATSAPP || '').replace(/\D/g, '');
-const whatsappUrl = whatsappNumber
-  ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`
-  : `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappMessage)}`;
+// Número oficial da instância LUND/PBL. Todos os CTAs da landing usam o
+// mesmo destino para que o cliente caia diretamente na triagem da IA.
+const whatsappNumber = '555193665581';
+const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
 
 const reviewItems = [
   {
