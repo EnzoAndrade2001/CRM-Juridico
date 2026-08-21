@@ -198,6 +198,24 @@ function shouldExtractClientMemory(message) {
   return false;
 }
 
+// Contact.notes is a text column, while the AI may return the extracted
+// profile as a JSON object. Convert both shapes to a compact text note before
+// handing the value to Prisma so memory extraction never breaks contact sync.
+function normalizeClientNotes(notes) {
+  if (notes == null) return null;
+  if (typeof notes === 'string') {
+    const value = notes.trim();
+    return value || null;
+  }
+  if (typeof notes === 'object') {
+    const entries = Object.entries(notes)
+      .filter(([, value]) => value != null && String(value).trim() !== '')
+      .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : String(value).trim()}`);
+    return entries.length ? entries.join('\n') : null;
+  }
+  return String(notes).trim() || null;
+}
+
 function pickBestContactMatch(contacts, phoneCandidates, instanceId) {
   if (!Array.isArray(contacts) || contacts.length === 0) return null;
 
@@ -1133,7 +1151,8 @@ ${legalInstructions}`;
       .then(async (result) => {
         if (result) {
           const updateData = {};
-          if (result.notes) updateData.notes = result.notes;
+          const normalizedNotes = normalizeClientNotes(result.notes);
+          if (normalizedNotes) updateData.notes = normalizedNotes;
           
           // Se a IA extraiu o nome e o contato ainda não tinha um nome válido (ou era ponto/número/vazio), atualiza o nome no banco
           const isGenericName = !contact.name || contact.name === '.' || contact.name.trim() === '' || contact.name.includes('+') || contact.name.match(/^\d+$/);
