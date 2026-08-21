@@ -314,10 +314,12 @@ function limitReplyToOneQuestion(reply = '') {
 
 function sanitizeBotReply(reply = '') {
   return String(reply)
-    .replace(/\[\[ROUTE:\s*.*?\]\]/gi, '')
-    .replace(/\[\[HANDOFF\]\]/gi, '')
-    .replace(/\p{Extended_Pictographic}/gu, '')
-    .replace(/\uFE0F/g, '')
+    // Marcadores de controle pertencem somente ao backend e nunca ao cliente.
+    // Aceita espacos extras para cobrir pequenas variacoes produzidas pelo modelo.
+    .replace(/\[\s*\[\s*ROUTE\s*:[^\]]*\]\s*\]/gi, '')
+    .replace(/\[\s*\[\s*HANDOFF\s*\]\s*\]/gi, '')
+    // Remove pictogramas, modificadores de tom de pele e sequencias de emoji.
+    .replace(/[\p{Extended_Pictographic}\p{Emoji_Modifier}\uFE0F\u200D]/gu, '')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/[ \t]{2,}/g, ' ')
     .trim();

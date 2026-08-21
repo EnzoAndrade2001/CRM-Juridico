@@ -124,3 +124,10 @@ test('remove marcadores internos e emojis antes de enviar a resposta', () => {
   assert.equal(reply, 'Perfeito! Vou encaminhar você ao setor especializado.');
   assert.doesNotMatch(reply, /HANDOFF|ROUTE|👍/);
 });
+
+test('remove marcadores com espacos e emojis com modificador de pele', () => {
+  const reply = sanitizeBotReply('Perfeito! Vou encaminhar você ao setor especializado. 👍🏽 [ [ HANDOFF ] ] [[ ROUTE : ATENDIMENTO ]]');
+
+  assert.equal(reply, 'Perfeito! Vou encaminhar você ao setor especializado.');
+  assert.doesNotMatch(reply, /HANDOFF|ROUTE|👍|🏽/);
+});

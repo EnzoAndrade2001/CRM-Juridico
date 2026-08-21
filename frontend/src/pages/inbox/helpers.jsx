@@ -15,10 +15,9 @@ export function fmt(value) {
 
 export function sanitizeInternalBotText(value) {
   return String(value || '')
-    .replace(/\[\[ROUTE:\s*.*?\]\]/gi, '')
-    .replace(/\[\[HANDOFF\]\]/gi, '')
-    .replace(/\p{Extended_Pictographic}/gu, '')
-    .replace(/\uFE0F/g, '')
+    .replace(/\[\s*\[\s*ROUTE\s*:[^\]]*\]\s*\]/gi, '')
+    .replace(/\[\s*\[\s*HANDOFF\s*\]\s*\]/gi, '')
+    .replace(/[\p{Extended_Pictographic}\p{Emoji_Modifier}\uFE0F\u200D]/gu, '')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/[ \t]{2,}/g, ' ')
     .trim();
