@@ -11,6 +11,10 @@ function setIo(socketIo) { io = socketIo; }
 
 const pendingConnectionChecks = new Map();
 const DISCONNECT_CONFIRMATION_MS = Number(process.env.EVOLUTION_DISCONNECT_CONFIRMATION_MS || 45000);
+// Pequena janela para agrupar mensagens enviadas em sequencia (ex.: "oi" +
+// "quero revisar meu contrato"). O valor anterior de 12s fazia toda resposta
+// parecer lenta mesmo quando a OpenAI respondia rapidamente.
+const BOT_REPLY_DEBOUNCE_MS = Math.max(1000, Number(process.env.BOT_REPLY_DEBOUNCE_MS) || 3000);
 
 function clearPendingConnectionCheck(instanceName) {
   const timer = pendingConnectionChecks.get(instanceName);
@@ -683,7 +687,7 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
             });
             delete pendingReplies[ticket.id];
           }
-        }, 12000);
+        }, BOT_REPLY_DEBOUNCE_MS);
       }
     }).catch(err => console.error('[webhook] erro ao processar mídia:', err.message));
   }
@@ -700,7 +704,7 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
   }
 
   if (!isHistorical && ticket.status === 'bot' && useBotForInstance && aiService.hasAiConfigured(tenant.settings) && !fromMe) {
-    console.log(`[bot] Iniciando debounce para ticket ${ticket.id} (12s)...`);
+    console.log(`[bot] Agrupando mensagens do ticket ${ticket.id} por ${BOT_REPLY_DEBOUNCE_MS}ms...`);
     if (pendingReplies[ticket.id]) {
       clearTimeout(pendingReplies[ticket.id]);
     }
@@ -739,7 +743,7 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
         }
         delete pendingReplies[ticket.id];
       }
-    }, 12000);
+    }, BOT_REPLY_DEBOUNCE_MS);
   } else if (ticket.status !== 'bot' && !fromMe) {
     console.log(`[bot] Ignorado: Ticket ${ticket.id} está com status "${ticket.status}" (não é bot).`);
   }

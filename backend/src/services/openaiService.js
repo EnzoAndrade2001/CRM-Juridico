@@ -10,6 +10,7 @@ const DEFAULT_CHAT_MODEL    = process.env.OPENAI_CHAT_MODEL    || 'gpt-4o-mini';
 const DEFAULT_VISION_MODEL  = process.env.OPENAI_VISION_MODEL  || 'gpt-4o';
 const DEFAULT_EMBED_MODEL   = process.env.OPENAI_EMBED_MODEL   || 'text-embedding-3-small';
 const OPENAI_API_BASE       = 'https://api.openai.com/v1';
+const OPENAI_REQUEST_TIMEOUT_MS = Math.max(5000, Number(process.env.OPENAI_REQUEST_TIMEOUT_MS) || 30000);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Utilitário de chamada HTTP simples (sem dependência extra)
@@ -64,6 +65,9 @@ function openaiRequest(apiKey, endpoint, body, { method = 'POST', isForm = false
       }
     );
 
+    req.setTimeout(OPENAI_REQUEST_TIMEOUT_MS, () => {
+      req.destroy(new Error(`OpenAI excedeu o limite de ${OPENAI_REQUEST_TIMEOUT_MS}ms`));
+    });
     req.on('error', reject);
     if (postData) {
       if (isForm) req.write(postData);

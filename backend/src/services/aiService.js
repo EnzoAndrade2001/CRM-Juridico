@@ -56,8 +56,16 @@ function hasAiConfigured(settings) {
 async function chat(settings, systemPrompt, history, userMessage) {
   const p = resolveProvider(settings);
   if (!p) throw new Error('Nenhum provedor de IA configurado para este tenant.');
-  console.log(`[ai] chat via ${p.provider}`);
-  return p.service.chat(p.key, systemPrompt, history, userMessage);
+  const startedAt = Date.now();
+  console.log(`[ai] chat via ${p.provider} iniciado`);
+  try {
+    const response = await p.service.chat(p.key, systemPrompt, history, userMessage);
+    console.log(`[ai] chat via ${p.provider} concluido em ${Date.now() - startedAt}ms`);
+    return response;
+  } catch (error) {
+    console.error(`[ai] chat via ${p.provider} falhou apos ${Date.now() - startedAt}ms: ${error.message}`);
+    throw error;
+  }
 }
 
 /**
