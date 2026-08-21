@@ -71,7 +71,8 @@
 .jd-demo-ribbon { height: 32px; position: fixed; inset: 0 0 auto 0; z-index: 70; display: flex; align-items: center; justify-content: center; gap: 16px; color: #d8deea; background: #091224; font-size: 15px; letter-spacing: .03em; }
 .jd-demo-ribbon span { display: flex; align-items: center; gap: 6px; color: #f0d89e; font-weight: 800; }
 .jd-demo-ribbon p { margin: 0; }
-.jd-sidebar { position: fixed; z-index: 60; top: 32px; bottom: 0; left: 0; width: 260px; background: var(--jd-navy); color: #dbe3f2; display: flex; flex-direction: column; padding: 0 14px; }
+.jd-sidebar { position: fixed; z-index: 60; top: 0; bottom: 0; left: 0; width: 260px; background: var(--jd-navy); color: #dbe3f2; display: flex; flex-direction: column; padding: 0 14px; }
+.legal-demo--demo .jd-sidebar { top: 32px; }
 .jd-brand { height: 78px; display: flex; align-items: center; gap: 11px; padding: 0 8px; border-bottom: 1px solid rgba(255,255,255,.09); }
 .jd-brand__mark { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; color: #18223a; background: linear-gradient(145deg, #ead394, #b78c3f); box-shadow: 0 6px 18px rgba(0,0,0,.24); }
 .jd-brand__mark--logo { background: #091d34; border: 1px solid #c59a3f; box-sizing: border-box; }
@@ -109,8 +110,10 @@
 .jd-user-menu button { width: 100%; height: 38px; display: flex; align-items: center; gap: 9px; padding: 0 10px; color: #29364c; background: transparent; border: 0; border-radius: 7px; text-align: left; font-size: 13px; font-weight: 700; cursor: pointer; }
 .jd-user-menu button:hover { background: #f2f5f8; }
 .jd-user-menu .jd-user-menu__danger { color: #b43c3c; }
-.jd-main { margin-left: 260px; padding-top: 32px; min-height: 100vh; }
-.jd-header { position: sticky; top: 32px; z-index: 40; height: 70px; display: flex; align-items: center; gap: 15px; padding: 0 30px; background: rgba(255,255,255,.95); border-bottom: 1px solid var(--jd-line); backdrop-filter: blur(10px); }
+.jd-main { margin-left: 260px; min-height: 100vh; }
+.legal-demo--demo .jd-main { padding-top: 32px; }
+.jd-header { position: sticky; top: 0; z-index: 40; height: 70px; display: flex; align-items: center; gap: 15px; padding: 0 30px; background: rgba(255,255,255,.95); border-bottom: 1px solid var(--jd-line); backdrop-filter: blur(10px); }
+.legal-demo--demo .jd-header { top: 32px; }
 .jd-header__title { min-width: 235px; }
 .jd-header__title h1 { margin: 0 0 2px; font-family: Georgia, serif; font-size: 24px; font-weight: 700; color: #16213a; }
 .jd-header__title p { margin: 0; color: var(--jd-muted); font-size: 15px; }
@@ -233,7 +236,7 @@
 @media (max-width: 1120px) { .jd-inbox { grid-template-columns: 245px minmax(360px, 1fr); }.jd-client-panel { display: none; }.jd-metrics { grid-template-columns: repeat(2,1fr); }.jd-kanban { grid-template-columns: repeat(4, 240px); }.jd-campaign-stats { grid-template-columns: repeat(2,1fr); } }
 @media (max-width: 760px) { .jd-knowledge-stats { grid-template-columns: 1fr; }.jd-knowledge-card > header { align-items: stretch; flex-direction: column; padding: 15px; }.jd-knowledge-card > header label { width: 100%; }.jd-knowledge-grid { grid-template-columns: 1fr; padding: 12px; } }
 @media (max-width: 820px) {
-  .jd-demo-ribbon p { display: none; }.jd-sidebar { transform: translateX(-100%); transition: transform .2s ease; }.jd-sidebar.is-open { transform: translateX(0); }.jd-sidebar__close { display: block; }.jd-overlay { display: block; position: fixed; z-index: 55; inset: 32px 0 0; background: rgba(6,12,23,.55); border: 0; }.jd-main { margin-left: 0; }.jd-header { padding: 0 16px; }.jd-menu-button { display: grid; place-items: center; }.jd-header__title { min-width: 0; flex: 1; }.jd-header__title p, .jd-search, .jd-profile span, .jd-profile > svg { display: none; }.jd-page { padding: 18px 16px 30px; }.jd-overview-grid { grid-template-columns: 1fr; }.jd-inbox { grid-template-columns: 220px minmax(330px,1fr); overflow-x: auto; }.jd-attention__table > button { grid-template-columns: 38px 1fr 90px 18px; }.jd-attention__reason, .jd-attention time { display: none; }.jd-table-head, .jd-table-row { min-width: 760px; }.jd-campaign-table { overflow-x: auto; }
+  .jd-demo-ribbon p { display: none; }.jd-sidebar { transform: translateX(-100%); transition: transform .2s ease; }.jd-sidebar.is-open { transform: translateX(0); }.jd-sidebar__close { display: block; }.jd-overlay { display: block; position: fixed; z-index: 55; inset: 0; background: rgba(6,12,23,.55); border: 0; }.legal-demo--demo .jd-overlay { inset: 32px 0 0; }.jd-main { margin-left: 0; }.jd-header { padding: 0 16px; }.jd-menu-button { display: grid; place-items: center; }.jd-header__title { min-width: 0; flex: 1; }.jd-header__title p, .jd-search, .jd-profile span, .jd-profile > svg { display: none; }.jd-page { padding: 18px 16px 30px; }.jd-overview-grid { grid-template-columns: 1fr; }.jd-inbox { grid-template-columns: 220px minmax(330px,1fr); overflow-x: auto; }.jd-attention__table > button { grid-template-columns: 38px 1fr 90px 18px; }.jd-attention__reason, .jd-attention time { display: none; }.jd-table-head, .jd-table-row { min-width: 760px; }.jd-campaign-table { overflow-x: auto; }
 }
 @media (max-width: 560px) {
   .jd-welcome { align-items: flex-start; flex-direction: column; gap: 16px; }.jd-welcome::after { right: -10px; }.jd-metrics { grid-template-columns: 1fr 1fr; }.jd-metric { min-height: 118px; padding: 14px; }.jd-metric__icon { width: 30px; height: 30px; top: 13px; right: 13px; }.jd-metric > strong { font-size: 27px; }.jd-overview-grid { display: block; }.jd-activity-card { margin-top: 14px; }.jd-attention__table > button { grid-template-columns: 36px 1fr 18px; }.jd-attention__table .jd-pill { display: none; }.jd-inbox { height: auto; min-height: calc(100vh - 102px); grid-template-columns: 1fr; }.jd-conversations { display: none; }.jd-chat { min-height: calc(100vh - 102px); }.jd-chat__header { flex-wrap: wrap; padding: 9px 12px; }.jd-chat__header .jd-pill { margin-left: 0; }.jd-takeover { margin-left: auto; }.jd-ai-summary .jd-pill { display: none; }.jd-message { max-width: 84%; }.jd-section-intro { align-items: flex-start; gap: 12px; }.jd-section-intro p { max-width: 220px; }.jd-campaign-stats { grid-template-columns: 1fr; }.jd-small-search { display: none; }

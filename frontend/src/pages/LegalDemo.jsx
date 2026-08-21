@@ -543,8 +543,8 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
     configuracoes: ['Configurações', 'Robô de IA, provedor e chaves de integração'],
   }[active]), [active]);
   return (
-    <div className="legal-demo">
-      <div className="jd-demo-ribbon"><span><Sparkles size={14} /> {demoMode ? 'DEMONSTRAÇÃO INTERATIVA' : 'AMBIENTE DO ESCRITÓRIO'}</span><p>{demoMode ? 'Dados fictícios · alterações salvas neste navegador' : 'Dados protegidos do escritório'}</p></div>
+    <div className={`legal-demo ${demoMode ? 'legal-demo--demo' : ''}`}>
+      {demoMode && <div className="jd-demo-ribbon"><span><Sparkles size={14} /> DEMONSTRAÇÃO INTERATIVA</span><p>Dados fictícios · alterações salvas neste navegador</p></div>}
       <Sidebar
         active={active}
         setActive={setActive}
