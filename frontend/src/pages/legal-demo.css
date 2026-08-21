@@ -87,16 +87,28 @@
 .jd-nav button.active { color: #fff; background: rgba(255,255,255,.1); }
 .jd-nav button.active::before { content: ""; position: absolute; left: -14px; width: 3px; height: 24px; border-radius: 0 4px 4px 0; background: var(--jd-gold); }
 .jd-nav button b { margin-left: auto; width: 21px; height: 21px; display: grid; place-items: center; border-radius: 7px; background: #d2a44f; color: #111a2d; font-size: 14px; }
-.jd-ai-card { margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 12px 10px; border: 1px solid rgba(204,170,93,.25); border-radius: 10px; background: rgba(196,154,74,.08); }
+.jd-ai-card { width: 100%; margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 12px 10px; color: inherit; border: 1px solid rgba(204,170,93,.25); border-radius: 10px; background: rgba(196,154,74,.08); text-align: left; cursor: pointer; transition: background .16s ease, border-color .16s ease, transform .16s ease; }
+.jd-ai-card:hover { background: rgba(196,154,74,.14); border-color: rgba(218,184,107,.5); }
+.jd-ai-card:active { transform: translateY(1px); }
+.jd-ai-card:focus-visible, .jd-user-card:focus-visible, .jd-user-menu button:focus-visible { outline: 2px solid #e2c47f; outline-offset: 2px; }
 .jd-ai-card__icon { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #e2c47f; background: rgba(218,184,107,.13); }
 .jd-ai-card div { display: flex; min-width: 0; flex-direction: column; }
 .jd-ai-card strong { color: #f5f7fa; font-size: 15px; }
 .jd-ai-card small { color: #8f9bb1; font-size: 12px; white-space: nowrap; }
-.jd-live-dot { margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: #45d59b; box-shadow: 0 0 0 4px rgba(69,213,155,.1); }
-.jd-user-card { height: 68px; display: flex; align-items: center; gap: 9px; border-top: 1px solid rgba(255,255,255,.08); margin-top: 12px; padding: 0 7px; }
+.jd-live-dot { margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: #8895aa; box-shadow: 0 0 0 4px rgba(136,149,170,.1); }
+.jd-live-dot--active, .jd-live-dot--demo { background: #45d59b; box-shadow: 0 0 0 4px rgba(69,213,155,.1); }
+.jd-live-dot--configured { background: #e2b14f; box-shadow: 0 0 0 4px rgba(226,177,79,.12); }
+.jd-live-dot--error { background: #e26666; box-shadow: 0 0 0 4px rgba(226,102,102,.12); }
+.jd-user-menu-wrap { position: relative; margin-top: 12px; border-top: 1px solid rgba(255,255,255,.08); }
+.jd-user-card { width: 100%; height: 68px; display: flex; align-items: center; gap: 9px; padding: 0 7px; color: inherit; background: transparent; border: 0; text-align: left; cursor: pointer; }
+.jd-user-card:hover { background: rgba(255,255,255,.04); }
 .jd-user-card > span:nth-child(2) { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .jd-user-card strong { color: #f6f7fa; font-size: 15px; white-space: nowrap; }
 .jd-user-card small { color: #8995aa; font-size: 13px; }
+.jd-user-menu { position: absolute; z-index: 80; right: 2px; bottom: 62px; width: 205px; padding: 6px; background: #fff; border: 1px solid #dfe4eb; border-radius: 10px; box-shadow: 0 16px 40px rgba(4,13,29,.28); }
+.jd-user-menu button { width: 100%; height: 38px; display: flex; align-items: center; gap: 9px; padding: 0 10px; color: #29364c; background: transparent; border: 0; border-radius: 7px; text-align: left; font-size: 13px; font-weight: 700; cursor: pointer; }
+.jd-user-menu button:hover { background: #f2f5f8; }
+.jd-user-menu .jd-user-menu__danger { color: #b43c3c; }
 .jd-main { margin-left: 260px; padding-top: 32px; min-height: 100vh; }
 .jd-header { position: sticky; top: 32px; z-index: 40; height: 70px; display: flex; align-items: center; gap: 15px; padding: 0 30px; background: rgba(255,255,255,.95); border-bottom: 1px solid var(--jd-line); backdrop-filter: blur(10px); }
 .jd-header__title { min-width: 235px; }

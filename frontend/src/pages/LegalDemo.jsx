@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { getSettings, saveSettings } from '../services/api';
+import { getMe, getSettings, saveSettings } from '../services/api';
 import {
   ArrowUpRight,
   Bell,
@@ -20,11 +20,13 @@ import {
   Menu,
   MessageCircleMore,
   MoreHorizontal,
+  LogOut,
   Paperclip,
   Plus,
   Search,
   Send,
   ShieldCheck,
+  Settings,
   Sparkles,
   Smartphone,
   UsersRound,
@@ -77,7 +79,36 @@ function StatusPill({ children, tone = 'neutral' }) {
   return <span className={`jd-pill jd-pill--${tone}`}>{children}</span>;
 }
 
-function Sidebar({ active, setActive, open, setOpen, demoMode = false }) {
+function initialsForUser(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return 'US';
+  return `${parts[0][0] || ''}${parts.length > 1 ? parts.at(-1)[0] : ''}`.toUpperCase();
+}
+
+function roleLabel(role) {
+  if (role === 'superadmin') return 'Superadministrador';
+  if (role === 'admin') return 'Administradora';
+  return 'Atendimento';
+}
+
+function Sidebar({
+  active,
+  setActive,
+  open,
+  setOpen,
+  demoMode = false,
+  currentUser,
+  aiStatus,
+  profileMenuOpen,
+  setProfileMenuOpen,
+  onLogout,
+}) {
+  const openSettings = () => {
+    setActive('configuracoes');
+    setOpen(false);
+    setProfileMenuOpen(false);
+  };
+
   return (
     <>
       {open && <button className="jd-overlay" type="button" aria-label="Fechar menu" onClick={() => setOpen(false)} />}
@@ -100,32 +131,40 @@ function Sidebar({ active, setActive, open, setOpen, demoMode = false }) {
             </button>
           ))}
         </nav>
-        <div className="jd-ai-card">
+        <button className="jd-ai-card" type="button" onClick={openSettings} aria-label="Abrir configurações da inteligência artificial">
           <span className="jd-ai-card__icon"><Sparkles size={18} /></span>
           <div>
-            <strong>{demoMode ? 'IA em demonstração' : 'IA em preparação'}</strong>
-            <small>{demoMode ? 'Dados fictícios neste navegador' : 'Ativação após configurar o provedor'}</small>
+            <strong>{demoMode ? 'IA em demonstração' : aiStatus.title}</strong>
+            <small>{demoMode ? 'Ambiente isolado para apresentação' : aiStatus.description}</small>
           </div>
-          <span className="jd-live-dot" />
-        </div>
-        <div className="jd-user-card">
-          <Avatar initials="EA" size="sm" />
-          <span><strong>Dra. Eduarda</strong><small>Administradora</small></span>
-          <MoreHorizontal size={18} />
+          <span className={`jd-live-dot jd-live-dot--${demoMode ? 'demo' : aiStatus.tone}`} />
+        </button>
+        <div className="jd-user-menu-wrap">
+          <button className="jd-user-card" type="button" onClick={() => setProfileMenuOpen((visible) => !visible)} aria-expanded={profileMenuOpen} aria-haspopup="menu">
+            <Avatar initials={initialsForUser(currentUser?.name)} size="sm" />
+            <span><strong>{currentUser?.name || 'Usuário'}</strong><small>{roleLabel(currentUser?.role)}</small></span>
+            <MoreHorizontal size={18} />
+          </button>
+          {profileMenuOpen && (
+            <div className="jd-user-menu" role="menu">
+              <button type="button" role="menuitem" onClick={openSettings}><Settings size={16} /> Configurações</button>
+              {!demoMode && <button type="button" role="menuitem" className="jd-user-menu__danger" onClick={onLogout}><LogOut size={16} /> Sair do CRM</button>}
+            </div>
+          )}
         </div>
       </aside>
     </>
   );
 }
 
-function Header({ title, subtitle, setMenuOpen }) {
+function Header({ title, subtitle, setMenuOpen, currentUser, onOpenSettings }) {
   return (
     <header className="jd-header">
       <button className="jd-menu-button" type="button" onClick={() => setMenuOpen(true)}><Menu size={22} /></button>
       <div className="jd-header__title"><h1>{title}</h1><p>{subtitle}</p></div>
       <label className="jd-search"><Search size={17} /><input placeholder="Buscar cliente, atendimento..." /></label>
       <button className="jd-icon-button" type="button" aria-label="Notificações"><Bell size={19} /><span /></button>
-      <button className="jd-profile" type="button"><Avatar initials="EA" size="xs" /><span>Dra. Eduarda</span><ChevronDown size={15} /></button>
+      <button className="jd-profile" type="button" onClick={onOpenSettings} aria-label="Abrir configurações da conta"><Avatar initials={initialsForUser(currentUser?.name)} size="xs" /><span>{currentUser?.name || 'Usuário'}</span><ChevronDown size={15} /></button>
     </header>
   );
 }
@@ -272,7 +311,7 @@ function CampaignsDemo() {
   );
 }
 
-function LegalSettings({ demoMode }) {
+function LegalSettings({ demoMode, onSettingsChanged }) {
   const [form, setForm] = useState({
     botEnabled: false,
     botName: '',
@@ -299,6 +338,7 @@ function LegalSettings({ demoMode }) {
     setSaving(true);
     try {
       await saveSettings(form);
+      onSettingsChanged?.();
       alert('Configurações salvas com sucesso!');
     } catch {
       alert('Erro ao salvar. Tente novamente.');
@@ -427,7 +467,45 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
     return navigation.some(({ id }) => id === initialScreen) ? initialScreen : 'visao-geral';
   });
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(() => demoMode
+    ? { name: 'Dra. Eduarda', role: 'admin', tenant: { slug: 'demonstracao' } }
+    : { name: '', role: localStorage.getItem('role') || 'agent', tenant: null });
+  const [aiStatus, setAiStatus] = useState({
+    title: 'IA em preparação',
+    description: 'Consultando configurações...',
+    tone: 'pending',
+  });
   const legalWorkspace = useLegalWorkspace({ demoMode });
+
+  const loadShellState = useCallback(async () => {
+    if (demoMode) return;
+    const [userResult, settingsResult] = await Promise.allSettled([getMe(), getSettings()]);
+    if (userResult.status === 'fulfilled') setCurrentUser(userResult.value.data);
+    if (settingsResult.status === 'fulfilled') {
+      const settings = settingsResult.value.data || {};
+      const providerConfigured = Boolean(settings.openaiKey || settings.geminiKey);
+      if (settings.botEnabled && providerConfigured) {
+        setAiStatus({ title: 'IA em operação', description: 'Atendimento automático ativo', tone: 'active' });
+      } else if (providerConfigured) {
+        setAiStatus({ title: 'IA configurada', description: 'Robô automático desativado', tone: 'configured' });
+      } else {
+        setAiStatus({ title: 'IA em preparação', description: 'Configure o provedor de IA', tone: 'pending' });
+      }
+    } else {
+      setAiStatus({ title: 'Status indisponível', description: 'Abra as configurações para revisar', tone: 'error' });
+    }
+  }, [demoMode]);
+
+  useEffect(() => {
+    loadShellState();
+  }, [loadShellState]);
+
+  function handleLogout() {
+    const slug = currentUser?.tenant?.slug;
+    localStorage.clear();
+    window.location.assign(slug ? `/${slug}/login` : '/login');
+  }
   function openLegalClient(client, ticketId = null) {
     const url = new URL(window.location.href);
     url.searchParams.set('tela', 'clientes');
@@ -467,10 +545,21 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
   return (
     <div className="legal-demo">
       <div className="jd-demo-ribbon"><span><Sparkles size={14} /> {demoMode ? 'DEMONSTRAÇÃO INTERATIVA' : 'AMBIENTE DO ESCRITÓRIO'}</span><p>{demoMode ? 'Dados fictícios · alterações salvas neste navegador' : 'Dados protegidos do escritório'}</p></div>
-      <Sidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} demoMode={demoMode} />
+      <Sidebar
+        active={active}
+        setActive={setActive}
+        open={menuOpen}
+        setOpen={setMenuOpen}
+        demoMode={demoMode}
+        currentUser={currentUser}
+        aiStatus={aiStatus}
+        profileMenuOpen={profileMenuOpen}
+        setProfileMenuOpen={setProfileMenuOpen}
+        onLogout={handleLogout}
+      />
       <main className="jd-main">
-        <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} />
-        {active === 'visao-geral' && <LegalOverviewPanel workspace={legalWorkspace} onNavigate={setActive} />}
+        <Header title={header[0]} subtitle={header[1]} setMenuOpen={setMenuOpen} currentUser={currentUser} onOpenSettings={() => setActive('configuracoes')} />
+        {active === 'visao-geral' && <LegalOverviewPanel workspace={legalWorkspace} onNavigate={setActive} currentUser={currentUser} />}
         {active === 'atendimentos' && (demoMode ? <InboxDemo /> : <RealInbox legalMode onOpenLegalClient={openLegalClient} onOpenLegalDocuments={openLegalDocuments} />)}
         {active === 'clientes' && <LegalClients workspace={legalWorkspace} onNavigate={setActive} />}
         {active === 'crm' && <CrmDemo workspace={legalWorkspace} />}
@@ -478,7 +567,7 @@ export default function LegalDemo({ demoMode = false, initialScreen = 'visao-ger
         {active === 'campanhas' && (demoMode ? <CampaignsDemo /> : <Campaigns />)}
         {active === 'conhecimento' && (demoMode ? <PlaceholderPage type={active} /> : <LegalKnowledgeBase />)}
         {active === 'conexoes' && (demoMode ? <PlaceholderPage type={active} /> : <div className="jd-connections-shell"><ConnectionsPage /></div>)}
-        {active === 'configuracoes' && <LegalSettings demoMode={demoMode} />}
+        {active === 'configuracoes' && <LegalSettings demoMode={demoMode} onSettingsChanged={loadShellState} />}
       </main>
     </div>
   );

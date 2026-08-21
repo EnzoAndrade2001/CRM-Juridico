@@ -342,7 +342,7 @@ export default function useLegalWorkspace({ demoMode }) {
   }, [demoMode]);
 
   const effectiveSummary = useMemo(
-    () => (demoMode ? buildDemoSummary(workspace) : summary || buildDemoSummary(workspace)),
+    () => (demoMode ? buildDemoSummary(workspace) : summary || buildEmptySummary()),
     [demoMode, summary, workspace],
   );
 
@@ -352,5 +352,14 @@ export default function useLegalWorkspace({ demoMode }) {
     loading, saving, error, demoMode,
     addClient, editClient, addLead, editLead, addMatter, editMatter, addTask, editTask,
     loadClientDetail, loadLeadDetail, loadMatterDetail, refresh, resetDemo,
+  };
+}
+
+function buildEmptySummary() {
+  return {
+    leadsByStage: {},
+    mattersByStatus: {},
+    tasks: { open: 0, overdue: 0 },
+    recentActivities: [],
   };
 }

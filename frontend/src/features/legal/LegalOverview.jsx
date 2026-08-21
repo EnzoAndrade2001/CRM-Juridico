@@ -40,7 +40,7 @@ function relativeTime(value) {
   return new Intl.DateTimeFormat('pt-BR').format(new Date(value));
 }
 
-export default function LegalOverview({ workspace, onNavigate }) {
+export default function LegalOverview({ workspace, onNavigate, currentUser }) {
   const { summary } = workspace;
   const activeMatters = Object.entries(summary.mattersByStatus || {})
     .filter(([status]) => ['TRIAGEM', 'ATIVO', 'SUSPENSO'].includes(status))
@@ -73,7 +73,7 @@ export default function LegalOverview({ workspace, onNavigate }) {
   return (
     <div className="jd-page jd-page--overview">
       {workspace.error && <div className="jd-workspace-error"><CircleAlert size={17} /><span>{workspace.error}</span><button type="button" onClick={workspace.refresh}>Tentar novamente</button></div>}
-      <section className="jd-welcome"><div><p>PAINEL DO ESCRITÓRIO</p><h2>Bom dia, Dra. Eduarda.</h2><span>Existem {attention.length} oportunidades que merecem atenção e {summary.tasks?.open || 0} tarefas abertas.</span></div><button type="button" onClick={() => onNavigate('crm')}><Inbox size={18} /> Abrir gestão jurídica <ArrowUpRight size={16} /></button></section>
+      <section className="jd-welcome"><div><p>PAINEL DO ESCRITÓRIO</p><h2>Bom dia, {currentUser?.name || 'equipe'}.</h2><span>Existem {attention.length} oportunidades que merecem atenção e {summary.tasks?.open || 0} tarefas abertas.</span></div><button type="button" onClick={() => onNavigate('crm')}><Inbox size={18} /> Abrir gestão jurídica <ArrowUpRight size={16} /></button></section>
       <section className="jd-metrics">{metrics.map(({ label, value, icon: Icon, tone, note }) => <article className="jd-metric" key={label}><div className={`jd-metric__icon jd-tone--${tone}`}><Icon size={20} /></div><span>{label}</span><strong>{value}</strong><p>{note}</p></article>)}</section>
       <section className="jd-overview-grid">
         <article className="jd-card jd-funnel-card"><div className="jd-card__heading"><div><h3>Funil de oportunidades</h3><p>Dados atuais do pipeline jurídico</p></div><button type="button" onClick={() => onNavigate('crm')}>Ver CRM <ArrowUpRight size={15} /></button></div><div className="jd-funnel">{funnel.map(([label, stage, color]) => { const value = summary.leadsByStage?.[stage] || 0; return <div className="jd-funnel__row" key={stage}><span>{label}</span><div><i style={{ width: `${Math.max(value ? 8 : 0, (value / maxFunnel) * 100)}%`, background: color }} /></div><strong>{value}</strong></div>; })}</div><div className="jd-funnel__footer"><span><Sparkles size={15} /> Conversão atual em contratos</span><b>{conversion}%</b></div></article>
@@ -83,4 +83,3 @@ export default function LegalOverview({ workspace, onNavigate }) {
     </div>
   );
 }
-
