@@ -319,6 +319,17 @@ async function getQrCode(url, key, instanceName) {
   }
 }
 
+async function sendPresence(url, key, instanceName, phone, { presence = 'composing', delay = 5000 } = {}) {
+  const client = getClient(url, key);
+  const safeDelay = Math.max(1000, Number(delay) || 5000);
+  const { data } = await client.post(`/chat/sendPresence/${instanceName}`, {
+    number: phone,
+    presence,
+    delay: safeDelay,
+  });
+  return data;
+}
+
 async function getConnectionState(url, key, instanceName) {
   const client = getClient(url, key);
   const { data } = await client.get(`/instance/connectionState/${instanceName}`);
@@ -582,7 +593,7 @@ async function findConversationJidsByMessageIds(url, key, instanceName, messageI
 }
 
 module.exports = {
-  sendText, sendMedia, sendAudio, sendMessage, getMediaBase64, saveMediaFile,
+  sendText, sendPresence, sendMedia, sendAudio, sendMessage, getMediaBase64, saveMediaFile,
   getQrCode, getConnectionState, setWebhook, createInstance, deleteInstance, isInstanceAlreadyInUse, fetchInstanceInfo, fetchProfilePicture, revokeMessage,
   normalizePhoneNumber, buildPhoneLookupCandidates, isGroupJid,
   findChats, findMessages, findConversationJidsByMessageIds

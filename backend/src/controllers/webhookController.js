@@ -14,7 +14,8 @@ const DISCONNECT_CONFIRMATION_MS = Number(process.env.EVOLUTION_DISCONNECT_CONFI
 // Pequena janela para agrupar mensagens enviadas em sequencia (ex.: "oi" +
 // "quero revisar meu contrato"). O valor anterior de 12s fazia toda resposta
 // parecer lenta mesmo quando a OpenAI respondia rapidamente.
-const BOT_REPLY_DEBOUNCE_MS = Math.max(1000, Number(process.env.BOT_REPLY_DEBOUNCE_MS) || 3000);
+const BOT_REPLY_DEBOUNCE_MS = Math.max(250, Number(process.env.BOT_REPLY_DEBOUNCE_MS) || 500);
+const BOT_TYPING_DURATION_MS = Math.max(1000, Number(process.env.BOT_TYPING_DURATION_MS) || 5000);
 
 function clearPendingConnectionCheck(instanceName) {
   const timer = pendingConnectionChecks.get(instanceName);
@@ -675,6 +676,14 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
 
       if (!isHistorical && ticket.status === 'bot' && useBotForInstance && transcription) {
         if (pendingReplies[ticket.id]) clearTimeout(pendingReplies[ticket.id]);
+
+        evolutionService.sendPresence(
+          tenant.settings.evolutionUrl,
+          tenant.settings.evolutionKey,
+          waInstance.instanceName,
+          contact.phone,
+          { delay: BOT_TYPING_DURATION_MS }
+        ).catch((err) => console.warn('[bot] Nao foi possivel exibir digitando para midia:', err.message));
         
         pendingReplies[ticket.id] = setTimeout(async () => {
           try {
@@ -708,6 +717,14 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
     if (pendingReplies[ticket.id]) {
       clearTimeout(pendingReplies[ticket.id]);
     }
+
+    evolutionService.sendPresence(
+      tenant.settings.evolutionUrl,
+      tenant.settings.evolutionKey,
+      waInstance.instanceName,
+      contact.phone,
+      { delay: BOT_TYPING_DURATION_MS }
+    ).catch((err) => console.warn('[bot] Nao foi possivel exibir digitando:', err.message));
 
     pendingReplies[ticket.id] = setTimeout(async () => {
       try {
