@@ -44,7 +44,10 @@ function normalizeTicketsForTab(items, currentTab) {
   for (const ticket of items) {
     if (!ticket?.id) continue;
 
-    const key = ticket.contactId || ticket.contact?.id || ticket.id;
+    const phone = String(ticket.contact?.phone || ticket.contact?.whatsapp || '').replace(/\D/g, '');
+    const key = phone
+      ? `phone:${phone}`
+      : (ticket.contactId || ticket.contact?.id || ticket.id);
     const current = grouped.get(key);
 
     if (!current || isTicketPreferred(ticket, current)) {

@@ -62,7 +62,7 @@ test('concluidos exibem apenas o atendimento mais recente de cada contato', asyn
 
   prisma.ticket.findMany = async () => [
     { id: 'ticket-old', contactId: 'contact-1', status: 'resolved', updatedAt: new Date('2026-08-20T10:00:00Z'), lastMessageAt: new Date('2026-08-20T10:00:00Z'), contact: { id: 'contact-1', phone: '5551999999999' } },
-    { id: 'ticket-latest', contactId: 'contact-1', status: 'resolved', updatedAt: new Date('2026-08-21T10:00:00Z'), lastMessageAt: new Date('2026-08-21T10:00:00Z'), contact: { id: 'contact-1', phone: '5551999999999' } },
+    { id: 'ticket-latest', contactId: 'contact-legacy', status: 'resolved', updatedAt: new Date('2026-08-21T10:00:00Z'), lastMessageAt: new Date('2026-08-21T10:00:00Z'), contact: { id: 'contact-legacy', phone: '5551999999999' } },
   ];
   prisma.ticket.count = async () => 0;
   prisma.ticket.groupBy = async () => [{ contactId: 'contact-1' }];
