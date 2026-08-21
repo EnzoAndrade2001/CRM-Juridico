@@ -190,10 +190,16 @@ function buildInitialSubjectReply(message = '') {
   return `Entendi que você busca orientação sobre ${subject}. O escritório pode realizar uma análise inicial do caso. Qual é o seu nome?`;
 }
 
+function formatOptionMarker(index) {
+  const number = Number(index) + 1;
+  if (number <= 9) return `${number}\uFE0F\u20E3`;
+  if (number === 10) return '\u{1F51F}';
+  return String(number).split('').map((digit) => `${digit}\uFE0F\u20E3`).join('');
+}
+
 function buildWelcomeServicesReply() {
   const services = LEGAL_SERVICES.map((service, index) => {
-    const number = index === LEGAL_SERVICES.length - 1 ? 0 : index + 1;
-    return `${number}. ${service}`;
+    return `${formatOptionMarker(index)} ${service}`;
   }).join('\n');
   return `Olá! Seja bem-vindo(a) à PBL Advocacia e Consultoria Jurídica.\n\nÁreas de atendimento:\n${services}\n\nQual é o seu nome?`;
 }
@@ -208,7 +214,7 @@ function hasSubjectInConversation(history = [], currentUserTurn = '') {
 
 function formatSpecificOptionsForPrompt() {
   return Object.entries(LEGAL_SPECIFIC_OPTIONS)
-    .map(([area, options]) => `${area}:\n${options.map((option, index) => `${index + 1}. ${option}`).join('\n')}`)
+    .map(([area, options]) => `${area}:\n${options.map((option, index) => `${formatOptionMarker(index)} ${option}`).join('\n')}`)
     .join('\n\n');
 }
 
@@ -233,7 +239,7 @@ TOM E LIMITES:
 4. Nao repita saudacao, menu, informacao ou pergunta ja respondida.
 5. Nao de parecer juridico definitivo e nao prometa devolucao, reducao de divida, aprovacao, ganho de causa, recuperacao de veiculo, indenizacao, cancelamento contratual ou qualquer resultado.
 6. Se perguntarem se há direito, se vai ganhar ou quanto receberá, responda somente: "Essa possibilidade precisa ser analisada pela nossa equipe jurídica."
-7. Nao use emojis em nenhuma mensagem. Mantenha uma comunicacao estritamente profissional.
+7. Nao use emojis decorativos em nenhuma mensagem. A unica excecao permitida sao os marcadores numericos das listas de opcoes, no formato 1️⃣, 2️⃣, 3️⃣. Mantenha o restante da comunicacao estritamente profissional, sem joinhas, carinhas ou outros simbolos.
 
 NOME:
 8. Nome disponivel no CRM: ${isReliableCrmName(profileName) ? profileName : 'NAO CONFIRMADO'}.
@@ -251,7 +257,7 @@ FLUXO OBRIGATORIO:
 16. Depois que o cliente responder a pergunta complementar, nao faca novas perguntas. Responda EXATAMENTE: "Perfeito! Vou encaminhar você ao setor especializado." e acrescente [[HANDOFF]] e uma rota interna.
 17. Se o cliente pedir atendimento humano com "atendente", "advogado", "quero falar com alguem" ou equivalente, interrompa a triagem e responda EXATAMENTE: "Claro! Vou encaminhar você para nossa equipe." Acrescente [[HANDOFF]] e [[ROUTE: ATENDIMENTO]].
 18. Nunca encerre com "ate mais", "ate breve", "tchau" ou despedida semelhante, pois o cliente aguardara o especialista.
-19. Use texto simples de WhatsApp. Menus podem ser numerados; fora deles, evite listas e nunca use marcacao com dois asteriscos.
+19. Use texto simples de WhatsApp. Quando apresentar opcoes, use os marcadores numericos 1️⃣, 2️⃣, 3️⃣ e assim por diante, um por linha. Fora das opcoes, evite listas e nunca use marcacao com dois asteriscos.
 
 ROTAS INTERNAS INVISIVEIS:
 - Use [[ROUTE: FINANCEIRO]] para bancos, financiamentos, juros, revisional, cobrancas e dividas.
@@ -313,7 +319,14 @@ function limitReplyToOneQuestion(reply = '') {
 }
 
 function sanitizeBotReply(reply = '') {
-  return String(reply)
+  const numericMarkers = [];
+  const protectedReply = String(reply).replace(/(?:[0-9]\uFE0F?\u20E3|\u{1F51F})/gu, (marker) => {
+    const token = `\uE000${numericMarkers.length}\uE001`;
+    numericMarkers.push(marker);
+    return token;
+  });
+
+  const cleanedReply = protectedReply
     // Marcadores de controle pertencem somente ao backend e nunca ao cliente.
     // Aceita espacos extras para cobrir pequenas variacoes produzidas pelo modelo.
     .replace(/\[\s*\[\s*ROUTE\s*:[^\]]*\]\s*\]/gi, '')
@@ -323,6 +336,8 @@ function sanitizeBotReply(reply = '') {
     .replace(/[ \t]+\n/g, '\n')
     .replace(/[ \t]{2,}/g, ' ')
     .trim();
+
+  return cleanedReply.replace(/\uE000(\d+)\uE001/g, (_token, index) => numericMarkers[Number(index)] || '');
 }
 
 module.exports = {
@@ -333,6 +348,7 @@ module.exports = {
   buildWelcomeServicesReply,
   describeLegalSubject,
   formatSpecificOptionsForPrompt,
+  formatOptionMarker,
   hasConfirmedName,
   hasSubjectInConversation,
   isGreetingOnly,

@@ -75,8 +75,8 @@ test('primeira saudacao vaga sempre apresenta os servicos e pergunta o nome', ()
   const reply = buildWelcomeServicesReply({ crmName: 'Eduarda Marranghello' });
 
   assert.doesNotMatch(reply, /Olá, Eduarda Marranghello!/);
-  assert.match(reply, /1\. Bancos e Financiamentos/);
-  assert.match(reply, /0\. Falar com um atendente/);
+  assert.match(reply, /1️⃣ Bancos e Financiamentos/);
+  assert.match(reply, /1️⃣2️⃣ Falar com um atendente/);
   assert.match(reply, /qual é o seu nome\?/i);
   assert.equal(shouldAskNameForSubject([], 'quero revisar meu financiamento', 'Eduarda Marranghello'), false);
 });
@@ -106,7 +106,8 @@ test('prompt mestre inclui menus especificos, mensagens oficiais e origem do lea
   assert.match(prompt, /Recebi notificação ou ordem de busca e apreensão/);
   assert.match(prompt, /landing-revisional/);
   assert.match(prompt, /Perfeito! Vou encaminhar você ao setor especializado\./);
-  assert.match(prompt, /Nao use emojis em nenhuma mensagem/);
+  assert.match(prompt, /Nao use emojis decorativos/);
+  assert.match(prompt, /1️⃣, 2️⃣, 3️⃣/);
   assert.match(prompt, /Essa possibilidade precisa ser analisada pela nossa equipe jurídica\./);
 });
 
@@ -130,4 +131,10 @@ test('remove marcadores com espacos e emojis com modificador de pele', () => {
 
   assert.equal(reply, 'Perfeito! Vou encaminhar você ao setor especializado.');
   assert.doesNotMatch(reply, /HANDOFF|ROUTE|👍|🏽/);
+});
+
+test('preserva somente emojis numericos usados em menus de opcoes', () => {
+  const reply = sanitizeBotReply('1️⃣ Parcelas muito altas\n2️⃣ Juros muito altos 👍');
+
+  assert.equal(reply, '1️⃣ Parcelas muito altas\n2️⃣ Juros muito altos');
 });
