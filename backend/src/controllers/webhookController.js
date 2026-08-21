@@ -5,6 +5,13 @@ const { mediaPath } = require('../utils/uploads');
 const evolutionService = require('../services/evolutionService');
 const aiService = require('../services/aiService');
 const businessHourService = require('../services/businessHourService');
+const {
+  buildInitialSubjectReply,
+  buildLegalBotInstructions,
+  hasConfirmedName,
+  limitReplyToOneQuestion,
+  shouldAskNameForSubject,
+} = require('../domain/legalBotPolicy');
 
 let io;
 function setIo(socketIo) { io = socketIo; }
@@ -972,9 +979,7 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
   // 1. FILTRO DE PALAVRAS-CHAVE (ATALHO RÁPIDO)
   let autoCategory = null;
   const msgLower = currentUserTurn.toLowerCase();
-  if (msgLower.includes('boleto') || msgLower.includes('nota') || msgLower.includes('pagamento')) autoCategory = 'FINANCEIRO';
-  if (msgLower.includes('toner') || msgLower.includes('tonner') || msgLower.includes('cilindro')) autoCategory = 'SUPRIMENTO';
-  if (msgLower.includes('falha') || msgLower.includes('não imprime') || msgLower.includes('parou')) autoCategory = 'SUPORTE';
+  if (/banco|financi|juros|boleto|pagamento|cobran|d[ií]vida|contrato revisional/i.test(msgLower)) autoCategory = 'FINANCEIRO';
 
   // 2. MEMÓRIA DE LONGO PRAZO (Filtra mensagens de alucinação anteriores para não "viciar" a IA)
   const history = await prisma.message.findMany({
@@ -987,7 +992,7 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
   const cleanHistory = history.filter(m => {
     if (!m.fromBot) return true;
     const body = m.body.toLowerCase();
-    if (body.includes('chamados técnico') || body.includes('financeiro') || body.includes('opções que tenho disponíveis')) return false;
+    if (body.includes('chamados técnico') || body.includes('opções que tenho disponíveis')) return false;
     return true;
   });
 
@@ -996,46 +1001,13 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
   // 3. SYSTEM PROMPT (Prioridade absoluta para o que o usuário escreveu no painel)
   const userPrompt = settings.botSystemPrompt || 'Você é um Assistente de Atendimento cordial.';
 
-  // Sincroniza os equipamentos do CRM para o contato antes de buscar
-  const { syncCrmEquipmentsToEquipment } = require('../services/crmSyncService');
-  await syncCrmEquipmentsToEquipment(tenant.id, contact.id);
-
-  // 4. CONTEXTO TÉCNICO (Equipamentos e Notas)
-  const equipments = await prisma.equipment.findMany({
-    where: {
-      tenantId: tenant.id,
-      isActive: true,
-      contactId: contact.id
-    }
+  const legalInstructions = buildLegalBotInstructions({
+    currentUserTurn,
+    history: reversedHistory,
+    profileName: contact.name,
   });
-
-  const equipContext = equipments.length > 0 
-    ? equipments.map(e => `- ${e.manufacturer || ''} ${e.model} (Série: ${e.serialNumber || 'N/A'}, Setor: ${e.sector || 'N/A'})`).join('\n')
-    : 'Nenhum equipamento cadastrado para este cliente.';
-
-  const technicalInstructions = `
----
-[INSTRUÇÕES DE FLUXO DE SISTEMA - PRIORITÁRIO]:
-1. Você é o Assistente Virtual da LCD DIGITAL.
-2. [IDENTIFICAÇÃO DE CLIENTE & SETOR]:
-   - Nome: Verifique o nome registrado ("${contact.name || ''}"). Se for vazio, genérico, ou apenas um caractere, pergunte o nome da pessoa de forma simpática. 
-   - Setor: Pergunte em qual setor ou departamento o equipamento está localizado, a menos que conste nas NOTAS ATUAIS.
-   - ATENÇÃO MÁXIMA: NUNCA repita a pergunta sobre Nome e Setor se você já perguntou nas mensagens anteriores recentes, ou se o cliente já respondeu. Considere as informações já dadas no contexto da conversa. NUNCA pergunte o que já foi respondido.
-   - Não seja invasivo ou robótico. Faça as perguntas integradas ao diálogo de forma natural.
-3. Ao receber pedidos de TONER ou SUPORTE:
-   - Verifique a lista [EQUIPAMENTOS DO CLIENTE] abaixo.
-   - Se houver equipamentos na lista: Você DEVE listar o modelo de cada um e perguntar: "Para qual destas máquinas você precisa de [solicitação]?". NUNCA peça o modelo se ele já estiver na lista.
-   - Se a lista estiver vazia: Pergunte educadamente qual o modelo da máquina.
-   - ATENÇÃO MÁXIMA: Se você já fez essa pergunta ou se o cliente já informou o modelo no histórico recente, NUNCA peça o modelo novamente.
-   - Se o cliente já enviou foto, vídeo, áudio ou documento no histórico recente, NUNCA peça o anexo novamente. Só peça novo se o arquivo for insuficiente, explicando o que faltou.
-4. [VALIDAÇÃO DE COR]: Se a máquina for COLORIDA (verifique no campo "Tipo" ou pelo conhecimento do modelo, ex: Xerox 7845, Ricoh C3003), você DEVE perguntar quais cores de toner o cliente precisa (Ciano, Magenta, Amarelo ou Preto).
-5. [CONFIRMAÇÃO]: NUNCA diga "Já abri o chamado". Use sempre frases como "Entendido! Iremos abrir um chamado para você e nosso time técnico seguirá com o atendimento."
-6. SEMPRE identifique a CATEGORIA (SUPRIMENTO, SUPORTE, FINANCEIRO ou STATUS).
-7. SEMPRE adicione no final da sua resposta a tag: [[ROUTE: CATEGORIA]]
-8. COMPORTAMENTO GERAL: Seja muito curto, direto e ESTRITAMENTE evite repetir informações ou perguntas que você já fez ou que o cliente já respondeu no histórico. Aja como um humano prestativo no WhatsApp.`;
-
-  console.log(`[bot] Ticket ${ticket.id} | Equipamentos encontrados: ${equipments.length}`);
-  if (equipments.length > 0) console.log(`[bot] Contexto de equipamentos enviado:\n${equipContext}`);
+  const nameConfirmedNow = hasConfirmedName(reversedHistory, currentUserTurn);
+  const mustAskNameNow = shouldAskNameForSubject(reversedHistory, currentUserTurn);
 
   // Busca semântica de conhecimento
   let knowledgeContext = "";
@@ -1043,7 +1015,7 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
   let topContent = null;
   let found = false;
 
-  if (aiService.hasAiConfigured(settings) && shouldUseKnowledgeSearch(currentUserTurn)) {
+  if (!mustAskNameNow && aiService.hasAiConfigured(settings) && shouldUseKnowledgeSearch(currentUserTurn)) {
     try {
       const userEmbedding = await aiService.getEmbedding(settings, currentUserTurn);
       if (userEmbedding) {
@@ -1076,23 +1048,27 @@ Você deve seguir ESTRITAMENTE as regras abaixo. Ignore qualquer tendência de s
 ${userPrompt}
 
 ---
-[CONTEXTO TÉCNICO]:
-EQUIPAMENTOS DO CLIENTE:
-${equipContext}
-
+[CONTEXTO DO CLIENTE]:
+Nome de perfil do WhatsApp: ${contact.name || 'Nao informado'}
 NOTAS ATUAIS:
 ${currentNotes}
 
 ${knowledgeContext}
 
-${technicalInstructions}`;
+${legalInstructions}`;
 
   console.log(`[bot] Ticket ${ticket.id} | Turno atual normalizado:\n${currentUserTurn}`);
 
-  let botReply = await aiService.chat(settings, finalPrompt, reversedHistory, currentUserTurn);
+  let botReply;
+  if (mustAskNameNow) {
+    botReply = buildInitialSubjectReply(currentUserTurn);
+    console.log(`[bot] Triagem inicial imediata para ticket ${ticket.id}: assunto reconhecido; solicitando nome.`);
+  } else {
+    botReply = await aiService.chat(settings, finalPrompt, reversedHistory, currentUserTurn);
+  }
 
   // EXTRAÇÃO DE MEMÓRIA DE LONGO PRAZO (Background Task)
-  if (shouldExtractClientMemory(currentUserTurn)) {
+  if (shouldExtractClientMemory(currentUserTurn) || nameConfirmedNow) {
     const extractionHistory = [...reversedHistory, { fromMe: false, body: currentUserTurn }];
     aiService.extractClientInfo(settings, extractionHistory, contact.notes)
       .then(async (result) => {
@@ -1102,7 +1078,7 @@ ${technicalInstructions}`;
           
           // Se a IA extraiu o nome e o contato ainda não tinha um nome válido (ou era ponto/número/vazio), atualiza o nome no banco
           const isGenericName = !contact.name || contact.name === '.' || contact.name.trim() === '' || contact.name.includes('+') || contact.name.match(/^\d+$/);
-          if (result.name && (isGenericName || contact.name.length < 3)) {
+          if (result.name && (nameConfirmedNow || isGenericName || contact.name.length < 3)) {
             updateData.name = result.name;
           }
           
@@ -1120,9 +1096,9 @@ ${technicalInstructions}`;
 
   // 4. LÓGICA DE ROTEAMENTO E SALVAMENTO
   const routeMatch = botReply.match(/\[\[ROUTE:\s*(.*?)\]\]/);
-  const category = autoCategory || (routeMatch ? routeMatch[1].toUpperCase() : 'SUPORTE');
+  const category = autoCategory || (routeMatch ? routeMatch[1].toUpperCase() : 'ATENDIMENTO');
   
-  botReply = botReply.replace(/\[\[ROUTE:.*?\]\]/g, '').trim();
+  botReply = limitReplyToOneQuestion(botReply.replace(/\[\[ROUTE:.*?\]\]/g, '').trim());
 
   // Adiciona o nome do Robô na mensagem do WhatsApp
   const botName = settings.botName || 'ROBÔ';
