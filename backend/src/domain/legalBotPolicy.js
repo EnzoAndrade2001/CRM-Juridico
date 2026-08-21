@@ -312,6 +312,17 @@ function limitReplyToOneQuestion(reply = '') {
   });
 }
 
+function sanitizeBotReply(reply = '') {
+  return String(reply)
+    .replace(/\[\[ROUTE:\s*.*?\]\]/gi, '')
+    .replace(/\[\[HANDOFF\]\]/gi, '')
+    .replace(/\p{Extended_Pictographic}/gu, '')
+    .replace(/\uFE0F/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
 module.exports = {
   LEGAL_SERVICES,
   LEGAL_SPECIFIC_OPTIONS,
@@ -329,5 +340,6 @@ module.exports = {
   limitReplyToOneQuestion,
   looksLikePersonName,
   replaceFarewellWithSpecialistHandoff,
+  sanitizeBotReply,
   shouldAskNameForSubject,
 };

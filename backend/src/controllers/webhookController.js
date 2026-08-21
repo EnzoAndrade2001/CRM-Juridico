@@ -14,6 +14,7 @@ const {
   isVagueMessage,
   limitReplyToOneQuestion,
   replaceFarewellWithSpecialistHandoff,
+  sanitizeBotReply,
   shouldAskNameForSubject,
 } = require('../domain/legalBotPolicy');
 
@@ -1157,10 +1158,7 @@ ${legalInstructions}`;
   const shouldHandoff = /\[\[HANDOFF\]\]/i.test(botReply);
   const category = autoCategory || (routeMatch ? routeMatch[1].toUpperCase() : 'ATENDIMENTO');
   
-  const cleanBotReply = botReply
-    .replace(/\[\[ROUTE:.*?\]\]/g, '')
-    .replace(/\[\[HANDOFF\]\]/gi, '')
-    .trim();
+  const cleanBotReply = sanitizeBotReply(botReply);
   botReply = shouldHandoff
     ? 'Perfeito! Vou encaminhar você ao setor especializado.'
     : limitReplyToOneQuestion(replaceFarewellWithSpecialistHandoff(cleanBotReply));

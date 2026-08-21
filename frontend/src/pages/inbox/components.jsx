@@ -35,7 +35,7 @@ import {
   Users,
 } from 'lucide-react';
 import { toast } from '../../utils/toast';
-import { Empty, fmt, statusColor, statusLabel } from './helpers.jsx';
+import { Empty, fmt, sanitizeInternalBotText, statusColor, statusLabel } from './helpers.jsx';
 import ContactProfileModal from '../../components/ContactProfileModal';
 
 function getSafeTags(rawTags) {
@@ -1908,7 +1908,8 @@ export const MessageList = React.memo(function MessageList({
 
             try {
               const quotedText = getSafeText(message.quotedMsgBody);
-              const bodyText = getSafeText(message.body);
+              const rawBodyText = getSafeText(message.body);
+              const bodyText = message.fromBot ? sanitizeInternalBotText(rawBodyText) : rawBodyText;
               const messageAgentName = getSafeText(message.agent?.name, 'Voce');
               const messageUserName = getSafeText(message.user?.name, 'Sistema');
 

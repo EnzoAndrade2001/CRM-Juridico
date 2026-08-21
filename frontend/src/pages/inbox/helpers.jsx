@@ -13,6 +13,17 @@ export function fmt(value) {
   return `${datePart} ${timePart}`;
 }
 
+export function sanitizeInternalBotText(value) {
+  return String(value || '')
+    .replace(/\[\[ROUTE:\s*.*?\]\]/gi, '')
+    .replace(/\[\[HANDOFF\]\]/gi, '')
+    .replace(/\p{Extended_Pictographic}/gu, '')
+    .replace(/\uFE0F/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
 export function mergeMessagePages(current, incoming, prepend = false) {
   const items = prepend ? [...incoming, ...current] : [...current, ...incoming];
   const seen = new Set();

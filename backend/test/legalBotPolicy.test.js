@@ -9,6 +9,7 @@ const {
   isVagueMessage,
   limitReplyToOneQuestion,
   replaceFarewellWithSpecialistHandoff,
+  sanitizeBotReply,
   shouldAskNameForSubject,
 } = require('../src/domain/legalBotPolicy');
 
@@ -115,4 +116,11 @@ test('despedida e substituida pela espera do especialista', () => {
   assert.doesNotMatch(reply, /até mais/i);
   assert.match(reply, /encaminhadas ao especialista responsável/i);
   assert.match(reply, /aguarde o retorno da equipe/i);
+});
+
+test('remove marcadores internos e emojis antes de enviar a resposta', () => {
+  const reply = sanitizeBotReply('Perfeito! Vou encaminhar você ao setor especializado. 👍\n\n[[HANDOFF]]\n[[ROUTE: ATENDIMENTO]]');
+
+  assert.equal(reply, 'Perfeito! Vou encaminhar você ao setor especializado.');
+  assert.doesNotMatch(reply, /HANDOFF|ROUTE|👍/);
 });

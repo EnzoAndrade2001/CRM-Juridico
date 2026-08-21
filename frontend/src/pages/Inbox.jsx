@@ -28,7 +28,7 @@ import LinkContactModal from '../components/LinkContactModal';
 import InstanceSelectionModal from '../components/InstanceSelectionModal';
 import { CrmCustomerProfileModal } from './CRM';
 import { ChatHeader, ContactPanel, ForwardModal, MessageComposer, MessageList, TicketSidebar, TransferModal } from './inbox/components';
-import { Empty } from './inbox/helpers.jsx';
+import { Empty, sanitizeInternalBotText } from './inbox/helpers.jsx';
 import { useInboxMessages, useInboxRealtime, useInboxTickets } from './inbox/hooks';
 
 class InboxSectionErrorBoundary extends React.Component {
@@ -349,7 +349,8 @@ export default function Inbox({ legalMode = false, instanceList = null, onOpenLe
   async function handleCopyMessage(message) {
     const parts = [];
     const quotedText = normalizeText(message.quotedMsgBody);
-    const bodyText = normalizeText(message.body);
+    const rawBodyText = normalizeText(message.body);
+    const bodyText = message.fromBot ? sanitizeInternalBotText(rawBodyText) : rawBodyText;
     const transcriptionText = normalizeText(message.transcription);
 
     if (quotedText) parts.push(`Respondendo: ${quotedText}`);
