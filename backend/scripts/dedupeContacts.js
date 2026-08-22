@@ -1,5 +1,5 @@
 const prisma = require('../src/lib/prisma');
-const { normalizePhoneNumber } = require('../src/services/evolutionService');
+const { buildPhoneLookupCandidates, normalizePhoneNumber } = require('../src/services/evolutionService');
 
 const APPLY = process.argv.includes('--apply');
 const VERBOSE = process.argv.includes('--verbose');
@@ -134,6 +134,36 @@ function mergeContactFields(target, source, normalizedPhone) {
   return next;
 }
 
+function phoneGroupKey(phone) {
+  const normalized = normalizePhoneNumber(phone || '');
+  if (!normalized || normalized.includes('@')) return null;
+
+  if (normalized.startsWith('55')) {
+    const localDigits = normalized.slice(2);
+    if (localDigits.length === 11 && localDigits[2] === '9') {
+      return `55${localDigits.slice(0, 2)}${localDigits.slice(3)}`;
+    }
+  }
+
+  return normalized;
+}
+
+function preferredNormalizedPhone(contacts) {
+  const candidates = contacts
+    .flatMap((contact) => buildPhoneLookupCandidates(contact.phone || contact.whatsapp || ''))
+    .map(normalizePhoneNumber)
+    .filter((phone) => phone && !phone.includes('@'));
+
+  return candidates
+    .sort((left, right) => {
+      const rightHasNinthDigit = Number(right.startsWith('55') && right.slice(2).length === 11 && right[4] === '9');
+      const leftHasNinthDigit = Number(left.startsWith('55') && left.slice(2).length === 11 && left[4] === '9');
+      return rightHasNinthDigit - leftHasNinthDigit
+        || right.length - left.length
+        || left.localeCompare(right);
+    })[0] || null;
+}
+
 async function loadContacts() {
   return prisma.contact.findMany({
     include: {
@@ -173,16 +203,21 @@ function groupDuplicates(contacts) {
   const groups = new Map();
 
   for (const contact of contacts) {
-    const normalizedPhone = normalizePhoneNumber(contact.phone || '');
-    if (!normalizedPhone) continue;
+    const normalizedPhone = normalizePhoneNumber(contact.phone || contact.whatsapp || '');
+    const keyPhone = phoneGroupKey(normalizedPhone);
+    if (!keyPhone) continue;
 
-    const key = `${contact.tenantId}:${normalizedPhone}`;
+    const key = `${contact.tenantId}:${keyPhone}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(contact);
   }
 
   return [...groups.entries()]
-    .map(([key, items]) => ({ key, normalizedPhone: key.split(':').slice(1).join(':'), items }))
+    .map(([key, items]) => ({
+      key,
+      normalizedPhone: preferredNormalizedPhone(items) || key.split(':').slice(1).join(':'),
+      items,
+    }))
     .filter((group) => group.items.length > 1);
 }
 

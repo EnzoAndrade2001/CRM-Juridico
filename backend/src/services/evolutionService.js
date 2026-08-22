@@ -449,6 +449,25 @@ function buildPhoneLookupCandidates(phone) {
     candidates.add(localDigits);
     candidates.add(`0${localDigits}`);
     candidates.add(`550${localDigits}`);
+
+    // Celulares brasileiros podem aparecer com ou sem o nono digito apos o DDD,
+    // dependendo da origem do webhook/formulario/importacao. Mantemos as duas
+    // formas como candidatas para evitar criar contatos duplicados.
+    if (localDigits.length === 11 && localDigits[2] === '9') {
+      const withoutNinthDigit = `${localDigits.slice(0, 2)}${localDigits.slice(3)}`;
+      candidates.add(withoutNinthDigit);
+      candidates.add(`55${withoutNinthDigit}`);
+      candidates.add(`0${withoutNinthDigit}`);
+      candidates.add(`550${withoutNinthDigit}`);
+    }
+
+    if (localDigits.length === 10) {
+      const withNinthDigit = `${localDigits.slice(0, 2)}9${localDigits.slice(2)}`;
+      candidates.add(withNinthDigit);
+      candidates.add(`55${withNinthDigit}`);
+      candidates.add(`0${withNinthDigit}`);
+      candidates.add(`550${withNinthDigit}`);
+    }
   }
 
   return Array.from(candidates).filter(Boolean);

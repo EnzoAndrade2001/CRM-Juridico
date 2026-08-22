@@ -24,7 +24,7 @@ test('ticket list returns the linked legal opportunity summary', async (t) => {
 
   let capturedInclude;
   prisma.ticket.findMany = async ({ include }) => {
-    capturedInclude = include;
+    if (include) capturedInclude = include;
     return [];
   };
   prisma.ticket.count = async () => 0;
@@ -76,6 +76,35 @@ test('concluidos exibem apenas o atendimento mais recente de cada contato', asyn
   assert.equal(res.payload.tickets.length, 1);
   assert.equal(res.payload.tickets[0].id, 'ticket-latest');
   assert.equal(res.payload.counts.resolved, 1);
+});
+
+test('concluidos agrupam contatos duplicados pelo mesmo telefone com variacao do nono digito', async (t) => {
+  const originals = {
+    findMany: prisma.ticket.findMany,
+    count: prisma.ticket.count,
+    groupBy: prisma.ticket.groupBy,
+  };
+  t.after(() => {
+    prisma.ticket.findMany = originals.findMany;
+    prisma.ticket.count = originals.count;
+    prisma.ticket.groupBy = originals.groupBy;
+  });
+
+  prisma.ticket.findMany = async () => [
+    { id: 'ticket-without-ninth', contactId: 'contact-a', status: 'resolved', updatedAt: new Date('2026-08-20T10:00:00Z'), lastMessageAt: new Date('2026-08-20T10:00:00Z'), contact: { id: 'contact-a', phone: '555189849691' } },
+    { id: 'ticket-with-ninth', contactId: 'contact-b', status: 'resolved', updatedAt: new Date('2026-08-21T10:00:00Z'), lastMessageAt: new Date('2026-08-21T10:00:00Z'), contact: { id: 'contact-b', phone: '5551989849691' } },
+  ];
+  prisma.ticket.count = async () => 0;
+  prisma.ticket.groupBy = async () => [{ contactId: 'contact-a' }, { contactId: 'contact-b' }];
+
+  const res = responseRecorder();
+  await list({
+    query: { status: 'resolved' },
+    user: { userId: 'user-1', tenantId: 'tenant-a' },
+  }, res);
+
+  assert.equal(res.payload.tickets.length, 1);
+  assert.equal(res.payload.tickets[0].id, 'ticket-with-ninth');
 });
 
 test('encerrar como contratado vincula a oportunidade ao mesmo contato e atendimento do WhatsApp', async (t) => {

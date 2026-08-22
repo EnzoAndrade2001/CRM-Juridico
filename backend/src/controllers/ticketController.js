@@ -276,14 +276,36 @@ function isTicketPreferred(candidate, current) {
   return new Date(candidate?.updatedAt || 0).getTime() > new Date(current?.updatedAt || 0).getTime();
 }
 
+function getContactPhoneGroupKey(contact = {}) {
+  const raw = contact.phone || contact.whatsapp || contact.whatsappJid || '';
+  const candidates = evolutionService.buildPhoneLookupCandidates(raw);
+  const normalizedCandidates = candidates
+    .map((candidate) => evolutionService.normalizePhoneNumber(candidate))
+    .filter((candidate) => candidate && !candidate.includes('@'));
+
+  const canonical = normalizedCandidates
+    .map((candidate) => {
+      if (candidate.startsWith('55')) {
+        const localDigits = candidate.slice(2);
+        if (localDigits.length === 11 && localDigits[2] === '9') {
+          return `55${localDigits.slice(0, 2)}${localDigits.slice(3)}`;
+        }
+      }
+      return candidate;
+    })
+    .sort((left, right) => left.length - right.length || left.localeCompare(right))[0];
+
+  return canonical ? `phone:${canonical}` : null;
+}
+
 function dedupeTicketsByContact(tickets = []) {
   const grouped = new Map();
 
   for (const ticket of tickets) {
-    const phone = String(ticket.contact?.phone || ticket.contact?.whatsapp || '').replace(/\D/g, '');
-    const key = phone
-      ? `phone:${phone}`
-      : (ticket.contactId || ticket.contact?.id || ticket.id);
+    const key = getContactPhoneGroupKey(ticket.contact)
+      || ticket.contactId
+      || ticket.contact?.id
+      || ticket.id;
     const current = grouped.get(key);
 
     if (!current || isTicketPreferred(ticket, current)) {
@@ -294,6 +316,17 @@ function dedupeTicketsByContact(tickets = []) {
   return Array.from(grouped.values()).sort((a, b) => (
     new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
   ));
+}
+
+function countTicketContactGroups(tickets = []) {
+  const keys = new Set();
+  tickets.forEach((ticket) => {
+    keys.add(getContactPhoneGroupKey(ticket.contact)
+      || ticket.contactId
+      || ticket.contact?.id
+      || ticket.id);
+  });
+  return keys.size;
 }
 
 function shouldAttemptAvatarRefresh(ticket) {
@@ -460,7 +493,7 @@ async function list(req, res) {
   refreshVisibleTicketAvatars(tickets);
 
   // Busca as contagens globais para os badges
-  const [countMine, countPending, countResolvedGroups, countAllGroups] = await Promise.all([
+  const [countMine, countPending, resolvedGroupTickets, allGroupTickets] = await Promise.all([
     prisma.ticket.count({ where: { tenantId: req.user.tenantId, agentId: req.user.userId, status: 'open' } }),
     prisma.ticket.count({
       where: buildWhere([
@@ -469,21 +502,29 @@ async function list(req, res) {
         pendingCondition
       ])
     }),
-    prisma.ticket.groupBy({
-      by: ['contactId'],
+    prisma.ticket.findMany({
       where: buildWhere([
         { tenantId: req.user.tenantId },
         visibilityFilter,
         { status: 'resolved' }
-      ])
+      ]),
+      select: {
+        id: true,
+        contactId: true,
+        contact: { select: { id: true, phone: true, whatsapp: true, whatsappJid: true } },
+      },
     }),
-    prisma.ticket.groupBy({
-      by: ['contactId'],
+    prisma.ticket.findMany({
       where: buildWhere([
         { tenantId: req.user.tenantId },
         visibilityFilter,
         { status: 'open' }
-      ])
+      ]),
+      select: {
+        id: true,
+        contactId: true,
+        contact: { select: { id: true, phone: true, whatsapp: true, whatsappJid: true } },
+      },
     })
   ]);
 
@@ -492,8 +533,8 @@ async function list(req, res) {
     counts: {
       mine: countMine,
       pending: countPending,
-      resolved: countResolvedGroups.length,
-      all: countAllGroups.length
+      resolved: countTicketContactGroups(resolvedGroupTickets),
+      all: countTicketContactGroups(allGroupTickets)
     }
   });
 }

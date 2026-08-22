@@ -135,25 +135,32 @@ async function upsertLandingContact(tenant, submission, landing, instance) {
 
   await ensureLandingTag(tenant.id, landing);
   const phoneCandidates = evolutionService.buildPhoneLookupCandidates(submission.phone);
+  const jidCandidates = phoneCandidates.flatMap((candidate) => [
+    `${candidate}@s.whatsapp.net`,
+    `${candidate}@lid`,
+  ]);
   const matchingContacts = await prisma.contact.findMany({
     where: {
       tenantId: tenant.id,
       OR: [
         { phone: { in: phoneCandidates } },
         { whatsapp: { in: phoneCandidates } },
+        { whatsappJid: { in: jidCandidates } },
       ],
     },
     orderBy: { createdAt: 'asc' },
   });
   const candidateSet = new Set(phoneCandidates);
+  const jidCandidateSet = new Set(jidCandidates);
   const existing = matchingContacts
     .map((candidate) => {
       const sameInstance = instance?.id && candidate.instanceId === instance.id ? 100 : 0;
       const exactPhone = candidateSet.has(candidate.phone) ? 10 : 0;
       const exactWhatsapp = candidateSet.has(candidate.whatsapp) ? 5 : 0;
+      const exactWhatsappJid = jidCandidateSet.has(candidate.whatsappJid) ? 8 : 0;
       const sameSource = candidate.externalSource === landing.contactSource ? 3 : 0;
       const hasName = candidate.name && candidate.name !== '.' ? 2 : 0;
-      return { candidate, score: sameInstance + exactPhone + exactWhatsapp + sameSource + hasName };
+      return { candidate, score: sameInstance + exactPhone + exactWhatsapp + exactWhatsappJid + sameSource + hasName };
     })
     .sort((left, right) => right.score - left.score
       || new Date(left.candidate.createdAt).getTime() - new Date(right.candidate.createdAt).getTime())

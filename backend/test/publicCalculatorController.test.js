@@ -148,6 +148,113 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
   assert.equal(messageUpdateData.externalId, 'message-1');
 });
 
+test('calculadora reutiliza contato existente com telefone em formato diferente', async (t) => {
+  const originals = {
+    tenantFindUnique: prisma.tenant.findUnique,
+    submissionCreate: prisma.calculatorSubmission.create,
+    submissionUpdate: prisma.calculatorSubmission.update,
+    tagFindFirst: prisma.tag.findFirst,
+    tagCreate: prisma.tag.create,
+    contactFindMany: prisma.contact.findMany,
+    contactCreate: prisma.contact.create,
+    contactUpdate: prisma.contact.update,
+    ticketFindFirst: prisma.ticket.findFirst,
+    ticketUpdate: prisma.ticket.update,
+    messageFindFirst: prisma.message.findFirst,
+    messageCreate: prisma.message.create,
+    messageUpdate: prisma.message.update,
+    sendText: evolutionService.sendText,
+    tenantSlug: process.env.PUBLIC_CALCULATOR_TENANT_SLUG,
+  };
+  t.after(() => {
+    prisma.tenant.findUnique = originals.tenantFindUnique;
+    prisma.calculatorSubmission.create = originals.submissionCreate;
+    prisma.calculatorSubmission.update = originals.submissionUpdate;
+    prisma.tag.findFirst = originals.tagFindFirst;
+    prisma.tag.create = originals.tagCreate;
+    prisma.contact.findMany = originals.contactFindMany;
+    prisma.contact.create = originals.contactCreate;
+    prisma.contact.update = originals.contactUpdate;
+    prisma.ticket.findFirst = originals.ticketFindFirst;
+    prisma.ticket.update = originals.ticketUpdate;
+    prisma.message.findFirst = originals.messageFindFirst;
+    prisma.message.create = originals.messageCreate;
+    prisma.message.update = originals.messageUpdate;
+    evolutionService.sendText = originals.sendText;
+    if (originals.tenantSlug === undefined) delete process.env.PUBLIC_CALCULATOR_TENANT_SLUG;
+    else process.env.PUBLIC_CALCULATOR_TENANT_SLUG = originals.tenantSlug;
+  });
+
+  process.env.PUBLIC_CALCULATOR_TENANT_SLUG = 'eduarda';
+  let createdContact = false;
+  let updateWhere;
+  let updateData;
+
+  prisma.tenant.findUnique = async () => ({
+    id: 'tenant-eduarda',
+    settings: { evolutionUrl: 'https://evolution.test', evolutionKey: 'key' },
+    instances: [{ id: 'instance-lund', instanceName: 'LUND', status: 'CONNECTED' }],
+  });
+  prisma.calculatorSubmission.create = async ({ data }) => ({ id: 'submission-2', ...data });
+  prisma.calculatorSubmission.update = async ({ data }) => ({ id: 'submission-2', ...data });
+  prisma.tag.findFirst = async () => ({ id: 'tag-1', name: 'VEIO PELA LANDING PAGE REVISAO BANCARIA' });
+  prisma.tag.create = async ({ data }) => data;
+  prisma.contact.findMany = async ({ where }) => {
+    assert.ok(where.OR.some((condition) => condition.whatsappJid));
+    return [{
+      id: 'contact-existing',
+      tenantId: 'tenant-eduarda',
+      instanceId: 'instance-lund',
+      phone: '555189849691',
+      whatsapp: null,
+      whatsappJid: '555189849691@s.whatsapp.net',
+      name: 'Enzo Android',
+      tags: '[]',
+      createdAt: new Date('2026-08-20T10:00:00Z'),
+    }];
+  };
+  prisma.contact.create = async () => {
+    createdContact = true;
+    throw new Error('nao deveria criar contato duplicado');
+  };
+  prisma.contact.update = async ({ where, data }) => {
+    updateWhere = where;
+    updateData = data;
+    return { id: where.id, ...data };
+  };
+  prisma.ticket.findFirst = async () => ({ id: 'ticket-existing', status: 'resolved', updatedAt: new Date() });
+  prisma.ticket.update = async ({ data }) => ({ id: 'ticket-existing', ...data });
+  prisma.message.findFirst = async () => null;
+  prisma.message.create = async ({ data }) => ({ id: 'message-2', ...data });
+  prisma.message.update = async ({ data }) => ({ id: 'message-2', ...data });
+  evolutionService.sendText = async () => ({ key: { id: 'message-2' } });
+
+  const res = responseRecorder();
+  await createCalculatorSubmission({
+    headers: { 'x-forwarded-for': 'calculator-test-existing-contact' },
+    body: {
+      source: 'revisional-bancario',
+      name: 'Enzo Andrade',
+      phone: '(51) 98984-9691',
+      installment: 1000,
+      totalInstallments: 24,
+      paidInstallments: 4,
+      consent: true,
+    },
+    ip: 'calculator-test-existing-contact',
+    socket: {},
+  }, res);
+
+  assert.equal(res.statusCode, 202);
+  assert.equal(res.payload.contactCreated, false);
+  assert.equal(res.payload.contactId, 'contact-existing');
+  assert.equal(createdContact, false);
+  assert.deepEqual(updateWhere, { id: 'contact-existing' });
+  assert.equal(updateData.phone, '5551989849691');
+  assert.equal(updateData.whatsapp, '5551989849691');
+  assert.match(updateData.tags, /VEIO PELA LANDING PAGE REVISAO BANCARIA/);
+});
+
 test('calculadora recusa origem que não foi autorizada pelo backend', async () => {
   const req = {
     headers: { 'x-forwarded-for': 'calculator-test-invalid-source' },
