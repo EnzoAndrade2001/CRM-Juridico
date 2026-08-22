@@ -18,6 +18,10 @@ import portrait from '../assets/pedro-bastos-lund-hero-hq.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import eduardaPortrait from '../assets/dra-eduarda-hq.png';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
+import clientSia from '../assets/clients/sia.png';
+import clientBoomMania from '../assets/clients/boom-mania.png';
+import clientRodrigues from '../assets/clients/rodrigues.png';
+import clientHamorim from '../assets/clients/hamorim.png';
 import './institutional-site.css';
 import './institutional-brand-overrides.css';
 
@@ -140,7 +144,13 @@ const guides = [
   },
 ];
 
-const clients = ['SIA', 'Boom Mania', 'Hamorim', 'DGI Log', 'Rodrigues Distribuidora'];
+const clients = [
+  { name: 'SIA', logo: clientSia },
+  { name: 'Boom Mania', logo: clientBoomMania },
+  { name: 'Hamorim', logo: clientHamorim },
+  { name: 'DGI Log', logo: null },
+  { name: 'Rodrigues Distribuidora', logo: clientRodrigues },
+];
 
 const highlights = [
   {
@@ -456,8 +466,14 @@ export default function InstitutionalSite() {
         <div className="office-shell">
           <p className="office-clients__title">Clientes e Parceiros</p>
           <div className="office-clients__grid">
-            {clients.map((name) => (
-              <span className="office-clients__name" key={name}>{name}</span>
+            {clients.map((client) => (
+              <span className="office-clients__item" key={client.name}>
+                {client.logo ? (
+                  <img src={client.logo} alt={client.name} loading="lazy" />
+                ) : (
+                  <span className="office-clients__name">{client.name}</span>
+                )}
+              </span>
             ))}
           </div>
         </div>
