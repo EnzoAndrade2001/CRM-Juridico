@@ -360,21 +360,6 @@
   line-height: 1.5;
 }
 
-.office-intro__assurance {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 26px 0 0;
-  color: #946f2b;
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.5;
-}
-
-.office-intro__assurance svg {
-  flex: 0 0 auto;
-}
-
 .office-modal__note {
   font-size: 15px;
   font-weight: 500;
