@@ -430,6 +430,22 @@
   display: none;
 }
 
+.office-highlights__tab-mark {
+  color: currentColor;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.office-highlights__art > span {
+  color: var(--office-gold-light);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 72px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
 .office-highlights__body {
   max-width: 860px;
 }

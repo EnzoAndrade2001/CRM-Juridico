@@ -190,31 +190,31 @@ const clients = [
 
 const highlights = [
   {
-    icon: Scale,
+    mark: '01',
     label: 'Direito Civil',
     title: 'Direito Civil',
     text: 'Contratos, responsabilidade civil e obrigações analisados com atenção às particularidades de cada caso.',
   },
   {
-    icon: BriefcaseBusiness,
+    mark: '02',
     label: 'Direito Empresarial',
     title: 'Direito Empresarial',
     text: 'Orientação societária, contratos comerciais e prevenção de riscos na rotina do seu negócio.',
   },
   {
-    icon: Landmark,
+    mark: '03',
     label: 'Direito do Consumidor',
     title: 'Direito do Consumidor',
     text: 'Defesa de direitos em relações de consumo diante de práticas abusivas ou cobranças indevidas.',
   },
   {
-    icon: Banknote,
+    mark: '04',
     label: 'Direito Bancário',
     title: 'Direito Bancário',
     text: 'Análise de juros, tarifas, seguros e demais encargos em contratos bancários e financeiros.',
   },
   {
-    icon: Stamp,
+    mark: '05',
     label: 'Registro de Marcas',
     title: 'Registro de Marcas',
     text: 'Proteção da identidade e dos ativos intangíveis da empresa junto ao INPI.',
@@ -404,7 +404,7 @@ export default function InstitutionalSite({ section = 'home' }) {
           </div>
           <div className="office-highlights__grid">
             <div className="office-highlights__art" aria-hidden="true">
-              <Scale size={96} />
+              <span>{highlights[activeHighlight].mark}</span>
             </div>
             <div className="office-highlights__body">
               <div className="office-highlights__tabs" role="tablist" aria-label="Áreas de destaque">
@@ -417,7 +417,8 @@ export default function InstitutionalSite({ section = 'home' }) {
                     className={`office-highlights__tab ${activeHighlight === index ? 'is-active' : ''}`}
                     onClick={() => setActiveHighlight(index)}
                   >
-                    <item.icon size={16} /> {item.label}
+                    <span className="office-highlights__tab-mark" aria-hidden="true">{item.mark}</span>
+                    {item.label}
                   </button>
                 ))}
               </div>
