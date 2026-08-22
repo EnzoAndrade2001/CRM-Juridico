@@ -1,5 +1,5 @@
 const prisma = require('../lib/prisma');
-const geminiService = require('../services/geminiService');
+const aiService = require('../services/aiService');
 
 async function list(req, res) {
   const { tenantId } = req.user;
@@ -18,8 +18,8 @@ async function create(req, res) {
 
   let embedding = null;
   const settings = await prisma.tenantSettings.findUnique({ where: { tenantId } });
-  if (settings?.geminiKey) {
-     embedding = await geminiService.getEmbedding(settings.geminiKey, `${question}\n${answer}`);
+  if (aiService.hasAiConfigured(settings)) {
+     embedding = await aiService.getEmbedding(settings, `${question}\n${answer}`);
   }
 
   const knowledge = await prisma.knowledge.create({
@@ -36,12 +36,12 @@ async function update(req, res) {
     let embedding = undefined;
     if (question || answer) {
        const settings = await prisma.tenantSettings.findUnique({ where: { tenantId: req.user.tenantId } });
-       if (settings?.geminiKey) {
+       if (aiService.hasAiConfigured(settings)) {
           const k = await prisma.knowledge.findFirst({ where: { id, tenantId: req.user.tenantId } });
-          if (!k) return res.status(404).json({ error: 'Conhecimento nÃ£o encontrado' });
+          if (!k) return res.status(404).json({ error: 'Conhecimento não encontrado' });
           const q = question || k.question;
           const a = answer || k.answer;
-          embedding = await geminiService.getEmbedding(settings.geminiKey, `${q}\n${a}`);
+          embedding = await aiService.getEmbedding(settings, `${q}\n${a}`);
        }
     }
 

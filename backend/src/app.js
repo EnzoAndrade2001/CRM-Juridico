@@ -255,12 +255,13 @@ server.listen(PORT, () => {
     try {
       const prisma = require('./lib/prisma');
       const evolution = require('./services/evolutionService');
+      const { buildWebhookUrl } = require('./utils/webhookSecurity');
       const instances = await prisma.waInstance.findMany();
       if (instances.length > 0) {
         console.log(`[startup-webhook-fix] Verificando/atualizando webhooks para ${instances.length} instâncias...`);
         const backendUrl = process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 3002}`;
-        const webhookUrl = `${backendUrl}/api/webhook`;
-        
+        const webhookUrl = buildWebhookUrl(backendUrl);
+
         for (const inst of instances) {
           const settings = await prisma.tenantSettings.findUnique({ where: { tenantId: inst.tenantId } });
           const evolutionUrl = settings?.evolutionUrl || process.env.DEFAULT_EVOLUTION_URL;

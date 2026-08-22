@@ -1,5 +1,6 @@
 const prisma = require('../lib/prisma');
 const evolution = require('../services/evolutionService');
+const { buildWebhookUrl } = require('../utils/webhookSecurity');
 
 async function getSettings(tenantId) {
   const s = await prisma.tenantSettings.findUnique({ where: { tenantId } });
@@ -111,7 +112,7 @@ async function create(req, res) {
 
     // Setup Webhook automático
     const backendUrl = process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 3002}`;
-    const webhookUrl = `${backendUrl}/api/webhook`;
+    const webhookUrl = buildWebhookUrl(backendUrl);
     await evolution.setWebhook(evolutionUrl, evolutionKey, instanceName, webhookUrl);
 
     // Evolution normally returns the first QR code during creation. Returning
@@ -192,7 +193,7 @@ async function repair(req, res) {
     }
 
     const backendUrl = process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 3002}`;
-    const webhookUrl = `${backendUrl}/api/webhook`;
+    const webhookUrl = buildWebhookUrl(backendUrl);
     try {
       await evolution.setWebhook(evolutionUrl, evolutionKey, inst.instanceName, webhookUrl);
     } catch (err) {
