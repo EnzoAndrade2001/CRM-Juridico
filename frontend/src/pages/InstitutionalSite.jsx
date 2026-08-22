@@ -443,8 +443,8 @@ export default function InstitutionalSite() {
               <div className="office-person__body"><p className="office-person__eyebrow">Advogado responsável</p><h3>Pedro Bastos Lund</h3><span>OAB/RS 74.953</span><p>Atuação dedicada à análise criteriosa dos contratos e à orientação jurídica clara.</p></div>
             </article>
             <article className="office-person">
-              <img src={eduardaPortrait} alt="Dra. Eduarda Marranghello" />
-              <div className="office-person__body"><p className="office-person__eyebrow">Advogada</p><h3>Dra. Eduarda Marranghello</h3><p>Atuação dedicada, organização das informações e acompanhamento cuidadoso de cada demanda.</p></div>
+              <img src={eduardaPortrait} alt="Equipe jurídica do escritório" />
+              <div className="office-person__body"><p className="office-person__eyebrow">Equipe jurídica</p><h3>Suporte jurídico dedicado</h3><p>Organização das informações e acompanhamento cuidadoso de cada demanda, do primeiro contato à conclusão do caso.</p></div>
             </article>
           </div>
         </div>
