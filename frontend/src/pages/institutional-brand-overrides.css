@@ -429,20 +429,12 @@
 }
 
 .office-areas__grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
 
 .office-area-card {
-  grid-column: span 2;
-}
-
-.office-area-card:nth-child(4) {
-  grid-column: 2 / span 2;
-}
-
-.office-area-card:nth-child(5) {
-  grid-column: 4 / span 2;
+  grid-column: auto;
 }
 
 .office-guides__grid {
@@ -460,13 +452,11 @@
   }
 
   .office-areas__grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .office-area-card,
-  .office-area-card:nth-child(4),
-  .office-area-card:nth-child(5) {
-    grid-column: span 2;
+  .office-area-card {
+    grid-column: auto;
   }
 }
 
@@ -496,9 +486,7 @@
     grid-template-columns: 1fr;
   }
 
-  .office-area-card,
-  .office-area-card:nth-child(4),
-  .office-area-card:nth-child(5) {
+  .office-area-card {
     grid-column: auto;
   }
 }

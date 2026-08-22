@@ -71,13 +71,13 @@ const areas = [
   {
     icon: Banknote,
     title: 'Revisional bancário',
-    text: 'Análise de juros, tarifas, seguros e demais encargos em contratos bancários.',
+    text: 'Revisão de juros, tarifas e seguros no contrato.',
     href: revisionalUrl,
   },
   {
     icon: CarFront,
     title: 'Busca e apreensão',
-    text: 'Orientação jurídica para situações que envolvem financiamento e risco de apreensão do veículo.',
+    text: 'Defesa e orientação quando o financiamento entra em conflito.',
     modal: {
       kicker: 'Direito bancário',
       title: 'Busca e apreensão exige atenção ao procedimento completo.',
@@ -90,7 +90,7 @@ const areas = [
   {
     icon: FileText,
     title: 'Contratos e cobranças',
-    text: 'Leitura técnica de contratos, cobranças indevidas e obrigações que precisam de atenção.',
+    text: 'Leitura de cláusulas, valores, prazos e cobranças.',
     modal: {
       kicker: 'Prevenção jurídica',
       title: 'Antes de assinar, leia. Entenda. Decida com segurança.',
@@ -103,7 +103,7 @@ const areas = [
   {
     icon: Landmark,
     title: 'Direito do consumidor',
-    text: 'Atuação em relações de consumo e na defesa de direitos diante de práticas abusivas.',
+    text: 'Resposta a cobranças indevidas e falhas na prestação do serviço.',
     modal: {
       kicker: 'Relações de consumo',
       title: 'Informação clara também é um direito.',
@@ -116,7 +116,7 @@ const areas = [
   {
     icon: BriefcaseBusiness,
     title: 'Direito trabalhista',
-    text: 'Análise individualizada de questões trabalhistas, documentos e possíveis medidas.',
+    text: 'Organização de documentos sobre vínculo, verbas e jornada.',
     modal: {
       kicker: 'Direito trabalhista',
       title: 'Organize os fatos antes de decidir o caminho.',
@@ -129,7 +129,7 @@ const areas = [
   {
     icon: Scale,
     title: 'Família e sucessões',
-    text: 'Orientação responsável para decisões familiares, inventários e organização patrimonial.',
+    text: 'Inventário, partilha e decisões patrimoniais com cuidado.',
     modal: {
       kicker: 'Direito de família e sucessões',
       title: 'Patrimônio e família pedem orientação cuidadosa.',
@@ -453,8 +453,7 @@ export default function InstitutionalSite({ section = 'home' }) {
       {section === 'areas' && <section className="office-areas" id="atuacao">
         <div className="office-shell">
           <div className="office-section-heading">
-            <p className="office-kicker">Áreas de atuação</p>
-            <h2>Orientação jurídica para o próximo passo.</h2>
+            <h2>Escolha a frente mais próxima da sua situação.</h2>
             <p>Escolha uma frente e veja o que vale organizar antes de conversar com a equipe.</p>
           </div>
           <div className="office-areas__grid">
@@ -477,8 +476,7 @@ export default function InstitutionalSite({ section = 'home' }) {
       {section === 'guides' && <section className="office-guides" id="conteudos">
         <div className="office-shell">
           <div className="office-section-heading">
-            <p className="office-kicker">Conteúdos jurídicos</p>
-            <h2>Informação para decidir melhor.</h2>
+            <h2>Assuntos para consultar antes de conversar.</h2>
             <p>Textos curtos para reconhecer riscos e fazer boas perguntas.</p>
           </div>
           <div className="office-guides__grid">
@@ -500,8 +498,7 @@ export default function InstitutionalSite({ section = 'home' }) {
       {section === 'process' && <section className="office-process" id="como-funciona">
         <div className="office-shell office-process__grid">
           <div className="office-process__heading">
-            <p className="office-kicker office-kicker--light">Como funciona</p>
-            <h2>Um atendimento simples, direto e transparente.</h2>
+            <h2>Três passos para organizar a conversa.</h2>
             <p>O primeiro contato acontece pelo WhatsApp e começa com o que você já consegue explicar.</p>
             <WhatsAppLink className="office-text-link" label="Iniciar conversa no WhatsApp">Iniciar conversa <ArrowRight size={17} /></WhatsAppLink>
           </div>
@@ -520,8 +517,7 @@ export default function InstitutionalSite({ section = 'home' }) {
       {section === 'team' && <section className="office-team" id="equipe">
         <div className="office-shell">
           <div className="office-section-heading office-section-heading--team">
-            <p className="office-kicker">Nossa equipe</p>
-            <h2>Atendimento próximo em cada etapa.</h2>
+            <h2>Quem acompanha cada demanda.</h2>
           </div>
           <div className="office-team__grid">
             <article className="office-person">
