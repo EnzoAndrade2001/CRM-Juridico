@@ -53,6 +53,10 @@ jobs:
           cp frontend/dist/index.html frontend/dist/demo-juridico/index.html
           mkdir -p frontend/dist/revisional-bancario
           cp frontend/dist/index.html frontend/dist/revisional-bancario/index.html
+          mkdir -p frontend/dist/registro-de-marca
+          cp frontend/dist/index.html frontend/dist/registro-de-marca/index.html
+          mkdir -p frontend/dist/autismo
+          cp frontend/dist/index.html frontend/dist/autismo/index.html
           mkdir -p frontend/dist/atuacao frontend/dist/como-funciona frontend/dist/conteudos frontend/dist/equipe
           cp frontend/dist/index.html frontend/dist/atuacao/index.html
           cp frontend/dist/index.html frontend/dist/como-funciona/index.html

@@ -1,0 +1,245 @@
+.autism-page {
+  --autism-navy: #07182c;
+  --autism-navy-soft: #0e2946;
+  --autism-gold: #bd9345;
+  --autism-gold-light: #d6b66e;
+  --autism-cream: #f6f3ed;
+  --autism-ink: #152236;
+  --autism-copy: #55606f;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #fff;
+  color: var(--autism-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.autism-page *, .autism-page *::before, .autism-page *::after { box-sizing: border-box; }
+.autism-page a { color: inherit; text-decoration: none; }
+.autism-page h1, .autism-page h2, .autism-page h3, .autism-page p { margin-top: 0; }
+.autism-page h1, .autism-page h2 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; }
+.autism-shell { width: min(1160px, calc(100% - 48px)); margin-inline: auto; }
+
+.autism-header {
+  position: absolute;
+  z-index: 10;
+  top: 0;
+  left: 50%;
+  display: flex;
+  width: min(1160px, calc(100% - 48px));
+  min-height: 92px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  border-bottom: 1px solid rgba(255, 255, 255, .18);
+  color: #fff;
+  transform: translateX(-50%);
+}
+
+.autism-brand { display: inline-flex; align-items: center; gap: 13px; min-width: 270px; }
+.autism-brand__mark { display: grid; width: 55px; height: 60px; flex: 0 0 auto; place-items: center; }
+.autism-brand__mark img { width: 52px; height: 52px; object-fit: contain; }
+.autism-brand > span:last-child { display: flex; flex-direction: column; }
+.autism-brand strong { font-family: Georgia, "Times New Roman", serif; font-size: 18px; font-weight: 500; letter-spacing: .025em; }
+.autism-brand small { margin-top: 3px; color: var(--autism-gold-light); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; }
+.autism-nav { display: flex; align-items: center; gap: 28px; margin-left: auto; }
+.autism-nav a { color: rgba(255,255,255,.76); font-size: 13px; transition: color .2s ease; }
+.autism-nav a:hover { color: #fff; }
+.autism-header__cta { display: inline-flex; min-height: 43px; align-items: center; gap: 9px; border: 1px solid rgba(214,182,110,.75); padding: 0 18px; color: #fff; font-size: 13px; font-weight: 700; transition: background .2s ease, color .2s ease; }
+.autism-header__cta:hover { background: var(--autism-gold); color: var(--autism-navy); }
+
+.autism-hero { position: relative; display: flex; min-height: 760px; align-items: center; background: var(--autism-navy); color: #fff; isolation: isolate; }
+.autism-hero::before { position: absolute; z-index: -2; top: 0; right: 0; bottom: 0; width: 54%; background-image: var(--autism-hero-image); background-position: center 16%; background-size: cover; content: ""; }
+.autism-hero::after { position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, #07182c 0%, #07182c 43%, rgba(7,24,44,.8) 57%, rgba(7,24,44,.12) 100%); content: ""; }
+.autism-hero__inner { position: relative; display: flex; min-height: 760px; align-items: center; }
+.autism-hero__copy { width: min(610px, 55%); padding-top: 84px; }
+.autism-eyebrow, .autism-kicker { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; color: #9a742e; font-size: 11px; font-weight: 800; letter-spacing: .19em; text-transform: uppercase; }
+.autism-eyebrow { color: var(--autism-gold-light); }
+.autism-eyebrow span { width: 42px; height: 1px; background: var(--autism-gold); }
+.autism-hero h1 { max-width: 610px; margin-bottom: 25px; font-size: clamp(48px, 4.6vw, 72px); line-height: 1.03; letter-spacing: -.035em; }
+.autism-hero h1 em { display: block; color: var(--autism-gold-light); font-weight: 400; }
+.autism-hero__lead { max-width: 530px; margin-bottom: 32px; color: rgba(255,255,255,.74); font-size: 18px; line-height: 1.7; }
+.autism-button { display: inline-flex; min-height: 54px; align-items: center; justify-content: center; gap: 12px; padding: 0 24px; font-size: 14px; font-weight: 800; transition: transform .2s ease, background .2s ease; }
+.autism-button:hover { transform: translateY(-2px); }
+.autism-button--gold { background: var(--autism-gold); color: #09172a !important; }
+.autism-button--gold:hover { background: var(--autism-gold-light); }
+.autism-button--navy { background: var(--autism-navy); color: #fff !important; }
+.autism-button--navy:hover { background: var(--autism-navy-soft); }
+.autism-hero__assurances { display: flex; flex-wrap: wrap; gap: 12px 22px; margin-top: 27px; color: rgba(255,255,255,.62); font-size: 12px; }
+.autism-hero__assurances span { display: inline-flex; align-items: center; gap: 6px; }
+.autism-hero__assurances svg { color: var(--autism-gold-light); }
+.autism-hero__name { position: absolute; right: 0; bottom: 36px; display: flex; flex-direction: column; align-items: flex-end; margin: 0; color: rgba(255,255,255,.65); font-size: 10px; letter-spacing: .19em; text-transform: uppercase; }
+.autism-hero__name span { margin-bottom: 4px; color: #fff; font-family: Georgia, "Times New Roman", serif; font-size: 18px; letter-spacing: .04em; text-transform: none; }
+
+.autism-intro { padding: 98px 0; background: #fff; }
+.autism-intro__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 86px; align-items: start; }
+.autism-intro h2, .autism-section-heading h2, .autism-about h2, .autism-final-cta h2 { margin-bottom: 0; color: var(--autism-ink); font-size: clamp(36px, 4vw, 52px); line-height: 1.12; letter-spacing: -.025em; }
+.autism-intro__text > p:first-child { margin-bottom: 25px; color: var(--autism-copy); font-family: Georgia, "Times New Roman", serif; font-size: 20px; line-height: 1.65; }
+.autism-note { display: flex; gap: 12px; margin-bottom: 0; border-left: 2px solid var(--autism-gold); padding: 15px 18px; background: var(--autism-cream); color: #3e4b5d; font-size: 13px; line-height: 1.55; }
+.autism-note svg { flex: 0 0 auto; color: var(--autism-gold); }
+
+.autism-calculator { position: relative; overflow: hidden; border-top: 1px solid #e7e0d5; border-bottom: 1px solid #e7e0d5; padding: 96px 0; background: #f0ede6; }
+.autism-calculator::after { position: absolute; right: -140px; bottom: -210px; width: 430px; height: 430px; border: 1px solid rgba(189,147,69,.26); border-radius: 50%; content: ''; pointer-events: none; }
+.autism-calculator__grid { position: relative; z-index: 1; display: grid; grid-template-columns: .82fr 1.18fr; gap: 80px; align-items: start; }
+.autism-calculator__copy { padding-top: 28px; }
+.autism-calculator__copy h2 { max-width: 510px; margin-bottom: 23px; color: var(--autism-ink); font-family: Georgia, "Times New Roman", serif; font-size: clamp(36px, 4vw, 52px); font-weight: 400; line-height: 1.1; letter-spacing: -.025em; }
+.autism-calculator__copy > p:not(.autism-kicker) { max-width: 510px; color: var(--autism-copy); font-size: 16px; line-height: 1.8; }
+.autism-calculator__benefits { display: grid; gap: 13px; margin-top: 29px; color: #3e4b5d; font-size: 13px; }
+.autism-calculator__benefits span { display: flex; align-items: center; gap: 8px; }
+.autism-calculator__benefits svg { color: var(--autism-gold); }
+.autism-calculator__card { position: relative; border: 1px solid rgba(189,147,69,.25); padding: 31px; background: rgba(255,255,255,.86); box-shadow: 0 22px 55px rgba(21,34,54,.1); }
+.autism-calculator__card-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 27px; }
+.autism-calculator__icon { display: grid; width: 48px; height: 48px; flex: 0 0 auto; place-items: center; background: var(--autism-navy); color: var(--autism-gold-light); }
+.autism-calculator__card h3 { margin-bottom: 4px; color: var(--autism-ink); font-family: Georgia, "Times New Roman", serif; font-size: 23px; font-weight: 400; }
+.autism-calculator__card-heading p { margin: 0; color: var(--autism-copy); font-size: 12px; line-height: 1.5; }
+.autism-calculator__fields { display: grid; gap: 12px; }
+.autism-calculator__fields--two { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 12px; }
+.autism-calculator__card label, .autism-calculator__type legend { color: #485568; font-size: 12px; font-weight: 700; }
+.autism-calculator__card label { display: grid; gap: 7px; }
+.autism-calculator__card input { width: 100%; border: 1px solid #e4e0d8; border-radius: 2px; padding: 13px 14px; outline: none; background: #fbfaf8; color: var(--autism-ink); font: inherit; font-size: 14px; transition: border-color .2s ease, box-shadow .2s ease, background .2s ease; }
+.autism-calculator__card input::placeholder { color: #9aa0a9; }
+.autism-calculator__card input:focus { border-color: var(--autism-gold); background: #fff; box-shadow: 0 0 0 3px rgba(189,147,69,.12); }
+.autism-calculator__field { margin-bottom: 17px; }
+.autism-calculator__contact-fields { margin-bottom: 17px; }
+.autism-calculator__consent { display: flex !important; grid-template-columns: none; align-items: flex-start; gap: 9px; margin: 0 0 17px; color: #697383 !important; font-size: 11px !important; font-weight: 500 !important; line-height: 1.5; }
+.autism-calculator__consent input { width: 15px; height: 15px; flex: 0 0 auto; margin-top: 1px; accent-color: var(--autism-gold); }
+.autism-calculator__type { margin: 0 0 16px; border: 0; padding: 0; }
+.autism-calculator__type legend { margin-bottom: 9px; }
+.autism-calculator__contract-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.autism-calculator__contract-options button { min-height: 47px; border: 1px solid #d5d0c6; padding: 7px 9px; background: transparent; color: #566172; cursor: pointer; font: inherit; font-size: 12px; line-height: 1.3; transition: border-color .2s ease, background .2s ease, color .2s ease; }
+.autism-calculator__contract-options button:hover, .autism-calculator__contract-options button.is-selected { border-color: var(--autism-navy); background: var(--autism-navy); color: #fff; }
+.autism-calculator__error { display: flex; align-items: center; gap: 7px; margin: 0 0 13px; color: #9b3a32; font-size: 12px; line-height: 1.4; }
+.autism-calculator__submit { width: 100%; border: 0; cursor: pointer; }
+.autism-calculator__result { margin-top: 22px; border-top: 1px solid rgba(189,147,69,.42); padding-top: 23px; }
+.autism-calculator__result-kicker { margin-bottom: 5px; color: #9a742e; font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.autism-calculator__result > strong { display: block; margin-bottom: 17px; color: var(--autism-navy); font-family: Georgia, "Times New Roman", serif; font-size: clamp(32px, 4vw, 45px); font-weight: 400; }
+.autism-calculator__result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-bottom: 15px; }
+.autism-calculator__result-grid span { display: grid; gap: 4px; border-left: 2px solid var(--autism-gold); padding: 7px 10px; background: var(--autism-cream); color: #687180; font-size: 11px; line-height: 1.35; }
+.autism-calculator__result-grid b { color: var(--autism-ink); font-size: 14px; }
+.autism-calculator__result > p:not(.autism-calculator__result-kicker) { margin-bottom: 12px; color: var(--autism-copy); font-size: 12px; line-height: 1.55; }
+.autism-calculator__result small { display: block; margin-bottom: 18px; color: #7b8490; font-size: 10px; line-height: 1.55; }
+.autism-calculator__submission { margin: -5px 0 15px !important; color: #7b8490 !important; font-size: 11px !important; line-height: 1.5 !important; }
+.autism-calculator__submission--success { color: #397455 !important; }
+.autism-calculator__result .autism-button { min-height: 47px; font-size: 12px; }
+
+.autism-review { border-bottom: 1px solid #e7eaf0; padding: 94px 0 106px; background: #fff; }
+.autism-section-heading { max-width: 650px; margin-bottom: 48px; }
+.autism-review__cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.autism-review-card { position: relative; min-height: 285px; overflow: hidden; border: 1px solid #e3ddd3; padding: 34px 31px; background: #fbfaf7; transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.autism-review-card:hover { border-color: #c9aa6b; box-shadow: 0 20px 45px rgba(31,42,57,.08); transform: translateY(-4px); }
+.autism-review-card__number { position: absolute; top: 22px; right: 24px; color: #d9d3c9; font-family: Georgia, "Times New Roman", serif; font-size: 38px; }
+.autism-review-card__icon { display: grid; width: 50px; height: 50px; margin-bottom: 37px; place-items: center; background: var(--autism-navy); color: var(--autism-gold-light); }
+.autism-review-card h3 { margin-bottom: 12px; color: var(--autism-ink); font-family: Georgia, "Times New Roman", serif; font-size: 23px; font-weight: 400; }
+.autism-review-card p { margin-bottom: 0; color: var(--autism-copy); font-size: 14px; line-height: 1.7; }
+
+.autism-process { padding: 105px 0; background: var(--autism-navy); color: #fff; }
+.autism-process__grid { display: grid; grid-template-columns: .82fr 1.18fr; gap: 105px; }
+.autism-kicker--light { color: var(--autism-gold-light); }
+.autism-process .autism-kicker, .autism-about .autism-kicker { font-size: 14px; letter-spacing: .18em; }
+.autism-process h2 { margin-bottom: 23px; color: #fff; font-size: clamp(38px, 4vw, 54px); line-height: 1.1; }
+.autism-process__heading > p:not(.autism-kicker) { margin-bottom: 25px; color: rgba(255,255,255,.63); font-size: 15px; line-height: 1.75; }
+.autism-text-link { display: inline-flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--autism-gold); padding-bottom: 6px; color: var(--autism-gold-light) !important; font-size: 14px; font-weight: 750; }
+.autism-steps { border-top: 1px solid rgba(255,255,255,.16); }
+.autism-step { display: grid; grid-template-columns: 70px 1fr; gap: 18px; border-bottom: 1px solid rgba(255,255,255,.16); padding: 27px 0; }
+.autism-step > span { color: var(--autism-gold-light); font-family: Georgia, "Times New Roman", serif; font-size: 30px; }
+.autism-step h3 { margin-bottom: 7px; font-family: Georgia, "Times New Roman", serif; font-size: 22px; font-weight: 400; }
+.autism-step p { margin-bottom: 0; color: rgba(255,255,255,.59); font-size: 14px; line-height: 1.65; }
+
+.autism-about { padding: 110px 0; background: #fff; }
+.autism-about__grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: 100px; align-items: center; }
+.autism-about__portrait { position: relative; width: min(100%, 420px); height: 520px; margin-bottom: 52px; background: var(--autism-cream); }
+.autism-about__portrait::before { position: absolute; z-index: 0; top: -20px; right: -20px; width: 80%; height: 80%; border: 1px solid #d6b66e; content: ""; }
+.autism-about__portrait img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; object-position: center 18%; filter: saturate(.88); }
+.autism-about__identity { position: absolute; z-index: 2; top: calc(100% + 19px); left: 0; display: flex; flex-direction: column; gap: 4px; }
+.autism-about__identity strong { color: var(--autism-ink); font-family: Georgia, "Times New Roman", serif; font-size: 20px; font-weight: 500; }
+.autism-about__identity span { color: #9a742e; font-size: 11px; font-weight: 800; letter-spacing: .14em; }
+.autism-about h2 { margin-bottom: 8px; }
+.autism-about__role { margin-bottom: 28px; color: #9a742e; font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.autism-about__copy > p:not(.autism-kicker, .autism-about__role) { max-width: 550px; color: var(--autism-copy); font-size: 16px; line-height: 1.8; }
+.autism-about blockquote { max-width: 535px; margin: 30px 0; border-left: 2px solid var(--autism-gold); padding: 4px 0 4px 22px; color: #344155; font-family: Georgia, "Times New Roman", serif; font-size: 21px; font-style: italic; line-height: 1.5; }
+
+.autism-final-cta { padding: 70px 0; background: #102d4d; color: #fff; }
+.autism-final-cta__inner { display: grid; grid-template-columns: auto 1fr auto; gap: 28px; align-items: center; }
+.autism-final-cta__icon { display: grid; width: 64px; height: 64px; place-items: center; border: 1px solid rgba(214,182,110,.55); color: var(--autism-gold-light); }
+.autism-final-cta .autism-kicker { margin-bottom: 10px; }
+.autism-final-cta h2 { margin-bottom: 9px; color: #fff; font-size: clamp(30px, 3vw, 42px); }
+.autism-final-cta p:last-child { margin-bottom: 0; color: rgba(255,255,255,.62); font-size: 14px; }
+
+.autism-footer { border-top: 1px solid rgba(255,255,255,.08); padding: 48px 0; background: #061425; }
+.autism-footer__inner { display: grid; grid-template-columns: 270px 1fr auto; gap: 35px; align-items: center; }
+.autism-footer__brand { display: flex; width: 285px; align-items: center; gap: 13px; }
+.autism-footer__mark { display: grid; width: 64px; height: 64px; flex: 0 0 auto; place-items: center; }
+.autism-footer__mark img { width: 60px; height: 60px; object-fit: contain; }
+.autism-footer__brand > span:last-child { display: flex; flex-direction: column; }
+.autism-footer__brand strong { color: #fff; font-family: Georgia, "Times New Roman", serif; font-size: 17px; font-weight: 500; }
+.autism-footer__brand small { margin-top: 5px; color: #9a742e; font-size: 8px; font-weight: 700; letter-spacing: .13em; line-height: 1.4; text-transform: uppercase; }
+.autism-footer p { max-width: 530px; margin: 0; color: rgba(255,255,255,.55); font-size: 11px; line-height: 1.55; }
+.autism-footer__inner > span { color: rgba(255,255,255,.55); font-size: 11px; white-space: nowrap; }
+
+.autism-whatsapp-float { position: fixed; z-index: 20; right: 24px; bottom: 24px; display: flex; min-height: 54px; align-items: center; gap: 9px; border-radius: 99px; padding: 0 20px; background: #1fa855; box-shadow: 0 12px 30px rgba(6,75,34,.28); color: #fff !important; font-size: 13px; font-weight: 800; transition: transform .2s ease, background .2s ease; }
+.autism-whatsapp-float:hover { background: #188c46; transform: translateY(-3px); }
+
+@media (max-width: 980px) {
+  .autism-nav { display: none; }
+  .autism-hero::before { width: 62%; }
+  .autism-hero::after { background: linear-gradient(90deg, #07182c 0%, #07182c 47%, rgba(7,24,44,.76) 70%, rgba(7,24,44,.23) 100%); }
+  .autism-hero__copy { width: 64%; }
+  .autism-intro__grid, .autism-process__grid, .autism-about__grid { gap: 55px; }
+  .autism-calculator__grid { gap: 55px; }
+  .autism-review__cards { grid-template-columns: repeat(2, 1fr); }
+  .autism-final-cta__inner { grid-template-columns: auto 1fr; }
+  .autism-final-cta .autism-button { grid-column: 2; justify-self: start; }
+  .autism-footer__inner { grid-template-columns: 230px 1fr; }
+  .autism-footer__inner > span { grid-column: 2; }
+}
+
+@media (max-width: 740px) {
+  .autism-shell, .autism-header { width: min(100% - 32px, 1160px); }
+  .autism-header { min-height: 78px; }
+  .autism-brand { min-width: 0; }
+  .autism-brand__mark { width: 47px; height: 47px; }
+  .autism-brand__mark img { width: 45px; height: 45px; }
+  .autism-brand strong { font-size: 15px; }
+  .autism-brand small { font-size: 7px; letter-spacing: .12em; }
+  .autism-header__cta { width: 43px; min-height: 43px; justify-content: center; overflow: hidden; padding: 0; font-size: 0; }
+  .autism-header__cta svg { width: 19px; }
+  .autism-hero, .autism-hero__inner { min-height: 720px; }
+  .autism-hero::before { width: 100%; background-position: 58% 14%; }
+  .autism-hero::after { background: linear-gradient(90deg, rgba(7,24,44,.97) 0%, rgba(7,24,44,.84) 53%, rgba(7,24,44,.45) 100%), linear-gradient(0deg, #07182c 0%, transparent 38%); }
+  .autism-hero__copy { width: 100%; min-width: 0; padding-top: 72px; }
+  .autism-hero__copy > * { max-width: calc(100vw - 32px); }
+  .autism-hero h1 { max-width: 530px; font-size: clamp(38px, 9.5vw, 50px); }
+  .autism-hero h1 > span, .autism-hero h1 em > span { display: block; }
+  .autism-hero__lead { max-width: 470px; font-size: 16px; }
+  .autism-hero__assurances { max-width: 430px; }
+  .autism-hero__name { display: none; }
+  .autism-intro, .autism-review, .autism-process, .autism-about { padding: 72px 0; }
+  .autism-intro__grid, .autism-process__grid, .autism-about__grid { grid-template-columns: 1fr; gap: 38px; }
+  .autism-calculator__grid { grid-template-columns: 1fr; gap: 42px; }
+  .autism-calculator__copy { padding-top: 0; }
+  .autism-calculator__card { padding: 24px 20px; }
+  .autism-review__cards { grid-template-columns: 1fr; }
+  .autism-review-card { min-height: 0; }
+  .autism-about__portrait { width: min(92%, 420px); height: 500px; }
+  .autism-final-cta__inner { grid-template-columns: 1fr; text-align: left; }
+  .autism-final-cta__icon { display: none; }
+  .autism-final-cta .autism-button { grid-column: 1; }
+  .autism-footer__inner { grid-template-columns: 1fr; gap: 20px; text-align: center; }
+  .autism-footer__brand { margin-inline: auto; }
+  .autism-footer p { margin-inline: auto; }
+  .autism-footer__inner > span { grid-column: 1; }
+  .autism-whatsapp-float { right: 16px; bottom: 16px; width: 54px; justify-content: center; padding: 0; }
+  .autism-whatsapp-float span { display: none; }
+}
+
+@media (max-width: 430px) {
+  .autism-hero h1 { font-size: 38px; letter-spacing: -.04em; }
+  .autism-hero__assurances { display: grid; gap: 8px; }
+  .autism-button { width: 100%; padding-inline: 16px; }
+  .autism-about__portrait { height: 440px; }
+  .autism-calculator__fields--two, .autism-calculator__result-grid { grid-template-columns: 1fr; }
+  .autism-calculator__contract-options { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .autism-page *, .autism-page *::before, .autism-page *::after { scroll-behavior: auto !important; transition: none !important; }
+}

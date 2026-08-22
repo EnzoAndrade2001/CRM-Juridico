@@ -24,6 +24,8 @@ const LeadScraper = lazy(() => import('./pages/LeadScraper'));
 const RevGuard = lazy(() => import('./pages/RevGuard'));
 const LegalDemo = lazy(() => import('./pages/LegalDemo'));
 const BankReviewLanding = lazy(() => import('./pages/BankReviewLanding'));
+const TrademarkLanding = lazy(() => import('./pages/TrademarkLanding'));
+const AutismLanding = lazy(() => import('./pages/AutismLanding'));
 const InstitutionalSite = lazy(() => import('./pages/InstitutionalSite'));
 
 // Interceptor global para tratar erros de autenticacao (401)
@@ -163,6 +165,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/validation/auth-spec" element={<AuthSpecPage />} />
           <Route path="/demo-juridico" element={<LegalDemo demoMode />} />
           <Route path="/revisional-bancario" element={<BankReviewLanding />} />
+          <Route path="/registro-de-marca" element={<TrademarkLanding />} />
+          <Route path="/autismo" element={<AutismLanding />} />
           <Route path="/juridico" element={<PrivateRoute><LegalDemo /></PrivateRoute>} />
           <Route path="/inbox" element={<PrivateRoute><LegalDemo initialScreen="atendimentos" /></PrivateRoute>} />
 
