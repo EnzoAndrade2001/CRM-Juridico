@@ -391,7 +391,7 @@ export default function InstitutionalSite({ section = 'home' }) {
           </div>
           <div className="office-intro__copy">
             <p>Uma conversa objetiva ajuda a organizar os fatos, os documentos e as possibilidades.</p>
-            <p className="office-note"><ShieldCheck size={20} /> Cada atendimento é analisado individualmente.</p>
+            <p className="office-intro__assurance"><ShieldCheck size={20} /> Cada atendimento é analisado individualmente.</p>
           </div>
         </div>
       </section>}
