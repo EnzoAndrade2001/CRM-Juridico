@@ -1,16 +1,16 @@
-/* Identidade institucional: azul profundo substituído por um preto azulado elegante. */
+/* Identidade institucional: preto quase puro, no espírito das peças de campanha do escritório. */
 .office-site {
-  --office-navy: #0b0d12;
-  --office-navy-soft: #15181f;
+  --office-navy: #070707;
+  --office-navy-soft: #121212;
 }
 
 .office-hero::after {
   background: linear-gradient(
     90deg,
-    #0b0d12 0%,
-    #0b0d12 43%,
-    rgba(11, 13, 18, 0.84) 57%,
-    rgba(11, 13, 18, 0.18) 100%
+    #070707 0%,
+    #070707 43%,
+    rgba(7, 7, 7, 0.84) 57%,
+    rgba(7, 7, 7, 0.18) 100%
   );
 }
 
@@ -19,12 +19,12 @@
 }
 
 .office-footer {
-  background: #090b0f;
+  background: #050505;
 }
 
 @media (max-width: 900px) {
   .office-nav {
-    background: rgba(11, 13, 18, 0.98);
+    background: rgba(7, 7, 7, 0.98);
   }
 }
 
@@ -32,9 +32,9 @@
   .office-hero::after {
     background: linear-gradient(
       180deg,
-      rgba(11, 13, 18, 0.35) 0%,
-      #0b0d12 54%,
-      #0b0d12 100%
+      rgba(7, 7, 7, 0.35) 0%,
+      #070707 54%,
+      #070707 100%
     );
   }
 }
@@ -175,7 +175,7 @@
 .office-modal__intro {
   margin: 0 0 30px;
   color: var(--office-copy);
-  font-family: "Fraunces", Georgia, "Times New Roman", serif;
+  font-family: "Poppins", Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 18px;
   line-height: 1.65;
 }

@@ -140,6 +140,8 @@ const guides = [
   },
 ];
 
+const clients = ['SIA', 'Boom Mania', 'Hamorim', 'DGI Log', 'Rodrigues Distribuidora'];
+
 const highlights = [
   {
     icon: Scale,
@@ -446,6 +448,17 @@ export default function InstitutionalSite() {
               <img src={eduardaPortrait} alt="Equipe jurídica do escritório" />
               <div className="office-person__body"><p className="office-person__eyebrow">Equipe jurídica</p><h3>Suporte jurídico dedicado</h3><p>Organização das informações e acompanhamento cuidadoso de cada demanda, do primeiro contato à conclusão do caso.</p></div>
             </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="office-clients" id="clientes">
+        <div className="office-shell">
+          <p className="office-clients__title">Clientes e Parceiros</p>
+          <div className="office-clients__grid">
+            {clients.map((name) => (
+              <span className="office-clients__name" key={name}>{name}</span>
+            ))}
           </div>
         </div>
       </section>
