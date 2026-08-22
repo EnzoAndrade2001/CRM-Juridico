@@ -790,6 +790,10 @@ model LegalTask {
   status      LegalTaskStatus @default(PENDENTE)
   dueAt       DateTime?
   completedAt DateTime?
+  // Último estágio de alerta de prazo disparado ('D3' | 'D1' | 'OVERDUE') e quando.
+  // Evita reenviar o mesmo alerta a cada execução do cron de lembretes.
+  lastReminderStage String?
+  lastReminderAt    DateTime?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 

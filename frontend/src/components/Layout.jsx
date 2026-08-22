@@ -129,6 +129,24 @@ export default function Layout() {
       }
     });
 
+    socket.on('legal_task_reminder', (reminder) => {
+      const stageLabels = { OVERDUE: 'Prazo vencido', D1: 'Prazo em 24h', D3: 'Prazo em 3 dias' };
+      const title = stageLabels[reminder.stage] || 'Alerta de prazo';
+      const body = reminder.contextTitle ? `${reminder.title} — ${reminder.contextTitle}` : reminder.title;
+
+      audioRef.current.play().catch(() => {});
+      setNotification({
+        name: title,
+        body,
+        isLegalReminder: true,
+      });
+      setTimeout(() => setNotification(null), 8000);
+
+      if (typeof window !== 'undefined' && window.Notification && Notification.permission === 'granted') {
+        new Notification(title, { body });
+      }
+    });
+
     socket.on('connection_update', ({ instance, data }) => {
       setInstances((prev) => 
         prev.map((inst) => {
@@ -347,6 +365,8 @@ export default function Layout() {
           onClick={() => {
             if (notification.isInternal) {
               setIsChatOpen(true);
+            } else if (notification.isLegalReminder) {
+              navigate('/juridico');
             } else {
               navigate('/inbox');
             }

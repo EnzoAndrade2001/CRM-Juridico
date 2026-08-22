@@ -230,8 +230,11 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-  const { tenantId } = socket.user;
+  const { tenantId, userId } = socket.user;
   socket.join(tenantId);
+  // Sala individual, usada para notificações direcionadas a um único usuário
+  // (ex.: alerta de prazo processual do responsável pela tarefa).
+  if (userId) socket.join(`user:${userId}`);
   socket.on('disconnect', (reason) => {
     console.log(`[socket] usuário ${socket.user.userId} DESCONECTADO do tenant ${tenantId}. Motivo: ${reason}`);
   });

@@ -3,11 +3,13 @@ const fs = require('fs');
 const path = require('path');
 const prisma = require('../lib/prisma');
 const evolutionService = require('./evolutionService');
+const legalTaskReminderService = require('./legalTaskReminderService');
 
 let io = null;
 
 function setIo(socketIo) {
   io = socketIo;
+  legalTaskReminderService.setIo(socketIo);
 }
 
 async function processScheduledMessages() {
@@ -194,6 +196,11 @@ function start() {
   // Roda imediatamente na inicialização para pegar mídias que falharam antes do restart
   setTimeout(retryPendingMedia, 10000);
   console.log('[media-retry] retry de mídias pendentes iniciado (5 min)');
+
+  // Alertas de prazo processual (LegalTask.dueAt) a cada 15 minutos
+  setInterval(legalTaskReminderService.processLegalTaskReminders, 15 * 60 * 1000);
+  setTimeout(legalTaskReminderService.processLegalTaskReminders, 15000);
+  console.log('[legal-reminder] alertas de prazo processual iniciados (15 min)');
 
   // Limpeza Noturna (03:00 AM)
   cron.schedule('0 3 * * *', () => {
