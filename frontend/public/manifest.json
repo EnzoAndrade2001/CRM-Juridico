@@ -1,8 +1,8 @@
 {
-  "name": "CRM Juridico - Atendimento PRO Pedro Lund",
-  "short_name": "CRM Juridico",
-  "description": "Atendimento juridico com WhatsApp e inteligencia artificial",
-  "start_url": "/login",
+  "name": "Pedro Bastos Lund Advocacia",
+  "short_name": "Pedro Bastos Lund",
+  "description": "Advocacia e consultoria juridica com analise responsavel e acompanhamento proximo em cada etapa.",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#D4AF37",
