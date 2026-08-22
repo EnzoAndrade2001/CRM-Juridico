@@ -147,6 +147,19 @@ export default function Layout() {
       }
     });
 
+    socket.on('legal_process_movement', (event) => {
+      const title = 'Movimentação processual';
+      const body = `${event.matterTitle}${event.caseNumber ? ` (${event.caseNumber})` : ''} — ${event.latest?.name || `${event.count} nova(s) movimentação(ões)`}`;
+
+      audioRef.current.play().catch(() => {});
+      setNotification({ name: title, body, isLegalReminder: true });
+      setTimeout(() => setNotification(null), 8000);
+
+      if (typeof window !== 'undefined' && window.Notification && Notification.permission === 'granted') {
+        new Notification(title, { body });
+      }
+    });
+
     socket.on('connection_update', ({ instance, data }) => {
       setInstances((prev) => 
         prev.map((inst) => {

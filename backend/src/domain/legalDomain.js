@@ -153,6 +153,7 @@ function buildLegalMatterData(payload = {}, { partial = false } = {}) {
   assignIfPresent(data, payload, 'description', (value) => textValue(value, 'description', { allowNull: true, max: 10000 }));
   assignIfPresent(data, payload, 'caseNumber', (value) => textValue(value, 'caseNumber', { allowNull: true, max: 80 }));
   assignIfPresent(data, payload, 'court', (value) => textValue(value, 'court', { allowNull: true, max: 180 }));
+  assignIfPresent(data, payload, 'courtAlias', (value) => textValue(value, 'courtAlias', { allowNull: true, max: 40 }));
   assignIfPresent(data, payload, 'opposingParty', (value) => textValue(value, 'opposingParty', { allowNull: true, max: 180 }));
   assignIfPresent(data, payload, 'openedAt', (value) => dateValue(value, 'openedAt', { allowNull: false }));
   assignIfPresent(data, payload, 'closedAt', (value) => dateValue(value, 'closedAt'));

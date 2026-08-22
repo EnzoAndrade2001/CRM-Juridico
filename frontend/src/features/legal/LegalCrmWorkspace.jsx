@@ -8,6 +8,7 @@ import {
   Clock3,
   FileCheck2,
   Filter,
+  Gavel,
   History,
   LoaderCircle,
   Plus,
@@ -174,9 +175,17 @@ const ACTIVITY_TEXT = {
   'lead.updated': 'Oportunidade atualizada',
   'matter.created': 'Caso jurídico criado',
   'matter.updated': 'Caso jurídico atualizado',
+  'matter.monitoring_started': 'Monitoramento de processo iniciado (DataJud)',
   'task.created': 'Tarefa criada',
   'task.updated': 'Tarefa atualizada',
 };
+
+function activityDescription(item) {
+  if (item.type === 'matter.movement') {
+    return `Movimentação processual: ${item.payload?.name || 'sem descrição'}`;
+  }
+  return ACTIVITY_TEXT[item.type] || 'Registro atualizado';
+}
 
 function ActivityTimeline({ activities = [] }) {
   return (
@@ -185,7 +194,7 @@ function ActivityTimeline({ activities = [] }) {
       {activities.map((item) => (
         <article key={item.id}>
           <i />
-          <span><strong>{ACTIVITY_TEXT[item.type] || 'Registro atualizado'}</strong><small>{item.actor?.name || 'Sistema'} · {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.createdAt))}</small></span>
+          <span><strong>{activityDescription(item)}</strong><small>{item.actor?.name || 'Sistema'} · {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.createdAt))}</small></span>
         </article>
       ))}
       {!activities.length && <p>Nenhuma alteração registrada até o momento.</p>}
@@ -308,36 +317,49 @@ function Pipeline({ workspace, search, area, onCreate, onSelect }) {
   );
 }
 
+function formatDateTime(value) {
+  if (!value) return null;
+  return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
+}
+
 function MatterDetail({ workspace, matter, onClose, onTask }) {
   const [detail, setDetail] = useState(matter);
   const [form, setForm] = useState({
     status: matter.status,
     caseNumber: matter.caseNumber || '',
     court: matter.court || '',
+    courtAlias: matter.courtAlias || '',
     opposingParty: matter.opposingParty || '',
     description: matter.description || '',
   });
   const [detailLoading, setDetailLoading] = useState(true);
   const [formError, setFormError] = useState('');
+  const [checking, setChecking] = useState(false);
+  const [checkMessage, setCheckMessage] = useState('');
   const update = (field) => (event) => setForm((current) => ({ ...current, [field]: event.target.value }));
+
+  function refreshDetail() {
+    return workspace.loadMatterDetail(matter.id).then((loaded) => {
+      setDetail(loaded);
+      setForm({
+        status: loaded.status,
+        caseNumber: loaded.caseNumber || '',
+        court: loaded.court || '',
+        courtAlias: loaded.courtAlias || '',
+        opposingParty: loaded.opposingParty || '',
+        description: loaded.description || '',
+      });
+      return loaded;
+    });
+  }
 
   useEffect(() => {
     let active = true;
-    workspace.loadMatterDetail(matter.id)
-      .then((loaded) => {
-        if (!active) return;
-        setDetail(loaded);
-        setForm({
-          status: loaded.status,
-          caseNumber: loaded.caseNumber || '',
-          court: loaded.court || '',
-          opposingParty: loaded.opposingParty || '',
-          description: loaded.description || '',
-        });
-      })
+    refreshDetail()
       .catch((error) => active && setFormError(error.message))
       .finally(() => active && setDetailLoading(false));
     return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matter.id, workspace.loadMatterDetail]);
 
   async function save() {
@@ -347,12 +369,32 @@ function MatterDetail({ workspace, matter, onClose, onTask }) {
         ...form,
         caseNumber: form.caseNumber || null,
         court: form.court || null,
+        courtAlias: form.courtAlias || null,
         opposingParty: form.opposingParty || null,
         description: form.description || null,
       });
       onClose();
     } catch (error) {
       setFormError(error.message);
+    }
+  }
+
+  async function checkProcess() {
+    setChecking(true);
+    setCheckMessage('');
+    try {
+      const response = await workspace.checkMatterProcess(matter.id);
+      const result = response?.result;
+      if (result?.ok && result.newMovements > 0) {
+        setCheckMessage(`${result.newMovements} nova(s) movimentação(ões) encontrada(s).`);
+      } else if (result?.ok) {
+        setCheckMessage('Nenhuma movimentação nova desde a última checagem.');
+      }
+      await refreshDetail();
+    } catch (error) {
+      setCheckMessage(error.message);
+    } finally {
+      setChecking(false);
     }
   }
 
@@ -364,9 +406,24 @@ function MatterDetail({ workspace, matter, onClose, onTask }) {
           <Field label="Situação"><select value={form.status} onChange={update('status')}>{MATTER_STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
           <Field label="Número do processo"><input value={form.caseNumber} onChange={update('caseNumber')} placeholder="0000000-00.0000.0.00.0000" /></Field>
           <Field label="Vara ou tribunal"><input value={form.court} onChange={update('court')} /></Field>
+          <Field label="Tribunal (DataJud) — opcional"><input value={form.courtAlias} onChange={update('courtAlias')} placeholder="ex: tjsp, trt2, trf3" /></Field>
           <Field label="Parte contrária"><input value={form.opposingParty} onChange={update('opposingParty')} /></Field>
           <Field label="Descrição" full><textarea rows="3" value={form.description} onChange={update('description')} /></Field>
         </div>
+        {!workspace.demoMode && (
+          <div className="jd-process-monitor">
+            <button type="button" className="jd-secondary" disabled={checking || !detail.caseNumber} onClick={checkProcess}>
+              {checking ? <LoaderCircle size={16} className="jd-spin" /> : <Gavel size={16} />}
+              {checking ? 'Verificando...' : 'Verificar andamento agora'}
+            </button>
+            <div className="jd-process-monitor__status">
+              {detail.lastMovementAt && <span>Última movimentação conhecida: {formatDateTime(detail.lastMovementAt)}</span>}
+              {detail.dataJudCheckedAt && <span>Última checagem: {formatDateTime(detail.dataJudCheckedAt)}</span>}
+              {detail.dataJudError && <span className="jd-process-monitor__error"><CircleAlert size={14} /> {detail.dataJudError}</span>}
+              {checkMessage && <span>{checkMessage}</span>}
+            </div>
+          </div>
+        )}
         {detailLoading ? <div className="jd-detail-loading"><LoaderCircle size={17} /> Carregando histórico...</div> : <ActivityTimeline activities={detail.activities} />}
         {!workspace.demoMode && <LegalDocuments workspace={workspace} contactId={detail.contactId || detail.contact?.id} leadId={detail.leadId} matterId={detail.id} compact />}
         {formError && <div className="jd-form-error"><CircleAlert size={16} />{formError}</div>}

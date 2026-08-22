@@ -361,6 +361,10 @@
 .jd-detail-loading { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 18px; color: #778396; font-size: 12px; }.jd-detail-loading svg { animation: jd-spin 1s linear infinite; }
 .jd-history { margin-top: 17px; padding-top: 15px; border-top: 1px solid var(--jd-line); }.jd-history > h4 { display: flex; align-items: center; gap: 6px; margin: 0 0 11px; color: #46536a; font-size: 13px; }.jd-history article { position: relative; display: flex; gap: 10px; min-height: 45px; padding-left: 2px; }.jd-history article > i { width: 9px; height: 9px; flex: none; margin-top: 4px; background: #b58a43; border: 2px solid #f6ead3; border-radius: 50%; box-shadow: 0 0 0 2px #d8bc84; }.jd-history article > span { display: flex; flex-direction: column; }.jd-history article strong { color: #48556b; font-size: 12px; }.jd-history article small { margin-top: 3px; color: #9099a8; font-size: 10px; }.jd-history > p { color: #8a94a4; font-size: 12px; }
 .jd-matter-form { margin-top: 16px; }
+.jd-process-monitor { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 14px; padding: 12px 14px; background: #f7f9fb; border: 1px solid #e5e9ef; border-radius: 10px; }
+.jd-process-monitor .jd-spin { animation: jd-spin 1s linear infinite; }
+.jd-process-monitor__status { display: flex; flex: 1; flex-wrap: wrap; gap: 4px 16px; color: #657187; font-size: 12px; }
+.jd-process-monitor__error { display: inline-flex; align-items: center; gap: 5px; color: #a43e3e; }
 @media (max-width: 900px) { .jd-client-stats { grid-template-columns: 1fr; }.jd-client-table { overflow-x: auto; }.jd-client-table__head, .jd-client-table__row { min-width: 850px; } }
 @media (max-width: 700px) {
   .jd-client-table { overflow: hidden; }

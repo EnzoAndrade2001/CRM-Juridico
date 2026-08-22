@@ -214,6 +214,7 @@ export const getLegalMatters = (params = {}) => api.get('/legal/matters', { para
 export const getLegalMatter = (id) => api.get(`/legal/matters/${id}`);
 export const createLegalMatter = (data) => api.post('/legal/matters', data);
 export const updateLegalMatter = (id, data) => api.patch(`/legal/matters/${id}`, data);
+export const checkLegalMatterProcess = (id) => api.post(`/legal/matters/${id}/check-process`);
 export const getLegalTasks = (params = {}) => api.get('/legal/tasks', { params });
 export const createLegalTask = (data) => api.post('/legal/tasks', data);
 export const updateLegalTask = (id, data) => api.patch(`/legal/tasks/${id}`, data);

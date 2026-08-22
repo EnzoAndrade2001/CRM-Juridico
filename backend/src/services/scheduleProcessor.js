@@ -4,12 +4,14 @@ const path = require('path');
 const prisma = require('../lib/prisma');
 const evolutionService = require('./evolutionService');
 const legalTaskReminderService = require('./legalTaskReminderService');
+const legalProcessMonitorService = require('./legalProcessMonitorService');
 
 let io = null;
 
 function setIo(socketIo) {
   io = socketIo;
   legalTaskReminderService.setIo(socketIo);
+  legalProcessMonitorService.setIo(socketIo);
 }
 
 async function processScheduledMessages() {
@@ -207,6 +209,14 @@ function start() {
     nightlyCleanup();
   });
   console.log('[cleanup] Cron de limpeza noturna agendado (03:00)');
+
+  // Monitoramento de movimentação processual (DataJud/CNJ) — diário às 07:00,
+  // mais uma checagem 2 min após o boot para dar sinal de vida imediato.
+  cron.schedule('0 7 * * *', () => {
+    legalProcessMonitorService.processActiveMatters();
+  });
+  setTimeout(() => legalProcessMonitorService.processActiveMatters(), 2 * 60 * 1000);
+  console.log('[legal-datajud] monitoramento de processos agendado (diário, 07:00)');
 }
 
 module.exports = { start, setIo };

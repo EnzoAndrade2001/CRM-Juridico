@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  checkLegalMatterProcess,
   createLegalClient,
   createLegalLead,
   createLegalMatter,
@@ -249,6 +250,15 @@ export default function useLegalWorkspace({ demoMode }) {
     await refresh();
   }), [commitDemo, demoMode, refresh, runMutation]);
 
+  const checkMatterProcess = useCallback((id) => runMutation(async () => {
+    if (demoMode) {
+      throw new Error('Monitoramento de processo indisponível na demonstração.');
+    }
+    const response = await checkLegalMatterProcess(id);
+    await refresh();
+    return response.data;
+  }), [demoMode, refresh, runMutation]);
+
   const addTask = useCallback((form) => runMutation(async () => {
     if (demoMode) {
       const now = new Date().toISOString();
@@ -350,7 +360,7 @@ export default function useLegalWorkspace({ demoMode }) {
     ...workspace,
     summary: effectiveSummary,
     loading, saving, error, demoMode,
-    addClient, editClient, addLead, editLead, addMatter, editMatter, addTask, editTask,
+    addClient, editClient, addLead, editLead, addMatter, editMatter, checkMatterProcess, addTask, editTask,
     loadClientDetail, loadLeadDetail, loadMatterDetail, refresh, resetDemo,
   };
 }

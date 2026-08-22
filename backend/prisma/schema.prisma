@@ -760,6 +760,14 @@ model LegalMatter {
   opposingParty     String?
   openedAt          DateTime          @default(now())
   closedAt          DateTime?
+  // Monitoramento de movimentação processual (DataJud/CNJ).
+  // courtAlias: override manual do alias do tribunal (ex: "tjsp", "trt2")
+  // usado quando a detecção automática a partir do número CNJ falha.
+  courtAlias        String?
+  lastMovementAt    DateTime?
+  lastMovementCode  Int?
+  dataJudCheckedAt  DateTime?
+  dataJudError      String?           @db.Text
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 

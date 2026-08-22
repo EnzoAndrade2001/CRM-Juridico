@@ -11,6 +11,7 @@ const {
   getLegalMatter,
   createLegalMatter,
   updateLegalMatter,
+  checkLegalMatterProcess,
   listLegalTasks,
   createLegalTask,
   updateLegalTask,
@@ -53,6 +54,7 @@ router.get('/matters', asyncRoute(listLegalMatters));
 router.post('/matters', asyncRoute(createLegalMatter));
 router.get('/matters/:id', asyncRoute(getLegalMatter));
 router.patch('/matters/:id', asyncRoute(updateLegalMatter));
+router.post('/matters/:id/check-process', asyncRoute(checkLegalMatterProcess));
 
 router.get('/documents', asyncRoute(listLegalDocuments));
 router.post('/documents', legalDocumentUpload.single('file'), handleUploadError, asyncRoute(createLegalDocument));

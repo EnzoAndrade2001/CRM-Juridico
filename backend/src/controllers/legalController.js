@@ -17,6 +17,7 @@ const {
   paginationFromQuery,
 } = require('../domain/legalDomain');
 const { LEGAL_DOCUMENT_KINDS, LEGAL_DOCUMENT_STATUSES } = require('../domain/legalDocumentDomain');
+const legalProcessMonitorService = require('../services/legalProcessMonitorService');
 
 const userSummarySelect = { id: true, name: true, email: true, role: true };
 const contactSummarySelect = {
@@ -342,6 +343,17 @@ async function updateLegalMatter(req, res) {
   res.json(updated);
 }
 
+async function checkLegalMatterProcess(req, res) {
+  const tenantId = req.user.tenantId;
+  const matter = await prisma.legalMatter.findFirst({ where: { id: req.params.id, tenantId } });
+  if (!matter) throw httpError(404, 'Caso jurídico não encontrado');
+  if (!matter.caseNumber) throw httpError(400, 'Este caso não tem número de processo cadastrado');
+
+  const result = await legalProcessMonitorService.checkMatter(matter);
+  const updated = await prisma.legalMatter.findFirst({ where: { id: matter.id }, include: matterInclude });
+  res.json({ result, matter: updated });
+}
+
 async function listLegalTasks(req, res) {
   const tenantId = req.user.tenantId;
   const { page, limit, skip } = paginationFromQuery(req.query);
@@ -452,6 +464,7 @@ module.exports = {
   getLegalMatter,
   createLegalMatter,
   updateLegalMatter,
+  checkLegalMatterProcess,
   listLegalTasks,
   createLegalTask,
   updateLegalTask,
