@@ -416,6 +416,12 @@
   color: #946f2b;
 }
 
+.office-process__grid {
+  width: min(1160px, calc(100% - 48px));
+  max-width: 1160px;
+  margin-inline: auto;
+}
+
 .office-highlights__grid {
   grid-template-columns: 1fr;
 }
@@ -472,6 +478,10 @@
 
   .office-page-hero__inner > p:last-child {
     font-size: 17px;
+  }
+
+  .office-process__grid {
+    width: min(100% - 32px, 520px);
   }
 
   .office-home-directory {
