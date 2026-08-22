@@ -37,7 +37,7 @@ const siteRoutes = {
 };
 const siteNavItems = [
   { key: 'areas', label: 'Áreas de atuação', path: siteRoutes.areas, number: '01', description: 'Conheça as principais frentes de atendimento.' },
-  { key: 'process', label: 'Como funciona', path: siteRoutes.process, number: '02', description: 'Entenda as etapas do primeiro contato.' },
+  { key: 'process', label: 'Como podemos ajudar', path: siteRoutes.process, number: '02', description: 'Veja o que você recebe do escritório.' },
   { key: 'guides', label: 'Conteúdos', path: siteRoutes.guides, number: '03', description: 'Informação jurídica para decidir melhor.' },
   { key: 'team', label: 'Equipe', path: siteRoutes.team, number: '04', description: 'Conheça quem acompanha cada demanda.' },
 ];
@@ -48,9 +48,9 @@ const sectionDetails = {
     text: 'Escolha o assunto mais próximo da sua situação e veja como organizar o próximo passo.',
   },
   process: {
-    kicker: 'Atendimento',
-    title: 'Como funciona',
-    text: 'Um primeiro contato claro, com orientação sobre informações e documentos importantes.',
+    kicker: 'O que oferecemos',
+    title: 'Seu caso merece análise e estratégia.',
+    text: 'Entendemos o que está em jogo, organizamos os documentos e apresentamos os caminhos possíveis para você decidir com clareza.',
   },
   guides: {
     kicker: 'Conteúdos jurídicos',
@@ -499,15 +499,15 @@ export default function InstitutionalSite({ section = 'home' }) {
       {section === 'process' && <section className="office-process" id="como-funciona">
         <div className="office-shell office-process__grid">
           <div className="office-process__heading">
-            <h2>Três passos para organizar a conversa.</h2>
-            <p>O primeiro contato acontece pelo WhatsApp e começa com o que você já consegue explicar.</p>
-            <WhatsAppLink className="office-text-link" label="Iniciar conversa no WhatsApp">Iniciar conversa <ArrowRight size={17} /></WhatsAppLink>
+            <h2>Orientação para o que realmente importa.</h2>
+            <p>Você recebe uma leitura cuidadosa da situação, dos documentos e das alternativas jurídicas antes de escolher o próximo passo.</p>
+            <WhatsAppLink className="office-text-link" label="Falar com a equipe pelo WhatsApp">Falar com a equipe <ArrowRight size={17} /></WhatsAppLink>
           </div>
           <div className="office-process__steps">
             {[
-              ['01', 'Conte o que aconteceu', 'Explique brevemente a situação e o que precisa resolver.'],
-              ['02', 'Organize os documentos', 'A equipe orienta quais informações são importantes para o caso.'],
-              ['03', 'Receba os próximos passos', 'Você entende as possibilidades jurídicas antes de decidir.'],
+              ['01', 'Análise do seu caso', 'Entendemos os fatos, os documentos e o que está realmente em jogo.'],
+              ['02', 'Orientação estratégica', 'Apresentamos riscos, possibilidades e o que merece atenção.'],
+              ['03', 'Próximos passos claros', 'Você sabe quais caminhos pode avaliar antes de decidir.'],
             ].map(([number, title, text]) => (
               <article className="office-step" key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></article>
             ))}
