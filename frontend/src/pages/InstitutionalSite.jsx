@@ -22,6 +22,7 @@ import clientSia from '../assets/clients/sia.png';
 import clientBoomMania from '../assets/clients/boom-mania.png';
 import clientRodrigues from '../assets/clients/rodrigues.png';
 import clientHamorim from '../assets/clients/hamorim.png';
+import clientDgiLog from '../assets/clients/dgi-log.png';
 import './institutional-site.css';
 import './institutional-brand-overrides.css';
 
@@ -148,7 +149,7 @@ const clients = [
   { name: 'SIA', logo: clientSia },
   { name: 'Boom Mania', logo: clientBoomMania },
   { name: 'Hamorim', logo: clientHamorim },
-  { name: 'DGI Log', logo: null },
+  { name: 'DGI Log', logo: clientDgiLog },
   { name: 'Rodrigues Distribuidora', logo: clientRodrigues },
 ];
 
