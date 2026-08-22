@@ -24,6 +24,7 @@ const LeadScraper = lazy(() => import('./pages/LeadScraper'));
 const RevGuard = lazy(() => import('./pages/RevGuard'));
 const LegalDemo = lazy(() => import('./pages/LegalDemo'));
 const BankReviewLanding = lazy(() => import('./pages/BankReviewLanding'));
+const InstitutionalSite = lazy(() => import('./pages/InstitutionalSite'));
 
 // Interceptor global para tratar erros de autenticacao (401)
 api.interceptors.response.use(
@@ -152,7 +153,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <AppErrorBoundary>
       <Suspense fallback={<RouteFallback />}>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<InstitutionalSite />} />
           <Route path="/login" element={<Login />} />
           <Route path="/:slug/login" element={<Login />} />
           <Route path="/validation/auth-spec" element={<AuthSpecPage />} />
@@ -169,7 +170,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             )}
           >
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route index element={<Dashboard />} />
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/crm" element={<CRM />} />
             <Route path="/users" element={<Users />} />
