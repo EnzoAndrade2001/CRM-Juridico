@@ -18,6 +18,7 @@ import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import eduardaPortrait from '../assets/dra-eduarda-hq.png';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
 import './institutional-site.css';
+import './institutional-brand-overrides.css';
 
 const whatsappNumber = '555193665581';
 const baseUrl = import.meta.env.BASE_URL || '/';
@@ -176,7 +177,7 @@ export default function InstitutionalSite() {
             </article>
             <article className="office-person">
               <img src={eduardaPortrait} alt="Dra. Eduarda Marranghello" />
-              <div className="office-person__body"><p className="office-person__eyebrow">Atendimento e relacionamento</p><h3>Dra. Eduarda Marranghello</h3><p>Atendimento próximo, organização das informações e acompanhamento cuidadoso de cada demanda.</p></div>
+              <div className="office-person__body"><p className="office-person__eyebrow">Advogada</p><h3>Dra. Eduarda Marranghello</h3><p>Atuação dedicada, organização das informações e acompanhamento cuidadoso de cada demanda.</p></div>
             </article>
           </div>
         </div>

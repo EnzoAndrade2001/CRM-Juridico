@@ -1,0 +1,40 @@
+/* Identidade institucional: azul profundo substituído por um preto azulado elegante. */
+.office-site {
+  --office-navy: #0b0d12;
+  --office-navy-soft: #15181f;
+}
+
+.office-hero::after {
+  background: linear-gradient(
+    90deg,
+    #0b0d12 0%,
+    #0b0d12 43%,
+    rgba(11, 13, 18, 0.84) 57%,
+    rgba(11, 13, 18, 0.18) 100%
+  );
+}
+
+.office-button--gold {
+  color: #080a0d !important;
+}
+
+.office-footer {
+  background: #090b0f;
+}
+
+@media (max-width: 900px) {
+  .office-nav {
+    background: rgba(11, 13, 18, 0.98);
+  }
+}
+
+@media (max-width: 640px) {
+  .office-hero::after {
+    background: linear-gradient(
+      180deg,
+      rgba(11, 13, 18, 0.35) 0%,
+      #0b0d12 54%,
+      #0b0d12 100%
+    );
+  }
+}
