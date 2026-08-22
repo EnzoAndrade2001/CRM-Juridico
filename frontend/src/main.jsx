@@ -154,6 +154,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           <Route path="/" element={<InstitutionalSite />} />
+          <Route path="/atuacao" element={<InstitutionalSite section="areas" />} />
+          <Route path="/como-funciona" element={<InstitutionalSite section="process" />} />
+          <Route path="/conteudos" element={<InstitutionalSite section="guides" />} />
+          <Route path="/equipe" element={<InstitutionalSite section="team" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/:slug/login" element={<Login />} />
           <Route path="/validation/auth-spec" element={<AuthSpecPage />} />

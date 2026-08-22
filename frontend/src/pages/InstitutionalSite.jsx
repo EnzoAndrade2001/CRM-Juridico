@@ -28,6 +28,41 @@ import './institutional-brand-overrides.css';
 
 const whatsappNumber = '555193665581';
 const baseUrl = import.meta.env.BASE_URL || '/';
+const siteRoutes = {
+  home: baseUrl,
+  areas: `${baseUrl}atuacao/`,
+  process: `${baseUrl}como-funciona/`,
+  guides: `${baseUrl}conteudos/`,
+  team: `${baseUrl}equipe/`,
+};
+const siteNavItems = [
+  { key: 'areas', label: 'Áreas de atuação', path: siteRoutes.areas, number: '01', description: 'Conheça as principais frentes de atendimento.' },
+  { key: 'process', label: 'Como funciona', path: siteRoutes.process, number: '02', description: 'Entenda as etapas do primeiro contato.' },
+  { key: 'guides', label: 'Conteúdos', path: siteRoutes.guides, number: '03', description: 'Informação jurídica para decidir melhor.' },
+  { key: 'team', label: 'Equipe', path: siteRoutes.team, number: '04', description: 'Conheça quem acompanha cada demanda.' },
+];
+const sectionDetails = {
+  areas: {
+    kicker: 'Atuação',
+    title: 'Áreas de atuação',
+    text: 'Escolha o assunto mais próximo da sua situação e veja como organizar o próximo passo.',
+  },
+  process: {
+    kicker: 'Atendimento',
+    title: 'Como funciona',
+    text: 'Um primeiro contato claro, com orientação sobre informações e documentos importantes.',
+  },
+  guides: {
+    kicker: 'Conteúdos jurídicos',
+    title: 'Informação para decidir com segurança',
+    text: 'Orientações objetivas para ajudar você a reconhecer riscos e fazer boas perguntas.',
+  },
+  team: {
+    kicker: 'O escritório',
+    title: 'Atendimento próximo em cada etapa',
+    text: 'Uma equipe que organiza as informações e acompanha a demanda com responsabilidade.',
+  },
+};
 const revisionalUrl = `${baseUrl.replace(/\/$/, '')}/revisional-bancario/`;
 const whatsappMessage = 'Olá, vim pelo site do escritório e gostaria de falar com a equipe.';
 const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
@@ -235,7 +270,9 @@ function ContentModal({ content, closeButtonRef, onClose }) {
   );
 }
 
-export default function InstitutionalSite() {
+export default function InstitutionalSite({ section = 'home' }) {
+  const isHome = section === 'home';
+  const pageDetails = sectionDetails[section];
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [activeHighlight, setActiveHighlight] = useState(0);
@@ -252,17 +289,24 @@ export default function InstitutionalSite() {
       document.head.appendChild(description);
     }
     const previousDescription = description.getAttribute('content');
-    document.title = 'Pedro Bastos Lund | Advocacia e Consultoria Jurídica';
+    const fontLink = document.createElement('link');
+    fontLink.rel = 'stylesheet';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap';
+    document.head.appendChild(fontLink);
+    document.title = pageDetails
+      ? `${pageDetails.title} | Pedro Bastos Lund`
+      : 'Pedro Bastos Lund | Advocacia e Consultoria Jurídica';
     description.setAttribute(
       'content',
       'Advocacia e consultoria jurídica com análise responsável, comunicação clara e acompanhamento próximo em cada etapa.',
     );
     return () => {
       document.title = previousTitle;
+      fontLink.remove();
       if (createdDescription) description.remove();
       else description.setAttribute('content', previousDescription || '');
     };
-  }, []);
+  }, [pageDetails]);
 
   useEffect(() => {
     if (!activeModal) {
@@ -292,7 +336,7 @@ export default function InstitutionalSite() {
   return (
     <main className="office-site">
       <header className="office-header">
-        <a className="office-brand" href="#inicio" onClick={closeMenu} aria-label="Pedro Bastos Lund Advocacia — início">
+        <a className="office-brand" href={siteRoutes.home} onClick={closeMenu} aria-label="Pedro Bastos Lund Advocacia — início">
           <span className="office-brand__mark"><img src={logo} alt="" /></span>
           <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span>
         </a>
@@ -300,22 +344,22 @@ export default function InstitutionalSite() {
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
         <nav className={`office-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegação principal">
-          <a href="#atuacao" onClick={closeMenu}>Áreas de atuação</a>
-          <a href="#como-funciona" onClick={closeMenu}>Como funciona</a>
-          <a href="#conteudos" onClick={closeMenu}>Conteúdos</a>
-          <a href="#equipe" onClick={closeMenu}>Equipe</a>
+          {siteNavItems.map((item) => (
+            <a key={item.key} href={item.path} onClick={closeMenu}>{item.label}</a>
+          ))}
           <WhatsAppLink className="office-header__cta" label="Falar com o escritório pelo WhatsApp" >
             <MessageCircle size={17} /> Falar com a equipe
           </WhatsAppLink>
         </nav>
       </header>
 
+      {isHome ? (
       <section className="office-hero" id="inicio" style={{ '--office-hero-image': `url(${portrait})` }}>
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
-            <h1>Clareza para decidir. <em>Segurança para agir.</em></h1>
+            <h1>Clareza para decidir. <span>Segurança para agir.</span></h1>
             <p className="office-hero__lead">
-              Atendimento jurídico próximo, com análise criteriosa dos documentos e orientação objetiva para cada situação.
+              Orientação jurídica clara para o próximo passo.
             </p>
             <WhatsAppLink className="office-button office-button--gold" label="Iniciar atendimento com o escritório">
               Iniciar atendimento <ArrowRight size={18} />
@@ -329,25 +373,34 @@ export default function InstitutionalSite() {
           <p className="office-hero__name"><span>Pedro Bastos Lund</span> OAB/RS 74.953</p>
         </div>
       </section>
+      ) : (
+        <section className="office-page-hero">
+          <div className="office-shell office-page-hero__inner">
+            <p className="office-kicker office-kicker--light">{pageDetails.kicker}</p>
+            <h1>{pageDetails.title}</h1>
+            <p>{pageDetails.text}</p>
+          </div>
+        </section>
+      )}
 
-      <section className="office-intro">
+      {isHome && <section className="office-intro">
         <div className="office-shell office-intro__grid">
           <div>
             <p className="office-kicker">Atuação dedicada</p>
-            <h2>Entender o seu caso é o primeiro passo para orientar o caminho jurídico.</h2>
+            <h2>Antes de decidir, entenda o seu caso.</h2>
           </div>
           <div className="office-intro__copy">
-            <p>O escritório Pedro Bastos Lund une atendimento acessível e análise técnica para que você compreenda suas opções antes de tomar uma decisão.</p>
-            <p className="office-note"><ShieldCheck size={20} /> Cada atendimento é analisado de forma individual. As medidas possíveis dependem dos documentos e das circunstâncias do caso.</p>
+            <p>Uma conversa objetiva ajuda a organizar os fatos, os documentos e as possibilidades.</p>
+            <p className="office-note"><ShieldCheck size={20} /> Cada atendimento é analisado individualmente.</p>
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section className="office-highlights" id="destaque">
+      {isHome && <section className="office-highlights" id="destaque">
         <div className="office-shell">
           <div className="office-section-heading">
             <p className="office-kicker office-kicker--light">Áreas de destaque</p>
-            <h2>Um panorama rápido das frentes que mais procuram o escritório.</h2>
+            <h2>Conheça as frentes mais procuradas.</h2>
           </div>
           <div className="office-highlights__grid">
             <div className="office-highlights__art" aria-hidden="true">
@@ -375,14 +428,34 @@ export default function InstitutionalSite() {
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section className="office-areas" id="atuacao">
+      {isHome && (
+        <section className="office-home-directory" aria-labelledby="office-home-directory-title">
+          <div className="office-shell">
+            <div className="office-section-heading">
+              <p className="office-kicker">Explore o escritório</p>
+              <h2 id="office-home-directory-title">Escolha o assunto que você quer conhecer.</h2>
+            </div>
+            <div className="office-home-directory__grid">
+              {siteNavItems.map((item) => (
+                <a className="office-home-directory__item" key={item.key} href={item.path}>
+                  <span>{item.number}</span>
+                  <div><h3>{item.label}</h3><p>{item.description}</p></div>
+                  <ArrowRight size={18} aria-hidden="true" />
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {section === 'areas' && <section className="office-areas" id="atuacao">
         <div className="office-shell">
           <div className="office-section-heading">
             <p className="office-kicker">Áreas de atuação</p>
-            <h2>Orientação jurídica para decisões que merecem atenção.</h2>
-            <p>Conheça as principais frentes de atendimento do escritório e fale com a equipe sobre a sua situação.</p>
+            <h2>Orientação jurídica para o próximo passo.</h2>
+            <p>Escolha uma frente e veja o que vale organizar antes de conversar com a equipe.</p>
           </div>
           <div className="office-areas__grid">
             {areas.map(({ icon: Icon, title, text, href, modal }) => (
@@ -399,14 +472,14 @@ export default function InstitutionalSite() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section className="office-guides" id="conteudos">
+      {section === 'guides' && <section className="office-guides" id="conteudos">
         <div className="office-shell">
           <div className="office-section-heading">
             <p className="office-kicker">Conteúdos jurídicos</p>
-            <h2>Informação para decidir com mais segurança.</h2>
-            <p>Orientações objetivas sobre temas que aparecem no dia a dia de clientes, empresas e famílias.</p>
+            <h2>Informação para decidir melhor.</h2>
+            <p>Textos curtos para reconhecer riscos e fazer boas perguntas.</p>
           </div>
           <div className="office-guides__grid">
             {guides.map((guide) => (
@@ -422,14 +495,14 @@ export default function InstitutionalSite() {
           </div>
           <p className="office-guides__source">Conteúdo informativo. A análise jurídica depende das particularidades de cada caso.</p>
         </div>
-      </section>
+      </section>}
 
-      <section className="office-process" id="como-funciona">
+      {section === 'process' && <section className="office-process" id="como-funciona">
         <div className="office-shell office-process__grid">
           <div className="office-process__heading">
             <p className="office-kicker office-kicker--light">Como funciona</p>
             <h2>Um atendimento simples, direto e transparente.</h2>
-            <p>O primeiro contato acontece pelo WhatsApp. A partir dele, entendemos a demanda e indicamos os documentos necessários para a análise jurídica.</p>
+            <p>O primeiro contato acontece pelo WhatsApp e começa com o que você já consegue explicar.</p>
             <WhatsAppLink className="office-text-link" label="Iniciar conversa no WhatsApp">Iniciar conversa <ArrowRight size={17} /></WhatsAppLink>
           </div>
           <div className="office-process__steps">
@@ -442,9 +515,9 @@ export default function InstitutionalSite() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section className="office-team" id="equipe">
+      {section === 'team' && <section className="office-team" id="equipe">
         <div className="office-shell">
           <div className="office-section-heading office-section-heading--team">
             <p className="office-kicker">Nossa equipe</p>
@@ -461,9 +534,9 @@ export default function InstitutionalSite() {
             </article>
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section className="office-clients" id="clientes">
+      {isHome && <section className="office-clients" id="clientes">
         <div className="office-shell">
           <p className="office-clients__title">Clientes e Parceiros</p>
           <div className="office-clients__grid">
@@ -478,7 +551,7 @@ export default function InstitutionalSite() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       <section className="office-final-cta">
         <div className="office-shell office-final-cta__inner">

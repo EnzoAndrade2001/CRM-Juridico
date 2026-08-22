@@ -2,6 +2,8 @@
 .office-site {
   --office-navy: #070707;
   --office-navy-soft: #121212;
+  font-family: 'Source Sans 3', Arial, sans-serif !important;
+  letter-spacing: 0;
 }
 
 .office-hero::after {
@@ -281,5 +283,222 @@
   .office-modal__columns {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+}
+
+.office-site h1,
+.office-site h2,
+.office-site h3,
+.office-site p,
+.office-site a,
+.office-site button,
+.office-site span,
+.office-site small {
+  font-family: 'Source Sans 3', Arial, sans-serif !important;
+  letter-spacing: 0;
+}
+
+.office-site h1,
+.office-site h2,
+.office-site h3 {
+  font-weight: 600;
+}
+
+.office-hero h1 {
+  max-width: 590px;
+  font-size: clamp(46px, 5vw, 70px);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: 0;
+}
+
+.office-hero h1 span {
+  display: block;
+  color: var(--office-gold-light);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.office-brand strong,
+.office-hero__name span,
+.office-footer__brand strong {
+  font-weight: 600;
+}
+
+.office-page-hero {
+  display: flex;
+  min-height: 420px;
+  align-items: end;
+  padding: 150px 0 75px;
+  background: #070707;
+  color: #fff;
+}
+
+.office-page-hero__inner {
+  max-width: 860px;
+}
+
+.office-page-hero h1 {
+  max-width: 760px;
+  margin: 0 0 18px;
+  color: #fff;
+  font-size: clamp(46px, 6vw, 78px);
+  line-height: 1;
+}
+
+.office-page-hero__inner > p:last-child {
+  max-width: 540px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 19px;
+  line-height: 1.55;
+}
+
+.office-note {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.office-modal__note {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.office-home-directory {
+  border-block: 1px solid #e7e0d5;
+  padding: 92px 0;
+  background: #fff;
+}
+
+.office-home-directory__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.office-home-directory__item {
+  display: grid;
+  min-height: 220px;
+  grid-template-rows: auto 1fr auto;
+  gap: 18px;
+  border-top: 2px solid var(--office-gold);
+  padding: 20px 20px 23px;
+  background: #fbfaf7;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.office-home-directory__item:hover {
+  background: #f3eee6;
+  transform: translateY(-3px);
+}
+
+.office-home-directory__item > span {
+  color: #9a742e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.office-home-directory__item h3 {
+  margin: 0 0 9px;
+  color: var(--office-ink);
+  font-size: 23px;
+}
+
+.office-home-directory__item p {
+  margin: 0;
+  color: var(--office-copy);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.office-home-directory__item > svg {
+  color: #946f2b;
+}
+
+.office-highlights__grid {
+  grid-template-columns: 1fr;
+}
+
+.office-highlights__art {
+  display: none;
+}
+
+.office-highlights__body {
+  max-width: 860px;
+}
+
+.office-areas__grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.office-area-card {
+  grid-column: span 2;
+}
+
+.office-area-card:nth-child(4) {
+  grid-column: 2 / span 2;
+}
+
+.office-area-card:nth-child(5) {
+  grid-column: 4 / span 2;
+}
+
+.office-guides__grid {
+  gap: 18px;
+}
+
+.office-guides__source {
+  max-width: 540px;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .office-home-directory__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .office-areas__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .office-area-card,
+  .office-area-card:nth-child(4),
+  .office-area-card:nth-child(5) {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .office-page-hero {
+    min-height: 370px;
+    padding: 125px 0 55px;
+  }
+
+  .office-page-hero h1 {
+    font-size: 48px;
+  }
+
+  .office-page-hero__inner > p:last-child {
+    font-size: 17px;
+  }
+
+  .office-home-directory {
+    padding: 70px 0;
+  }
+
+  .office-home-directory__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .office-areas__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .office-area-card,
+  .office-area-card:nth-child(4),
+  .office-area-card:nth-child(5) {
+    grid-column: auto;
   }
 }
