@@ -18,6 +18,13 @@
  */
 const axios = require('axios');
 
+// A API pública do DataJud é cronicamente saturada (chave compartilhada
+// nacionalmente) — respostas de sucesso levando 10-40s são normais mesmo
+// consultando pelo alias específico do tribunal. Timeouts curtos (ex.: 15s)
+// estouram na maior parte das vezes sem indicar problema real de rede.
+// Ver .claude/skills/datajud/references/producao.md.
+const REQUEST_TIMEOUT_MS = 35000;
+
 // Ordem oficial dos códigos de tribunal (TR) da Justiça Estadual (segmento 8),
 // conforme a numeração padronizada pelo CNJ (Resolução nº 65/2008).
 const TJ_UF_ORDER = [
@@ -82,11 +89,23 @@ async function fetchProcess(caseNumber, alias) {
     { query: { match: { numeroProcesso: digits } }, size: 1 },
     {
       headers: { Authorization: `APIKey ${apiKey}`, 'Content-Type': 'application/json' },
-      timeout: 15000,
+      timeout: REQUEST_TIMEOUT_MS,
     },
   );
 
-  return data?.hits?.hits?.[0]?._source || null;
+  const source = data?.hits?.hits?.[0]?._source || null;
+  if (source) return source;
+
+  // Sob saturação o Elasticsearch responde 200 tendo consultado só parte dos
+  // shards (_shards.failed > 0). Se o processo estava num shard rejeitado,
+  // "total = 0" mesmo com o processo existindo — não é "não encontrado", é
+  // indisponibilidade parcial. Já aconteceu em produção reportar como
+  // inexistente um processo que tinha dezenas de movimentos.
+  if (data?._shards?.failed > 0) {
+    throw new Error('API do DataJud respondeu de forma parcial (indisponibilidade momentânea). Tente novamente em alguns minutos.');
+  }
+
+  return null;
 }
 
 /**
