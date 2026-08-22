@@ -291,7 +291,7 @@ export default function InstitutionalSite({ section = 'home' }) {
     const previousDescription = description.getAttribute('content');
     const fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
-    fontLink.href = 'https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
     document.head.appendChild(fontLink);
     document.title = pageDetails
       ? `${pageDetails.title} | Pedro Bastos Lund`
@@ -328,6 +328,20 @@ export default function InstitutionalSite({ section = 'home' }) {
   }, [activeModal]);
 
   const closeMenu = () => setMenuOpen(false);
+  const navigateWithTransition = (event, href) => {
+    if (
+      event.defaultPrevented
+      || event.button !== 0
+      || event.metaKey
+      || event.ctrlKey
+      || event.shiftKey
+      || event.altKey
+    ) return;
+
+    event.preventDefault();
+    document.documentElement.classList.add('office-page-is-leaving');
+    window.setTimeout(() => window.location.assign(href), 420);
+  };
   const openModal = (content, event) => {
     lastModalTriggerRef.current = event.currentTarget;
     setActiveModal(content);
@@ -335,8 +349,9 @@ export default function InstitutionalSite({ section = 'home' }) {
 
   return (
     <main className="office-site">
+      <div className="office-page-transition" aria-hidden="true" />
       <header className="office-header">
-        <a className="office-brand" href={siteRoutes.home} onClick={closeMenu} aria-label="Pedro Bastos Lund Advocacia — início">
+        <a className="office-brand" href={siteRoutes.home} onClick={(event) => { closeMenu(); navigateWithTransition(event, siteRoutes.home); }} aria-label="Pedro Bastos Lund Advocacia — início">
           <span className="office-brand__mark"><img src={logo} alt="" /></span>
           <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span>
         </a>
@@ -345,7 +360,7 @@ export default function InstitutionalSite({ section = 'home' }) {
         </button>
         <nav className={`office-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegação principal">
           {siteNavItems.map((item) => (
-            <a key={item.key} href={item.path} onClick={closeMenu}>{item.label}</a>
+            <a key={item.key} href={item.path} onClick={(event) => { closeMenu(); navigateWithTransition(event, item.path); }}>{item.label}</a>
           ))}
           <WhatsAppLink className="office-header__cta" label="Falar com o escritório pelo WhatsApp" >
             <MessageCircle size={17} /> Falar com a equipe
@@ -421,7 +436,7 @@ export default function InstitutionalSite({ section = 'home' }) {
                   </button>
                 ))}
               </div>
-              <div className="office-highlights__content">
+              <div className="office-highlights__content" key={activeHighlight}>
                 <h3>{highlights[activeHighlight].title}</h3>
                 <p>{highlights[activeHighlight].text}</p>
               </div>
@@ -439,7 +454,7 @@ export default function InstitutionalSite({ section = 'home' }) {
             </div>
             <div className="office-home-directory__grid">
               {siteNavItems.map((item) => (
-                <a className="office-home-directory__item" key={item.key} href={item.path}>
+                <a className="office-home-directory__item" key={item.key} href={item.path} onClick={(event) => navigateWithTransition(event, item.path)}>
                   <span>{item.number}</span>
                   <div><h3>{item.label}</h3><p>{item.description}</p></div>
                   <ArrowRight size={18} aria-hidden="true" />
@@ -462,7 +477,7 @@ export default function InstitutionalSite({ section = 'home' }) {
                 <span className="office-area-card__icon"><Icon size={23} /></span>
                 <h3>{title}</h3>
                 <p>{text}</p>
-                {href ? <a href={href}>Conhecer atendimento <ArrowRight size={16} /></a> : (
+                {href ? <a href={href} onClick={(event) => navigateWithTransition(event, href)}>Conhecer atendimento <ArrowRight size={16} /></a> : (
                   <button className="office-card-link" type="button" onClick={(event) => openModal(modal, event)}>
                     Ver orientação <ArrowRight size={16} />
                   </button>

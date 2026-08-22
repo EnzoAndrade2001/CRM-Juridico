@@ -2,8 +2,45 @@
 .office-site {
   --office-navy: #070707;
   --office-navy-soft: #121212;
-  font-family: 'Source Sans 3', Arial, sans-serif !important;
+  font-family: 'Inter', Arial, sans-serif !important;
   letter-spacing: 0;
+  animation: office-site-enter 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.office-page-transition {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  pointer-events: none;
+  background: #070707;
+  transform: translateY(100%);
+  will-change: transform;
+}
+
+html.office-page-is-leaving .office-page-transition {
+  animation: office-page-leave 0.42s cubic-bezier(0.77, 0, 0.18, 1) both;
+}
+
+@keyframes office-site-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes office-page-leave {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 .office-hero::after {
@@ -294,7 +331,7 @@
 .office-site button,
 .office-site span,
 .office-site small {
-  font-family: 'Source Sans 3', Arial, sans-serif !important;
+  font-family: 'Inter', Arial, sans-serif !important;
   letter-spacing: 0;
 }
 
@@ -432,7 +469,7 @@
 
 .office-highlights__tab-mark {
   color: currentColor;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'Inter', Arial, sans-serif;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -440,7 +477,7 @@
 
 .office-highlights__art > span {
   color: var(--office-gold-light);
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'Inter', Arial, sans-serif;
   font-size: 72px;
   font-weight: 400;
   letter-spacing: 0.04em;
@@ -448,6 +485,30 @@
 
 .office-highlights__body {
   max-width: 860px;
+}
+
+.office-highlights__content {
+  animation: office-highlight-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes office-highlight-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .office-site,
+  .office-page-transition,
+  .office-highlights__content {
+    animation: none !important;
+  }
 }
 
 .office-areas__grid {
