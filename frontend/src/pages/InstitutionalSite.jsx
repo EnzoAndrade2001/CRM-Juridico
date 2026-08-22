@@ -11,6 +11,7 @@ import {
   MessageCircle,
   Scale,
   ShieldCheck,
+  Stamp,
   X,
 } from 'lucide-react';
 import portrait from '../assets/pedro-bastos-lund-hero-hq.png';
@@ -139,6 +140,39 @@ const guides = [
   },
 ];
 
+const highlights = [
+  {
+    icon: Scale,
+    label: 'Direito Civil',
+    title: 'Direito Civil',
+    text: 'Contratos, responsabilidade civil e obrigações analisados com atenção às particularidades de cada caso.',
+  },
+  {
+    icon: BriefcaseBusiness,
+    label: 'Direito Empresarial',
+    title: 'Direito Empresarial',
+    text: 'Orientação societária, contratos comerciais e prevenção de riscos na rotina do seu negócio.',
+  },
+  {
+    icon: Landmark,
+    label: 'Direito do Consumidor',
+    title: 'Direito do Consumidor',
+    text: 'Defesa de direitos em relações de consumo diante de práticas abusivas ou cobranças indevidas.',
+  },
+  {
+    icon: Banknote,
+    label: 'Direito Bancário',
+    title: 'Direito Bancário',
+    text: 'Análise de juros, tarifas, seguros e demais encargos em contratos bancários e financeiros.',
+  },
+  {
+    icon: Stamp,
+    label: 'Registro de Marcas',
+    title: 'Registro de Marcas',
+    text: 'Proteção da identidade e dos ativos intangíveis da empresa junto ao INPI.',
+  },
+];
+
 function WhatsAppLink({ children, className = '', label }) {
   return (
     <a className={`office-button-link ${className}`} href={whatsappUrl} target="_blank" rel="noreferrer" aria-label={label}>
@@ -191,6 +225,7 @@ function ContentModal({ content, closeButtonRef, onClose }) {
 export default function InstitutionalSite() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
+  const [activeHighlight, setActiveHighlight] = useState(0);
   const modalCloseButtonRef = useRef(null);
   const lastModalTriggerRef = useRef(null);
 
@@ -265,7 +300,6 @@ export default function InstitutionalSite() {
       <section className="office-hero" id="inicio" style={{ '--office-hero-image': `url(${portrait})` }}>
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
-            <p className="office-eyebrow"><span /> Advocacia e consultoria jurídica</p>
             <h1>Clareza para decidir. <em>Segurança para agir.</em></h1>
             <p className="office-hero__lead">
               Atendimento jurídico próximo, com análise criteriosa dos documentos e orientação objetiva para cada situação.
@@ -292,6 +326,40 @@ export default function InstitutionalSite() {
           <div className="office-intro__copy">
             <p>O escritório Pedro Bastos Lund une atendimento acessível e análise técnica para que você compreenda suas opções antes de tomar uma decisão.</p>
             <p className="office-note"><ShieldCheck size={20} /> Cada atendimento é analisado de forma individual. As medidas possíveis dependem dos documentos e das circunstâncias do caso.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="office-highlights" id="destaque">
+        <div className="office-shell">
+          <div className="office-section-heading">
+            <p className="office-kicker office-kicker--light">Áreas de destaque</p>
+            <h2>Um panorama rápido das frentes que mais procuram o escritório.</h2>
+          </div>
+          <div className="office-highlights__grid">
+            <div className="office-highlights__art" aria-hidden="true">
+              <Scale size={96} />
+            </div>
+            <div className="office-highlights__body">
+              <div className="office-highlights__tabs" role="tablist" aria-label="Áreas de destaque">
+                {highlights.map((item, index) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeHighlight === index}
+                    className={`office-highlights__tab ${activeHighlight === index ? 'is-active' : ''}`}
+                    onClick={() => setActiveHighlight(index)}
+                  >
+                    <item.icon size={16} /> {item.label}
+                  </button>
+                ))}
+              </div>
+              <div className="office-highlights__content">
+                <h3>{highlights[activeHighlight].title}</h3>
+                <p>{highlights[activeHighlight].text}</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>

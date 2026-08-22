@@ -175,7 +175,7 @@
 .office-modal__intro {
   margin: 0 0 30px;
   color: var(--office-copy);
-  font-family: Georgia, Times New Roman, serif;
+  font-family: "Fraunces", Georgia, "Times New Roman", serif;
   font-size: 18px;
   line-height: 1.65;
 }
