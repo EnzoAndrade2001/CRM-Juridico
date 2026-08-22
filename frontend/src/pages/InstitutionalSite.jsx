@@ -357,9 +357,9 @@ export default function InstitutionalSite({ section = 'home' }) {
       <section className="office-hero" id="inicio" style={{ '--office-hero-image': `url(${portrait})` }}>
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
-            <h1>Clareza para decidir. <span>Segurança para agir.</span></h1>
+            <h1>Quando o que está em jogo importa. <span>Estratégia faz diferença.</span></h1>
             <p className="office-hero__lead">
-              Orientação jurídica clara para o próximo passo.
+              Análise cuidadosa e orientação objetiva para decisões importantes.
             </p>
             <WhatsAppLink className="office-button office-button--gold" label="Iniciar atendimento com o escritório">
               Iniciar atendimento <ArrowRight size={18} />
