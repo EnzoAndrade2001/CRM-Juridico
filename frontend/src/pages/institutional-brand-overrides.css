@@ -38,3 +38,248 @@
     );
   }
 }
+
+.office-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #946f2b;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.office-card-link:hover,
+.office-card-link:focus-visible {
+  color: var(--office-navy);
+}
+
+.office-card-link:focus-visible,
+.office-modal__close:focus-visible,
+.office-modal .office-button:focus-visible {
+  outline: 3px solid rgba(189, 147, 69, 0.55);
+  outline-offset: 4px;
+}
+
+.office-guides {
+  border-bottom: 1px solid #e7e0d5;
+  padding: 96px 0 82px;
+  background: #fff;
+}
+
+.office-guides__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.office-guide-card {
+  display: flex;
+  min-height: 280px;
+  flex-direction: column;
+  align-items: flex-start;
+  border: 1px solid #e2ddd3;
+  padding: 27px;
+  background: #fbfaf7;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.office-guide-card:hover {
+  border-color: rgba(189, 147, 69, 0.65);
+  box-shadow: 0 15px 35px rgba(21, 34, 54, 0.08);
+  transform: translateY(-3px);
+}
+
+.office-guide-card__category {
+  margin: 0 0 18px;
+  color: #9a742e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.office-guide-card h3 {
+  margin: 0 0 13px;
+  color: var(--office-ink);
+  font-size: 25px;
+  line-height: 1.18;
+}
+
+.office-guide-card > p:not(.office-guide-card__category) {
+  margin: 0 0 22px;
+  color: var(--office-copy);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.office-guides__source {
+  margin: 27px 0 0;
+  color: #798393;
+  font-size: 12px;
+}
+
+.office-modal {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(7, 9, 13, 0.76);
+}
+
+.office-modal__dialog {
+  position: relative;
+  width: min(700px, 100%);
+  max-height: min(720px, calc(100vh - 48px));
+  overflow: auto;
+  border: 1px solid rgba(189, 147, 69, 0.4);
+  padding: 42px 44px 44px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.3);
+}
+
+.office-modal__close {
+  position: absolute;
+  top: 17px;
+  right: 17px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid #ded8cf;
+  background: #fff;
+  color: var(--office-ink);
+  cursor: pointer;
+}
+
+.office-modal .office-kicker {
+  margin-bottom: 16px;
+}
+
+.office-modal h2 {
+  max-width: 580px;
+  margin: 0 52px 18px 0;
+  color: var(--office-ink);
+  font-size: clamp(32px, 4vw, 46px);
+  line-height: 1.12;
+}
+
+.office-modal__intro {
+  margin: 0 0 30px;
+  color: var(--office-copy);
+  font-family: Georgia, Times New Roman, serif;
+  font-size: 18px;
+  line-height: 1.65;
+}
+
+.office-modal__columns {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 25px;
+  border-top: 1px solid #e6e0d8;
+  padding-top: 25px;
+}
+
+.office-modal__columns h3 {
+  margin: 0 0 12px;
+  color: var(--office-ink);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.office-modal__columns ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 19px;
+  color: var(--office-copy);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.office-modal__columns li::marker {
+  color: var(--office-gold);
+}
+
+.office-modal__columns p {
+  margin: 0;
+  color: var(--office-copy);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.office-modal__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 28px 0;
+  border-left: 2px solid var(--office-gold);
+  padding: 12px 15px;
+  background: #f6f3ed;
+  color: #4b5665;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.office-modal__note svg {
+  flex: 0 0 auto;
+  color: var(--office-gold);
+}
+
+@media (max-width: 900px) {
+  .office-guides__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .office-guides {
+    padding: 70px 0;
+  }
+
+  .office-guides__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .office-guide-card {
+    min-height: 235px;
+  }
+
+  .office-modal {
+    align-items: end;
+    padding: 0;
+  }
+
+  .office-modal__dialog {
+    max-height: 88vh;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    padding: 37px 22px 28px;
+  }
+
+  .office-modal h2 {
+    margin-right: 44px;
+    font-size: 35px;
+  }
+
+  .office-modal__intro {
+    font-size: 16px;
+  }
+
+  .office-modal__columns {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
