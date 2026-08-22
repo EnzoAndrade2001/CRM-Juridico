@@ -53,6 +53,11 @@ jobs:
           cp frontend/dist/index.html frontend/dist/demo-juridico/index.html
           mkdir -p frontend/dist/revisional-bancario
           cp frontend/dist/index.html frontend/dist/revisional-bancario/index.html
+          mkdir -p frontend/dist/atuacao frontend/dist/como-funciona frontend/dist/conteudos frontend/dist/equipe
+          cp frontend/dist/index.html frontend/dist/atuacao/index.html
+          cp frontend/dist/index.html frontend/dist/como-funciona/index.html
+          cp frontend/dist/index.html frontend/dist/conteudos/index.html
+          cp frontend/dist/index.html frontend/dist/equipe/index.html
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
