@@ -4,7 +4,7 @@
   "description": "Advocacia e consultoria juridica com analise responsavel e acompanhamento proximo em cada etapa.",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#050505",
+  "background_color": "#0d1b2a",
   "theme_color": "#D4AF37",
   "icons": [
     {

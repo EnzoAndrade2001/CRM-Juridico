@@ -1,6 +1,6 @@
 .trademark-page {
-  --trademark-navy: #07182c;
-  --trademark-navy-soft: #0e2946;
+  --trademark-navy: #0d1b2a;
+  --trademark-navy-soft: #152232;
   --trademark-gold: #bd9345;
   --trademark-gold-light: #d6b66e;
   --trademark-cream: #f6f3ed;
@@ -49,7 +49,7 @@
 
 .trademark-hero { position: relative; display: flex; min-height: 760px; align-items: center; background: var(--trademark-navy); color: #fff; isolation: isolate; }
 .trademark-hero::before { position: absolute; z-index: -2; top: 0; right: 0; bottom: 0; width: 54%; background-image: var(--trademark-hero-image); background-position: center 16%; background-size: cover; content: ""; }
-.trademark-hero::after { position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, #07182c 0%, #07182c 43%, rgba(7,24,44,.8) 57%, rgba(7,24,44,.12) 100%); content: ""; }
+.trademark-hero::after { position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, #0d1b2a 0%, #0d1b2a 43%, rgba(13,27,42,.8) 57%, rgba(13,27,42,.12) 100%); content: ""; }
 .trademark-hero__inner { position: relative; display: flex; min-height: 760px; align-items: center; }
 .trademark-hero__copy { width: min(610px, 55%); padding-top: 84px; }
 .trademark-eyebrow, .trademark-kicker { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; color: #9a742e; font-size: 11px; font-weight: 800; letter-spacing: .19em; text-transform: uppercase; }
@@ -181,7 +181,7 @@
 @media (max-width: 980px) {
   .trademark-nav { display: none; }
   .trademark-hero::before { width: 62%; }
-  .trademark-hero::after { background: linear-gradient(90deg, #07182c 0%, #07182c 47%, rgba(7,24,44,.76) 70%, rgba(7,24,44,.23) 100%); }
+  .trademark-hero::after { background: linear-gradient(90deg, #0d1b2a 0%, #0d1b2a 47%, rgba(13,27,42,.76) 70%, rgba(13,27,42,.23) 100%); }
   .trademark-hero__copy { width: 64%; }
   .trademark-intro__grid, .trademark-process__grid, .trademark-about__grid { gap: 55px; }
   .trademark-calculator__grid { gap: 55px; }
@@ -204,7 +204,7 @@
   .trademark-header__cta svg { width: 19px; }
   .trademark-hero, .trademark-hero__inner { min-height: 720px; }
   .trademark-hero::before { width: 100%; background-position: 58% 14%; }
-  .trademark-hero::after { background: linear-gradient(90deg, rgba(7,24,44,.97) 0%, rgba(7,24,44,.84) 53%, rgba(7,24,44,.45) 100%), linear-gradient(0deg, #07182c 0%, transparent 38%); }
+  .trademark-hero::after { background: linear-gradient(90deg, rgba(13,27,42,.97) 0%, rgba(13,27,42,.84) 53%, rgba(13,27,42,.45) 100%), linear-gradient(0deg, #0d1b2a 0%, transparent 38%); }
   .trademark-hero__copy { width: 100%; min-width: 0; padding-top: 72px; }
   .trademark-hero__copy > * { max-width: calc(100vw - 32px); }
   .trademark-hero h1 { max-width: 530px; font-size: clamp(38px, 9.5vw, 50px); }

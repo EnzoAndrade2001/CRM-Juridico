@@ -1,7 +1,7 @@
 /* Identidade institucional: azul profundo, dourado discreto e leitura editorial. */
 .office-site {
-  --office-navy: #07182c;
-  --office-navy-soft: #0e2946;
+  --office-navy: #0d1b2a;
+  --office-navy-soft: #152232;
   font-family: 'Inter', Arial, sans-serif !important;
   letter-spacing: 0;
   animation: office-site-enter 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -46,10 +46,10 @@ html.office-page-is-leaving .office-page-transition {
 .office-hero::after {
   background: linear-gradient(
     90deg,
-    #07182c 0%,
-    #07182c 43%,
-    rgba(7, 24, 44, 0.84) 57%,
-    rgba(7, 24, 44, 0.18) 100%
+    #0d1b2a 0%,
+    #0d1b2a 43%,
+    rgba(13, 27, 42, 0.84) 57%,
+    rgba(13, 27, 42, 0.18) 100%
   );
 }
 
@@ -58,16 +58,16 @@ html.office-page-is-leaving .office-page-transition {
 }
 
 .office-footer {
-  background: #071321;
+  background: #0a1724;
 }
 
 .office-clients {
-  background: #071321;
+  background: #0a1724;
 }
 
 @media (max-width: 900px) {
   .office-nav {
-    background: rgba(7, 24, 44, 0.98);
+    background: rgba(13, 27, 42, 0.98);
   }
 }
 
@@ -75,9 +75,9 @@ html.office-page-is-leaving .office-page-transition {
   .office-hero::after {
     background: linear-gradient(
       180deg,
-      rgba(7, 24, 44, 0.35) 0%,
-      #07182c 54%,
-      #07182c 100%
+      rgba(13, 27, 42, 0.35) 0%,
+      #0d1b2a 54%,
+      #0d1b2a 100%
     );
   }
 }
