@@ -1514,3 +1514,95 @@ html.office-page-is-leaving .office-page-transition {
     align-self: flex-start;
   }
 }
+
+/* Hero em duas colunas para manter texto e retrato independentes. */
+.office-hero__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  gap: 56px;
+  width: min(100% - 48px, 1440px);
+  min-height: 760px;
+  align-items: stretch;
+  padding-top: 0;
+}
+
+.office-hero__copy {
+  width: 100%;
+  max-width: 690px;
+  margin-left: 0;
+  align-self: center;
+}
+
+.office-hero h1 {
+  max-width: 100%;
+  font-size: clamp(30px, 2.2vw, 32px);
+  line-height: 1.08;
+  text-align: left;
+  text-wrap: nowrap;
+}
+
+.office-hero__portrait {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: auto;
+  min-height: 760px;
+  align-self: stretch;
+}
+
+@media (max-width: 900px) {
+  .office-hero,
+  .office-hero__inner {
+    min-height: 680px;
+  }
+
+  .office-hero__inner {
+    grid-template-columns: minmax(0, 1.06fr) minmax(230px, 0.94fr);
+    gap: 28px;
+  }
+
+  .office-hero h1 {
+    font-size: 34px;
+    text-wrap: balance;
+  }
+
+  .office-hero__portrait {
+    min-height: 680px;
+  }
+}
+
+@media (max-width: 640px) {
+  .office-hero,
+  .office-hero__inner {
+    min-height: 720px;
+  }
+
+  .office-hero__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-top: 118px;
+  }
+
+  .office-hero__copy {
+    max-width: 430px;
+    align-self: flex-start;
+  }
+
+  .office-hero h1 {
+    max-width: 430px;
+    font-size: 34px;
+    text-wrap: balance;
+  }
+
+  .office-hero__title-break {
+    display: none;
+  }
+
+  .office-hero__portrait {
+    width: min(100%, 420px);
+    height: 380px;
+    min-height: 380px;
+    align-self: flex-end;
+  }
+}
