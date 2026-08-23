@@ -1,0 +1,181 @@
+backend:
+  name: github
+  repo: EnzoAndrade2001/CRM-Juridico
+  branch: main
+  base_url: https://crm-juriditico-crm-juridico-api.kna79u.easypanel.host
+  auth_endpoint: api/cms-auth/auth
+
+# GitHub Pages publica o build automaticamente a cada push no main — não há
+# ambiente de "preview" separado, então o editorial workflow fica desligado
+# (salvar já commita direto no main).
+publish_mode: simple
+
+media_folder: "frontend/src/assets/cms-uploads"
+public_folder: "/CRM-Juridico/assets/cms-uploads"
+
+collections:
+  - name: "registro_marca"
+    label: "Landing: Registro de Marca"
+    files:
+      - name: "conteudo"
+        label: "Conteúdo da página"
+        file: "frontend/src/content/registro-de-marca.json"
+        fields:
+          - { label: "Título da aba do navegador", name: "meta.title", widget: "string" }
+          - { label: "Descrição (SEO)", name: "meta.description", widget: "text" }
+          - label: "Hero (topo da página)"
+            name: "hero"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena acima do título", name: "eyebrow", widget: "string" }
+              - { label: "Início do título", name: "titleStart", widget: "string" }
+              - { label: "Fim do título (destacado em dourado)", name: "titleEmphasis", widget: "string" }
+              - { label: "Texto de apoio", name: "lead", widget: "text" }
+              - { label: "Texto do botão principal", name: "ctaLabel", widget: "string" }
+              - { label: "Selos de confiança (3 itens curtos)", name: "assurances", widget: "list" }
+          - label: "Introdução"
+            name: "intro"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena", name: "kicker", widget: "string" }
+              - { label: "Título", name: "title", widget: "string" }
+              - { label: "Texto", name: "text", widget: "text" }
+              - { label: "Aviso (caixa com borda dourada)", name: "note", widget: "text" }
+          - label: "Cards — o que está incluído"
+            name: "review"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena", name: "kicker", widget: "string" }
+              - { label: "Título da seção", name: "title", widget: "string" }
+              - label: "Cards"
+                name: "items"
+                widget: "list"
+                fields:
+                  - { label: "Ícone", name: "icon", widget: "select", options: ["Search", "Stamp", "ShieldCheck", "FileText"] }
+                  - { label: "Título do card", name: "title", widget: "string" }
+                  - { label: "Texto do card", name: "text", widget: "text" }
+          - label: "Como funciona"
+            name: "process"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena", name: "kicker", widget: "string" }
+              - { label: "Título", name: "title", widget: "string" }
+              - { label: "Texto", name: "text", widget: "text" }
+              - { label: "Texto do link", name: "ctaLabel", widget: "string" }
+              - label: "Passos"
+                name: "steps"
+                widget: "list"
+                fields:
+                  - { label: "Número", name: "number", widget: "string" }
+                  - { label: "Título do passo", name: "title", widget: "string" }
+                  - { label: "Texto do passo", name: "text", widget: "text" }
+          - label: "Sobre o advogado"
+            name: "about"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena", name: "kicker", widget: "string" }
+              - { label: "Cargo/atuação", name: "role", widget: "string" }
+              - { label: "Texto", name: "text", widget: "text" }
+              - { label: "Frase em destaque (aspas)", name: "quote", widget: "text" }
+              - { label: "Texto do botão", name: "ctaLabel", widget: "string" }
+          - label: "Chamada final"
+            name: "finalCta"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena", name: "kicker", widget: "string" }
+              - { label: "Título", name: "title", widget: "string" }
+              - { label: "Texto", name: "text", widget: "text" }
+              - { label: "Texto do botão", name: "ctaLabel", widget: "string" }
+          - label: "Rodapé"
+            name: "footer"
+            widget: "object"
+            fields:
+              - { label: "Aviso legal", name: "note", widget: "text" }
+          - label: "Mensagem padrão do WhatsApp"
+            name: "whatsapp"
+            widget: "object"
+            fields:
+              - { label: "Mensagem inicial", name: "message", widget: "text" }
+
+  - name: "autismo"
+    label: "Landing: Direitos da Pessoa Autista"
+    files:
+      - name: "conteudo"
+        label: "Conteúdo da página"
+        file: "frontend/src/content/autismo.json"
+        fields:
+          - { label: "Título da aba do navegador", name: "meta.title", widget: "string" }
+          - { label: "Descrição (SEO)", name: "meta.description", widget: "text" }
+          - label: "Hero (topo da página)"
+            name: "hero"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena acima do título", name: "eyebrow", widget: "string" }
+              - { label: "Início do título", name: "titleStart", widget: "string" }
+              - { label: "Fim do título (destacado em dourado)", name: "titleEmphasis", widget: "string" }
+              - { label: "Texto de apoio", name: "lead", widget: "text" }
+              - { label: "Texto do botão principal", name: "ctaLabel", widget: "string" }
+              - { label: "Selos de confiança (3 itens curtos)", name: "assurances", widget: "list" }
+          - label: "Introdução"
+            name: "intro"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena", name: "kicker", widget: "string" }
+              - { label: "Título", name: "title", widget: "string" }
+              - { label: "Texto", name: "text", widget: "text" }
+              - { label: "Aviso (caixa com borda dourada)", name: "note", widget: "text" }
+          - label: "Cards — onde podemos ajudar"
+            name: "review"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena", name: "kicker", widget: "string" }
+              - { label: "Título da seção", name: "title", widget: "string" }
+              - label: "Cards"
+                name: "items"
+                widget: "list"
+                fields:
+                  - { label: "Ícone", name: "icon", widget: "select", options: ["HeartHandshake", "Landmark", "GraduationCap", "Scale"] }
+                  - { label: "Título do card", name: "title", widget: "string" }
+                  - { label: "Texto do card", name: "text", widget: "text" }
+          - label: "Como funciona"
+            name: "process"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena", name: "kicker", widget: "string" }
+              - { label: "Título", name: "title", widget: "string" }
+              - { label: "Texto", name: "text", widget: "text" }
+              - { label: "Texto do link", name: "ctaLabel", widget: "string" }
+              - label: "Passos"
+                name: "steps"
+                widget: "list"
+                fields:
+                  - { label: "Número", name: "number", widget: "string" }
+                  - { label: "Título do passo", name: "title", widget: "string" }
+                  - { label: "Texto do passo", name: "text", widget: "text" }
+          - label: "Sobre o advogado"
+            name: "about"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena", name: "kicker", widget: "string" }
+              - { label: "Cargo/atuação", name: "role", widget: "string" }
+              - { label: "Texto", name: "text", widget: "text" }
+              - { label: "Frase em destaque (aspas)", name: "quote", widget: "text" }
+              - { label: "Texto do botão", name: "ctaLabel", widget: "string" }
+          - label: "Chamada final"
+            name: "finalCta"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena", name: "kicker", widget: "string" }
+              - { label: "Título", name: "title", widget: "string" }
+              - { label: "Texto", name: "text", widget: "text" }
+              - { label: "Texto do botão", name: "ctaLabel", widget: "string" }
+          - label: "Rodapé"
+            name: "footer"
+            widget: "object"
+            fields:
+              - { label: "Aviso legal", name: "note", widget: "text" }
+          - label: "Mensagem padrão do WhatsApp"
+            name: "whatsapp"
+            widget: "object"
+            fields:
+              - { label: "Mensagem inicial", name: "message", widget: "text" }

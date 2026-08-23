@@ -12,42 +12,15 @@ import {
 import portrait from '../assets/pedro-bastos-lund-hero-hq.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
+import content from '../content/registro-de-marca.json';
 import './trademark-landing.css';
 
-const whatsappMessage = 'Olá, vim pela página de Registro de Marca e gostaria de falar sobre o registro da minha marca.';
-// Número oficial da instância LUND/PBL. Todos os CTAs da landing usam o
-// mesmo destino para que o cliente caia diretamente na triagem da IA.
+// Mapa de nomes de ícone (guardados como texto no content JSON, editável
+// pelo CMS) para os componentes reais do lucide-react.
+const ICONS = { Search, Stamp, ShieldCheck, FileText };
+
 const whatsappNumber = '555193665581';
-const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
-
-const reviewItems = [
-  {
-    icon: Search,
-    title: 'Busca de viabilidade',
-    text: 'Verificação prévia de marcas iguais ou semelhantes já registradas ou em pedido no INPI.',
-  },
-  {
-    icon: Stamp,
-    title: 'Registro no INPI',
-    text: 'Condução completa do pedido de registro, da classificação de Nice ao acompanhamento das publicações.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Monitoramento e defesa',
-    text: 'Acompanhamento de oposições, impugnações e tentativas de registro de marcas conflitantes.',
-  },
-  {
-    icon: FileText,
-    title: 'Contratos e licenciamento',
-    text: 'Cessão, licenciamento de uso e demais contratos relacionados à marca já registrada.',
-  },
-];
-
-const steps = [
-  ['01', 'Conte sobre sua marca', 'Envie o nome, o segmento de atuação e, se tiver, a logomarca pelo WhatsApp.'],
-  ['02', 'Receba a busca de viabilidade', 'Verificamos se há conflito com marcas já registradas antes de seguir com o pedido.'],
-  ['03', 'Acompanhe o registro', 'Conduzimos o processo junto ao INPI e mantemos você informado em cada etapa.'],
-];
+const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(content.whatsapp.message)}`;
 
 function WhatsAppLink({ children, className = '', label }) {
   return (
@@ -84,11 +57,8 @@ export default function TrademarkLanding() {
     }
     const previousDescription = description?.getAttribute('content');
 
-    document.title = 'Registro de Marca | Pedro Bastos Lund Advocacia';
-    description?.setAttribute(
-      'content',
-      'Registro de marca no INPI com análise de viabilidade, acompanhamento do processo e defesa em oposições. Atendimento direto com Pedro Bastos Lund Advocacia.',
-    );
+    document.title = content.meta.title;
+    description?.setAttribute('content', content.meta.description);
 
     return () => {
       document.title = previousTitle;
@@ -121,21 +91,17 @@ export default function TrademarkLanding() {
       >
         <div className="trademark-shell trademark-hero__inner">
           <div className="trademark-hero__copy">
-            <p className="trademark-eyebrow"><span /> Sua marca ainda não está registrada?</p>
+            <p className="trademark-eyebrow"><span /> {content.hero.eyebrow}</p>
             <h1>
-              <span>Registre sua marca</span>{' '}
-              <em><span>antes que outra</span>{' '}<span>pessoa registre.</span></em>
+              <span>{content.hero.titleStart}</span>{' '}
+              <em><span>{content.hero.titleEmphasis}</span></em>
             </h1>
-            <p className="trademark-hero__lead">
-              Uma marca não registrada pode ser usada — e registrada — por outra empresa a qualquer momento. A análise de viabilidade e o registro no INPI protegem o nome, a identidade e o investimento feitos no seu negócio.
-            </p>
+            <p className="trademark-hero__lead">{content.hero.lead}</p>
             <WhatsAppLink className="trademark-button trademark-button--gold">
-              REGISTRAR MINHA MARCA <ArrowRight size={19} />
+              {content.hero.ctaLabel} <ArrowRight size={19} />
             </WhatsAppLink>
             <div className="trademark-hero__assurances" aria-label="Características do atendimento">
-              <span><Check size={15} /> Busca de viabilidade</span>
-              <span><Check size={15} /> Acompanhamento no INPI</span>
-              <span><Check size={15} /> Orientação clara</span>
+              {content.hero.assurances.map((item) => <span key={item}><Check size={15} /> {item}</span>)}
             </div>
           </div>
           <p className="trademark-hero__name"><span>Pedro Bastos Lund</span> Advogado</p>
@@ -145,14 +111,12 @@ export default function TrademarkLanding() {
       <section className="trademark-intro" id="marca">
         <div className="trademark-shell trademark-intro__grid">
           <div>
-            <p className="trademark-kicker">Proteja antes de expandir</p>
-            <h2>Investiu em uma marca sem registrá-la? Isso pode custar caro mais tarde.</h2>
+            <p className="trademark-kicker">{content.intro.kicker}</p>
+            <h2>{content.intro.title}</h2>
           </div>
           <div className="trademark-intro__text">
-            <p>
-              Sem o registro no INPI, qualquer pessoa pode contestar o uso da sua marca, registrá-la primeiro ou até exigir que você deixe de usá-la — mesmo que tenha sido você quem a criou. O registro garante exclusividade de uso em todo o território nacional.
-            </p>
-            <p className="trademark-note"><ShieldCheck size={20} /> A viabilidade do registro depende de uma busca prévia. Cada caso é analisado individualmente antes do pedido ser protocolado.</p>
+            <p>{content.intro.text}</p>
+            <p className="trademark-note"><ShieldCheck size={20} /> {content.intro.note}</p>
           </div>
         </div>
       </section>
@@ -160,18 +124,21 @@ export default function TrademarkLanding() {
       <section className="trademark-review">
         <div className="trademark-shell">
           <div className="trademark-section-heading">
-            <p className="trademark-kicker">O que está incluído</p>
-            <h2>Do primeiro nome pensado até a marca protegida.</h2>
+            <p className="trademark-kicker">{content.review.kicker}</p>
+            <h2>{content.review.title}</h2>
           </div>
           <div className="trademark-review__cards">
-            {reviewItems.map(({ icon: Icon, title, text }, index) => (
-              <article className="trademark-review-card" key={title}>
-                <span className="trademark-review-card__number">0{index + 1}</span>
-                <span className="trademark-review-card__icon"><Icon size={25} /></span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </article>
-            ))}
+            {content.review.items.map(({ icon, title, text }, index) => {
+              const Icon = ICONS[icon] || ShieldCheck;
+              return (
+                <article className="trademark-review-card" key={title}>
+                  <span className="trademark-review-card__number">0{index + 1}</span>
+                  <span className="trademark-review-card__icon"><Icon size={25} /></span>
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -179,15 +146,15 @@ export default function TrademarkLanding() {
       <section className="trademark-process" id="como-funciona">
         <div className="trademark-shell trademark-process__grid">
           <div className="trademark-process__heading">
-            <p className="trademark-kicker trademark-kicker--light">Como funciona</p>
-            <h2>Um atendimento simples, direto e transparente.</h2>
-            <p>O atendimento inicial é realizado pelo WhatsApp. Após entender o segmento e o nome pretendido, orientamos sobre a busca de viabilidade e os próximos passos do registro.</p>
+            <p className="trademark-kicker trademark-kicker--light">{content.process.kicker}</p>
+            <h2>{content.process.title}</h2>
+            <p>{content.process.text}</p>
             <WhatsAppLink className="trademark-text-link">
-              Iniciar atendimento <ArrowRight size={18} />
+              {content.process.ctaLabel} <ArrowRight size={18} />
             </WhatsAppLink>
           </div>
           <div className="trademark-steps">
-            {steps.map(([number, title, text]) => (
+            {content.process.steps.map(({ number, title, text }) => (
               <article className="trademark-step" key={number}>
                 <span>{number}</span>
                 <div><h3>{title}</h3><p>{text}</p></div>
@@ -207,15 +174,13 @@ export default function TrademarkLanding() {
             </div>
           </div>
           <div className="trademark-about__copy">
-            <p className="trademark-kicker">Atendimento jurídico</p>
+            <p className="trademark-kicker">{content.about.kicker}</p>
             <h2>Pedro Bastos Lund</h2>
-            <p className="trademark-about__role">Advocacia e Consultoria Jurídica</p>
-            <p>
-              Atuação dedicada a empreendedores e empresas que precisam proteger o nome e a identidade do seu negócio, com análise responsável, comunicação acessível e acompanhamento próximo em cada etapa do registro.
-            </p>
-            <blockquote>“Uma marca registrada é um ativo do negócio. Protegê-la é parte da estratégia, não um detalhe burocrático.”</blockquote>
+            <p className="trademark-about__role">{content.about.role}</p>
+            <p>{content.about.text}</p>
+            <blockquote>“{content.about.quote}”</blockquote>
             <WhatsAppLink className="trademark-button trademark-button--navy">
-              Conversar com o escritório <MessageCircle size={19} />
+              {content.about.ctaLabel} <MessageCircle size={19} />
             </WhatsAppLink>
           </div>
         </div>
@@ -225,12 +190,12 @@ export default function TrademarkLanding() {
         <div className="trademark-shell trademark-final-cta__inner">
           <span className="trademark-final-cta__icon"><Scale size={30} /></span>
           <div>
-            <p className="trademark-kicker trademark-kicker--light">Fale com o escritório</p>
-            <h2>Não deixe sua marca vulnerável.</h2>
-            <p>Envie o nome da sua marca e solicite uma busca de viabilidade inicial.</p>
+            <p className="trademark-kicker trademark-kicker--light">{content.finalCta.kicker}</p>
+            <h2>{content.finalCta.title}</h2>
+            <p>{content.finalCta.text}</p>
           </div>
           <WhatsAppLink className="trademark-button trademark-button--gold">
-            Quero registrar <ArrowRight size={19} />
+            {content.finalCta.ctaLabel} <ArrowRight size={19} />
           </WhatsAppLink>
         </div>
       </section>
@@ -241,7 +206,7 @@ export default function TrademarkLanding() {
             <span className="trademark-footer__mark"><img src={logo} alt="" /></span>
             <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span>
           </div>
-          <p>Conteúdo informativo. A viabilidade do registro e os prazos possíveis dependem das particularidades de cada marca e segmento.</p>
+          <p>{content.footer.note}</p>
           <span>© {new Date().getFullYear()} Pedro Bastos Lund</span>
         </div>
       </footer>

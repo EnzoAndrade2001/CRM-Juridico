@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "title": "Direitos da Pessoa Autista | Pedro Bastos Lund Advocacia",
+    "description": "Orientação jurídica sobre negativa de plano de saúde, BPC/LOAS, inclusão escolar e curatela para pessoas com TEA. Atendimento direto com Pedro Bastos Lund Advocacia."
+  },
+  "hero": {
+    "eyebrow": "Direitos da pessoa com TEA",
+    "titleStart": "O plano negou a terapia?",
+    "titleEmphasis": "Você não precisa aceitar isso.",
+    "lead": "Pessoas com Transtorno do Espectro Autista têm direitos garantidos por lei — cobertura de terapias pelo plano de saúde, BPC/LOAS, inclusão escolar e prioridade de atendimento. Quando esses direitos são negados, há caminhos jurídicos para revertê-los.",
+    "ctaLabel": "QUERO ORIENTAÇÃO",
+    "assurances": ["Atendimento humanizado", "Análise individual", "Acompanhamento próximo"]
+  },
+  "intro": {
+    "kicker": "Lei 12.764/2012 e Lei 13.146/2015",
+    "title": "A pessoa com TEA é considerada pessoa com deficiência para todos os efeitos legais.",
+    "text": "Isso garante direitos como prioridade de atendimento, cobertura de terapias pelo plano de saúde, benefício assistencial (BPC/LOAS) e inclusão escolar com os apoios necessários. Na prática, esses direitos são negados com frequência — e é possível contestar essas negativas.",
+    "note": "Cada situação é analisada de forma individual. As medidas possíveis dependem dos documentos, laudos e do histórico do caso."
+  },
+  "review": {
+    "kicker": "Onde podemos ajudar",
+    "title": "As frentes mais comuns em que a orientação jurídica faz diferença.",
+    "items": [
+      { "icon": "HeartHandshake", "title": "Plano de saúde", "text": "Negativa ou limitação de cobertura de terapias como ABA, fonoaudiologia, terapia ocupacional e psicomotricidade." },
+      { "icon": "Landmark", "title": "BPC/LOAS", "text": "Orientação sobre o benefício assistencial ao autista com indeferimento indevido ou cessação pelo INSS." },
+      { "icon": "GraduationCap", "title": "Inclusão escolar", "text": "Direito à educação inclusiva, acompanhante especializado e adaptações necessárias na escola." },
+      { "icon": "Scale", "title": "Curatela e apoio", "text": "Curatela e tomada de decisão apoiada para a fase adulta, conforme a necessidade de cada pessoa." }
+    ]
+  },
+  "process": {
+    "kicker": "Como funciona",
+    "title": "Um atendimento simples, direto e acolhedor.",
+    "text": "O atendimento inicial é realizado pelo WhatsApp. Entendemos a situação com calma e orientamos sobre os documentos e laudos necessários para avaliar o caso.",
+    "ctaLabel": "Iniciar atendimento",
+    "steps": [
+      { "number": "01", "title": "Conte a sua situação", "text": "Explique brevemente o que está acontecendo — negativa, dúvida ou pedido negado." },
+      { "number": "02", "title": "Organize os documentos", "text": "Orientamos quais laudos, relatórios e documentos são importantes para o caso." },
+      { "number": "03", "title": "Conheça os caminhos possíveis", "text": "Você entende as medidas juridicamente cabíveis antes de decidir como seguir." }
+    ]
+  },
+  "about": {
+    "kicker": "Atendimento jurídico",
+    "role": "Advocacia e Consultoria Jurídica",
+    "text": "Atuação dedicada a famílias que enfrentam negativas de direitos relacionados ao TEA, com análise responsável, comunicação clara e acompanhamento próximo em cada etapa — do primeiro contato até a solução do caso.",
+    "quote": "Conhecer os direitos da pessoa autista é o primeiro passo para não aceitar uma negativa indevida.",
+    "ctaLabel": "Conversar com o escritório"
+  },
+  "finalCta": {
+    "kicker": "Fale com o escritório",
+    "title": "Não enfrente essa negativa sozinho.",
+    "text": "Conte a sua situação e receba orientação sobre os próximos passos possíveis.",
+    "ctaLabel": "Quero orientação"
+  },
+  "footer": {
+    "note": "Conteúdo informativo. A análise jurídica e as medidas possíveis dependem das particularidades de cada caso."
+  },
+  "whatsapp": {
+    "message": "Olá, vim pela página sobre direitos da pessoa autista e gostaria de orientação sobre a minha situação."
+  }
+}

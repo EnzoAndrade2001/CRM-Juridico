@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "title": "Registro de Marca | Pedro Bastos Lund Advocacia",
+    "description": "Registro de marca no INPI com análise de viabilidade, acompanhamento do processo e defesa em oposições. Atendimento direto com Pedro Bastos Lund Advocacia."
+  },
+  "hero": {
+    "eyebrow": "Sua marca ainda não está registrada?",
+    "titleStart": "Registre sua marca",
+    "titleEmphasis": "antes que outra pessoa registre.",
+    "lead": "Uma marca não registrada pode ser usada — e registrada — por outra empresa a qualquer momento. A análise de viabilidade e o registro no INPI protegem o nome, a identidade e o investimento feitos no seu negócio.",
+    "ctaLabel": "REGISTRAR MINHA MARCA",
+    "assurances": ["Busca de viabilidade", "Acompanhamento no INPI", "Orientação clara"]
+  },
+  "intro": {
+    "kicker": "Proteja antes de expandir",
+    "title": "Investiu em uma marca sem registrá-la? Isso pode custar caro mais tarde.",
+    "text": "Sem o registro no INPI, qualquer pessoa pode contestar o uso da sua marca, registrá-la primeiro ou até exigir que você deixe de usá-la — mesmo que tenha sido você quem a criou. O registro garante exclusividade de uso em todo o território nacional.",
+    "note": "A viabilidade do registro depende de uma busca prévia. Cada caso é analisado individualmente antes do pedido ser protocolado."
+  },
+  "review": {
+    "kicker": "O que está incluído",
+    "title": "Do primeiro nome pensado até a marca protegida.",
+    "items": [
+      { "icon": "Search", "title": "Busca de viabilidade", "text": "Verificação prévia de marcas iguais ou semelhantes já registradas ou em pedido no INPI." },
+      { "icon": "Stamp", "title": "Registro no INPI", "text": "Condução completa do pedido de registro, da classificação de Nice ao acompanhamento das publicações." },
+      { "icon": "ShieldCheck", "title": "Monitoramento e defesa", "text": "Acompanhamento de oposições, impugnações e tentativas de registro de marcas conflitantes." },
+      { "icon": "FileText", "title": "Contratos e licenciamento", "text": "Cessão, licenciamento de uso e demais contratos relacionados à marca já registrada." }
+    ]
+  },
+  "process": {
+    "kicker": "Como funciona",
+    "title": "Um atendimento simples, direto e transparente.",
+    "text": "O atendimento inicial é realizado pelo WhatsApp. Após entender o segmento e o nome pretendido, orientamos sobre a busca de viabilidade e os próximos passos do registro.",
+    "ctaLabel": "Iniciar atendimento",
+    "steps": [
+      { "number": "01", "title": "Conte sobre sua marca", "text": "Envie o nome, o segmento de atuação e, se tiver, a logomarca pelo WhatsApp." },
+      { "number": "02", "title": "Receba a busca de viabilidade", "text": "Verificamos se há conflito com marcas já registradas antes de seguir com o pedido." },
+      { "number": "03", "title": "Acompanhe o registro", "text": "Conduzimos o processo junto ao INPI e mantemos você informado em cada etapa." }
+    ]
+  },
+  "about": {
+    "kicker": "Atendimento jurídico",
+    "role": "Advocacia e Consultoria Jurídica",
+    "text": "Atuação dedicada a empreendedores e empresas que precisam proteger o nome e a identidade do seu negócio, com análise responsável, comunicação acessível e acompanhamento próximo em cada etapa do registro.",
+    "quote": "Uma marca registrada é um ativo do negócio. Protegê-la é parte da estratégia, não um detalhe burocrático.",
+    "ctaLabel": "Conversar com o escritório"
+  },
+  "finalCta": {
+    "kicker": "Fale com o escritório",
+    "title": "Não deixe sua marca vulnerável.",
+    "text": "Envie o nome da sua marca e solicite uma busca de viabilidade inicial.",
+    "ctaLabel": "Quero registrar"
+  },
+  "footer": {
+    "note": "Conteúdo informativo. A viabilidade do registro e os prazos possíveis dependem das particularidades de cada marca e segmento."
+  },
+  "whatsapp": {
+    "message": "Olá, vim pela página de Registro de Marca e gostaria de falar sobre o registro da minha marca."
+  }
+}

@@ -40,6 +40,7 @@ const integrationRoutes = require('./routes/integrations');
 const firebirdSyncRoutes = require('./routes/firebirdSync');
 const legalRoutes = require('./routes/legal');
 const publicCalculatorRoutes = require('./routes/publicCalculator');
+const cmsAuthRoutes = require('./routes/cmsAuth');
 
 const app = express();
 app.disable('x-powered-by');
@@ -190,6 +191,7 @@ app.use('/api/integrations/firebird', firebirdSyncRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/legal', legalRoutes);
 app.use('/api/public', publicCalculatorRoutes);
+app.use('/api/cms-auth', cmsAuthRoutes);
 
 // Respostas previsíveis para clientes que chamarem uma rota inexistente ou
 // enviarem uma requisição que falhe antes de chegar ao controller.
