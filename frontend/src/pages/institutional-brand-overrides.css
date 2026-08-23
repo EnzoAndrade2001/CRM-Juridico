@@ -1380,3 +1380,98 @@ html.office-page-is-leaving .office-page-transition {
     bottom: 10px;
   }
 }
+
+.office-footer__inner {
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.8fr) auto;
+  gap: 26px 44px;
+  align-items: start;
+}
+
+.office-footer__brand {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.office-footer__contact {
+  display: grid;
+  grid-column: 2;
+  grid-row: 1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.office-footer__contact span,
+.office-footer__contact a {
+  display: flex;
+  flex-direction: column;
+}
+
+.office-footer__contact strong {
+  margin-bottom: 5px;
+  color: var(--office-gold-light);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.office-footer__contact a {
+  transition: color 0.2s ease;
+}
+
+.office-footer__contact a:hover {
+  color: #fff;
+}
+
+.office-footer__inner > p {
+  grid-column: 1 / span 2;
+  grid-row: 2;
+}
+
+.office-footer__inner > span {
+  grid-column: 3;
+  grid-row: 2;
+  justify-self: end;
+}
+
+@media (max-width: 900px) {
+  .office-footer__inner {
+    grid-template-columns: minmax(190px, 0.8fr) minmax(0, 1.4fr);
+  }
+
+  .office-footer__contact {
+    grid-column: 2;
+  }
+
+  .office-footer__inner > p {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .office-footer__inner > span {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .office-footer__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .office-footer__contact {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .office-footer__inner > p,
+  .office-footer__inner > span {
+    align-self: flex-start;
+  }
+}

@@ -17,11 +17,6 @@ import portrait from '../assets/pedro-bastos-lund-hero-cutout.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import eduardaPortrait from '../assets/dra-eduarda-hq.png';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
-import clientSia from '../assets/clients/sia.png';
-import clientBoomMania from '../assets/clients/boom-mania.png';
-import clientRodrigues from '../assets/clients/rodrigues.png';
-import clientHamorim from '../assets/clients/hamorim.png';
-import clientDgiLog from '../assets/clients/dgi-log.png';
 import './institutional-site.css';
 import './institutional-brand-overrides.css';
 
@@ -180,14 +175,6 @@ const guides = [
       note: 'A documentação define a análise do caso.',
     },
   },
-];
-
-const clients = [
-  { name: 'SIA', logo: clientSia },
-  { name: 'Boom Mania', logo: clientBoomMania },
-  { name: 'Hamorim', logo: clientHamorim },
-  { name: 'DGI Log', logo: clientDgiLog },
-  { name: 'Rodrigues Distribuidora', logo: clientRodrigues },
 ];
 
 function SocialIcon({ name }) {
@@ -520,24 +507,21 @@ export default function InstitutionalSite({ section = 'home' }) {
         </div>
       </section>}
 
-      {isHome && <section className="office-clients" id="clientes">
-        <div className="office-shell">
-          <p className="office-clients__title">Clientes e parceiros</p>
-          <div className="office-clients__grid">
-            {clients.map((client) => (
-              <span className="office-clients__item" key={client.name}>
-                {client.logo ? (
-                  <img src={client.logo} alt={client.name} loading="lazy" />
-                ) : (
-                  <span className="office-clients__name">{client.name}</span>
-                )}
-              </span>
-            ))}
+      <footer className="office-footer">
+        <div className="office-shell office-footer__inner">
+          <div className="office-footer__brand">
+            <img src={logo} alt="" />
+            <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span>
           </div>
+          <div className="office-footer__contact" aria-label="Informações de contato">
+            <span><strong>Endereço</strong>Rua Visconde do Herval, 1092, sala 503<br />Menino Deus, Porto Alegre/RS</span>
+            <a href="tel:+555132235692"><strong>Telefone</strong>(51) 3223-5692</a>
+            <a href="mailto:pedro@bastoslund.com.br"><strong>E-mail</strong>pedro@bastoslund.com.br</a>
+          </div>
+          <p>Informações gerais. Não substituem uma consulta jurídica.</p>
+          <span>© {new Date().getFullYear()} Pedro Bastos Lund</span>
         </div>
-      </section>}
-
-      <footer className="office-footer"><div className="office-shell office-footer__inner"><div className="office-footer__brand"><img src={logo} alt="" /><span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span></div><p>Informações gerais. Não substituem uma consulta jurídica.</p><span>© {new Date().getFullYear()} Pedro Bastos Lund</span></div></footer>
+      </footer>
       <WhatsAppLink className="office-float" label="Abrir conversa no WhatsApp"><MessageCircle size={20} /><span>Fale conosco</span></WhatsAppLink>
       <ContentModal content={activeModal} closeButtonRef={modalCloseButtonRef} onClose={() => setActiveModal(null)} />
     </main>
