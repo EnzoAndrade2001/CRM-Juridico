@@ -1122,3 +1122,147 @@ html.office-page-is-leaving .office-page-transition {
     height: 300px;
   }
 }
+
+/* Hero compacto: a mensagem conduz a entrada e a fotografia atua como apoio. */
+.office-hero {
+  min-height: 590px;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.office-hero::before {
+  display: none;
+}
+
+.office-hero::after {
+  background: linear-gradient(100deg, #0d1b2a 0%, #0d1b2a 66%, #152232 100%);
+}
+
+.office-hero__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 350px);
+  gap: 54px;
+  min-height: 590px;
+  align-items: center;
+}
+
+.office-hero__copy {
+  width: auto;
+  max-width: 780px;
+  margin-left: clamp(0px, 3vw, 42px);
+  padding-top: 42px;
+}
+
+.office-hero h1 {
+  max-width: 760px;
+  font-size: clamp(42px, 4.2vw, 60px);
+  line-height: 1.08;
+}
+
+.office-hero__lead {
+  max-width: 590px;
+}
+
+.office-hero__portrait {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 510px;
+  align-items: flex-end;
+  justify-content: center;
+  align-self: end;
+}
+
+.office-hero__portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 530px;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.office-hero__portrait-name {
+  position: absolute;
+  right: 0;
+  bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.office-hero__portrait-name span {
+  margin-bottom: 4px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+
+@media (max-width: 900px) {
+  .office-hero__inner {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+    gap: 28px;
+  }
+
+  .office-hero__copy {
+    margin-left: 0;
+  }
+
+  .office-hero h1 {
+    font-size: clamp(39px, 5vw, 50px);
+  }
+}
+
+@media (max-width: 640px) {
+  .office-hero,
+  .office-hero__inner {
+    min-height: 680px;
+  }
+
+  .office-hero__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding-top: 118px;
+    padding-bottom: 0;
+  }
+
+  .office-hero__copy {
+    padding-top: 0;
+  }
+
+  .office-hero h1 {
+    max-width: 430px;
+    font-size: clamp(38px, 10.5vw, 50px);
+  }
+
+  .office-hero__portrait {
+    width: min(245px, 62vw);
+    height: 315px;
+    min-height: 0;
+    margin: -4px 0 0 auto;
+  }
+
+  .office-hero__portrait img {
+    max-height: 315px;
+  }
+
+  .office-hero__portrait-name {
+    right: 0;
+    bottom: 10px;
+    font-size: 8px;
+  }
+
+  .office-hero__portrait-name span {
+    font-size: 13px;
+  }
+}
