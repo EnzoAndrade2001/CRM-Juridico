@@ -1274,9 +1274,18 @@ html.office-page-is-leaving .office-page-transition {
 
 .office-hero__inner {
   position: relative;
+  z-index: 2;
   display: block;
   min-height: 760px;
   padding-top: 170px;
+}
+
+.office-hero::before {
+  z-index: 0;
+}
+
+.office-hero::after {
+  z-index: 1;
 }
 
 .office-hero__copy {
