@@ -47,3 +47,180 @@ html.office-page-is-leaving .office-page-transition {
     animation: none !important;
   }
 }
+
+/* Diferenciais: composição editorial aberta, sem sequência de cards. */
+.office-differentiators {
+  position: relative;
+  overflow: hidden;
+  background: var(--office-navy);
+  color: #fff;
+}
+
+.office-differentiators__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.72fr);
+  gap: 70px;
+  min-height: 690px;
+  align-items: stretch;
+}
+
+.office-differentiators__content {
+  align-self: center;
+  padding: 90px 0;
+}
+
+.office-differentiators__content > h2 {
+  margin: 0 0 38px;
+  color: var(--office-gold-light);
+  font-size: clamp(42px, 4.8vw, 64px);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.office-differentiators__list {
+  max-width: 720px;
+}
+
+.office-differentiator {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 25px 0;
+  background: transparent;
+  transition: none;
+}
+
+.office-differentiator:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: none;
+}
+
+.office-differentiator:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.office-differentiator__icon {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  color: var(--office-gold-light);
+}
+
+.office-differentiator > div {
+  min-width: 0;
+}
+
+.office-differentiator h3 {
+  max-width: 100%;
+  margin: 0 0 7px;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.25;
+  letter-spacing: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.office-differentiator p {
+  max-width: 560px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.office-differentiators__art {
+  position: relative;
+  display: flex;
+  min-height: 690px;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.office-differentiators__art::before {
+  position: absolute;
+  top: 12%;
+  bottom: 12%;
+  left: 0;
+  width: 1px;
+  background: rgba(214, 182, 110, 0.28);
+  content: "";
+}
+
+.office-differentiators__art img {
+  display: block;
+  width: min(100%, 500px);
+  height: 640px;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+@media (max-width: 900px) {
+  .office-differentiators__layout {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.62fr);
+    gap: 34px;
+    min-height: 620px;
+  }
+
+  .office-differentiators__content {
+    padding: 72px 0;
+  }
+
+  .office-differentiators__art,
+  .office-differentiators__art img {
+    min-height: 620px;
+    height: 620px;
+  }
+}
+
+@media (max-width: 640px) {
+  .office-differentiators__layout {
+    display: block;
+    min-height: 0;
+  }
+
+  .office-differentiators__content {
+    padding: 68px 0 24px;
+  }
+
+  .office-differentiators__content > h2 {
+    margin-bottom: 28px;
+    font-size: 36px;
+  }
+
+  .office-differentiator {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 14px;
+    padding: 21px 0;
+  }
+
+  .office-differentiator__icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .office-differentiator h3 {
+    font-size: 18px;
+  }
+
+  .office-differentiators__art {
+    min-height: 430px;
+  }
+
+  .office-differentiators__art::before {
+    display: none;
+  }
+
+  .office-differentiators__art img {
+    width: min(100%, 340px);
+    height: 430px;
+  }
+}
