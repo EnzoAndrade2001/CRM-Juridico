@@ -35,30 +35,30 @@ const siteRoutes = {
   team: `${baseUrl}equipe/`,
 };
 const siteNavItems = [
-  { key: 'areas', label: 'Áreas', path: siteRoutes.areas },
-  { key: 'process', label: 'Atendimento', path: siteRoutes.process },
-  { key: 'guides', label: 'Conteúdos', path: siteRoutes.guides },
-  { key: 'team', label: 'Equipe', path: siteRoutes.team },
+  { key: 'areas', label: 'O que defendemos', path: siteRoutes.areas },
+  { key: 'process', label: 'Como trabalhamos', path: siteRoutes.process },
+  { key: 'guides', label: 'Dúvidas', path: siteRoutes.guides },
+  { key: 'team', label: 'Nossa equipe', path: siteRoutes.team },
 ];
 const sectionDetails = {
   areas: {
-    kicker: 'Atuação',
-    title: 'Áreas de atuação',
+    kicker: 'O que defendemos',
+    title: 'Serviços jurídicos.',
     text: 'Contratos, bancos, consumo, trabalho, família e empresas.',
   },
   process: {
-    kicker: 'Atendimento',
+    kicker: 'Como trabalhamos',
     title: 'Atendimento direto.',
     text: 'Você relata o caso. A equipe analisa os documentos e indica os próximos passos.',
   },
   guides: {
-    kicker: 'Conteúdos jurídicos',
-    title: 'Informação jurídica.',
+    kicker: 'Dúvidas jurídicas',
+    title: 'Informação prática.',
     text: 'Orientações práticas sobre direitos, contratos e decisões do dia a dia.',
   },
   team: {
-    kicker: 'O escritório',
-    title: 'A equipe.',
+    kicker: 'Nossa equipe',
+    title: 'Equipe jurídica.',
     text: 'Pedro Bastos Lund e equipe jurídica.',
   },
 };
@@ -191,39 +191,6 @@ const clients = [
   { name: 'Rodrigues Distribuidora', logo: clientRodrigues },
 ];
 
-const highlights = [
-  {
-    mark: '01',
-    label: 'Direito Civil',
-    title: 'Direito Civil',
-    text: 'Contratos, indenizações e obrigações civis tratados a partir dos fatos e dos documentos do caso.',
-  },
-  {
-    mark: '02',
-    label: 'Direito Empresarial',
-    title: 'Direito Empresarial',
-    text: 'Contratos comerciais, relações entre sócios e decisões importantes para a rotina da empresa.',
-  },
-  {
-    mark: '03',
-    label: 'Direito do Consumidor',
-    title: 'Direito do Consumidor',
-    text: 'Cobranças indevidas, falhas na prestação de serviços e outros problemas de consumo.',
-  },
-  {
-    mark: '04',
-    label: 'Direito Bancário',
-    title: 'Direito Bancário',
-    text: 'Conferência de juros, tarifas, seguros e demais encargos cobrados em contratos bancários.',
-  },
-  {
-    mark: '05',
-    label: 'Registro de Marcas',
-    title: 'Registro de Marcas',
-    text: 'Pedido e acompanhamento do registro que protege o nome e a identidade da sua empresa.',
-  },
-];
-
 function SocialIcon({ name }) {
   if (name === 'instagram') {
     return (
@@ -296,7 +263,6 @@ export default function InstitutionalSite({ section = 'home' }) {
   const pageDetails = sectionDetails[section];
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
-  const [activeHighlight, setActiveHighlight] = useState(0);
   const modalCloseButtonRef = useRef(null);
   const lastModalTriggerRef = useRef(null);
 
@@ -422,48 +388,48 @@ export default function InstitutionalSite({ section = 'home' }) {
       )}
 
       {isHome && <section className="office-intro">
-        <div className="office-shell office-intro__grid">
-          <div>
-            <p className="office-kicker">Atendimento</p>
-            <h2>Análise individual.</h2>
+        <div className="office-shell">
+          <div className="office-section-heading">
+            <p className="office-kicker">Por que o escritório</p>
+            <h2>Objetividade em cada atendimento.</h2>
           </div>
-          <div className="office-intro__copy">
-            <p>Você apresenta os fatos e os documentos. A equipe orienta os próximos passos.</p>
+          <div className="office-intro__points">
+            <article>
+              <h3>Contato direto</h3>
+              <p>Você fala com a equipe responsável pelo atendimento.</p>
+            </article>
+            <article>
+              <h3>Análise documental</h3>
+              <p>Contratos, registros e informações entram na avaliação.</p>
+            </article>
+            <article>
+              <h3>Próximos passos</h3>
+              <p>Orientação objetiva sobre as alternativas do caso.</p>
+            </article>
           </div>
         </div>
       </section>}
 
-      {isHome && <section className="office-highlights" id="destaque">
+      {isHome && <section className="office-home-services" id="atuacao">
         <div className="office-shell">
           <div className="office-section-heading">
-            <p className="office-kicker office-kicker--light">Áreas de atuação</p>
-            <h2>Principais áreas.</h2>
+            <p className="office-kicker">O que defendemos</p>
+            <h2>Serviços jurídicos.</h2>
+            <p>Atuação para problemas concretos de pessoas e empresas.</p>
           </div>
-          <div className="office-highlights__grid">
-            <div className="office-highlights__art" aria-hidden="true">
-              <span>{highlights[activeHighlight].mark}</span>
-            </div>
-            <div className="office-highlights__body">
-              <div className="office-highlights__tabs" role="tablist" aria-label="Áreas de destaque">
-                {highlights.map((item, index) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    role="tab"
-                    aria-selected={activeHighlight === index}
-                    className={`office-highlights__tab ${activeHighlight === index ? 'is-active' : ''}`}
-                    onClick={() => setActiveHighlight(index)}
-                  >
-                    <span className="office-highlights__tab-mark" aria-hidden="true">{item.mark}</span>
-                    {item.label}
+          <div className="office-home-services__grid">
+            {areas.map(({ icon: Icon, title, text, href, modal }) => (
+              <article className="office-area-card office-home-services__card" key={title}>
+                <span className="office-area-card__icon"><Icon size={23} /></span>
+                <h3>{title}</h3>
+                <p>{text}</p>
+                {href ? <a href={href} onClick={(event) => navigateWithTransition(event, href)}>Saiba mais <ArrowRight size={16} /></a> : (
+                  <button className="office-card-link" type="button" onClick={(event) => openModal(modal, event)}>
+                    Ver detalhes <ArrowRight size={16} />
                   </button>
-                ))}
-              </div>
-              <div className="office-highlights__content" key={activeHighlight}>
-                <h3>{highlights[activeHighlight].title}</h3>
-                <p>{highlights[activeHighlight].text}</p>
-              </div>
-            </div>
+                )}
+              </article>
+            ))}
           </div>
         </div>
       </section>}
@@ -544,6 +510,26 @@ export default function InstitutionalSite({ section = 'home' }) {
             </article>
             <article className="office-person">
               <img src={eduardaPortrait} alt="Eduarda Marranghello" />
+              <div className="office-person__body"><p className="office-person__eyebrow">Equipe jurídica</p><h3>Eduarda Marranghello</h3><p>Atendimento e organização dos documentos.</p></div>
+            </article>
+          </div>
+        </div>
+      </section>}
+
+      {isHome && <section className="office-home-team" id="equipe">
+        <div className="office-shell">
+          <div className="office-section-heading">
+            <p className="office-kicker">Nossa equipe</p>
+            <h2>Quem atende você.</h2>
+            <p>Profissionais responsáveis pela análise e pelo acompanhamento das demandas.</p>
+          </div>
+          <div className="office-home-team__grid">
+            <article className="office-person">
+              <img src={aboutPortrait} alt="Pedro Bastos Lund" loading="lazy" />
+              <div className="office-person__body"><p className="office-person__eyebrow">Advogado responsável</p><h3>Pedro Bastos Lund</h3><span>OAB/RS 74.953</span><p>Contratos, direito bancário e demandas empresariais.</p></div>
+            </article>
+            <article className="office-person">
+              <img src={eduardaPortrait} alt="Eduarda Marranghello" loading="lazy" />
               <div className="office-person__body"><p className="office-person__eyebrow">Equipe jurídica</p><h3>Eduarda Marranghello</h3><p>Atendimento e organização dos documentos.</p></div>
             </article>
           </div>

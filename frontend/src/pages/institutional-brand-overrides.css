@@ -666,6 +666,74 @@ html.office-page-is-leaving .office-page-transition {
   padding-block: 60px;
 }
 
+.office-intro__points {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid #e2ddd3;
+}
+
+.office-intro__points article {
+  min-height: 126px;
+  border-right: 1px solid #e2ddd3;
+  padding: 22px 24px 18px 0;
+}
+
+.office-intro__points article:not(:first-child) {
+  padding-left: 24px;
+}
+
+.office-intro__points article:last-child {
+  border-right: 0;
+}
+
+.office-intro__points h3 {
+  margin: 0 0 8px;
+  color: var(--office-ink);
+  font-size: 18px;
+}
+
+.office-intro__points p {
+  margin: 0;
+  color: var(--office-copy);
+  font-size: 14px;
+  line-height: 1.55;
+  text-align: justify;
+}
+
+.office-home-services {
+  border-block: 1px solid #e7e0d5;
+  padding-block: 72px;
+  background: var(--office-cream);
+}
+
+.office-home-services__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.office-home-services__card {
+  min-height: 220px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.office-home-team {
+  padding-block: 72px;
+  background: #fff;
+}
+
+.office-home-team__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .office-home-services__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .office-nav {
   gap: 8px;
 }
@@ -755,6 +823,35 @@ html.office-page-is-leaving .office-page-transition {
 
   .office-final-cta {
     padding-block: 50px;
+  }
+
+  .office-intro__points {
+    grid-template-columns: 1fr;
+  }
+
+  .office-intro__points article,
+  .office-intro__points article:not(:first-child) {
+    min-height: 0;
+    border-right: 0;
+    border-bottom: 1px solid #e2ddd3;
+    padding: 18px 0;
+  }
+
+  .office-intro__points article:last-child {
+    border-bottom: 0;
+  }
+
+  .office-home-services {
+    padding-block: 56px;
+  }
+
+  .office-home-services__grid,
+  .office-home-team__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .office-home-team {
+    padding-block: 56px;
   }
 
   .office-social-links {
