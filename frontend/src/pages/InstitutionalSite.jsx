@@ -35,8 +35,7 @@ const siteRoutes = {
   team: `${baseUrl}equipe/`,
 };
 const siteNavItems = [
-  { key: 'areas', label: 'O que defendemos', path: siteRoutes.areas },
-  { key: 'process', label: 'Como trabalhamos', path: siteRoutes.process },
+  { key: 'areas', label: 'Áreas de atuação', path: siteRoutes.areas },
   { key: 'guides', label: 'Dúvidas', path: siteRoutes.guides },
   { key: 'team', label: 'Nossa equipe', path: siteRoutes.team },
 ];
