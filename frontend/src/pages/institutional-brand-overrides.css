@@ -585,3 +585,120 @@ html.office-page-is-leaving .office-page-transition {
     grid-column: auto;
   }
 }
+
+/* Texto e ritmo de leitura das páginas institucionais. */
+.office-hero__lead,
+.office-page-hero__inner > p:last-child,
+.office-intro__copy > p,
+.office-section-heading > p:last-child,
+.office-area-card > p,
+.office-guide-card > p:not(.office-guide-card__category),
+.office-guides__source,
+.office-process__heading > p:not(.office-kicker),
+.office-step p,
+.office-person__body > p:last-child,
+.office-final-cta p:last-child,
+.office-footer__inner > p,
+.office-modal__intro,
+.office-modal__columns p,
+.office-modal__note {
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+.office-intro,
+.office-highlights,
+.office-areas,
+.office-guides,
+.office-process,
+.office-team {
+  padding-block: 72px;
+}
+
+.office-intro__grid {
+  gap: 60px;
+}
+
+.office-section-heading {
+  margin-bottom: 30px;
+}
+
+.office-area-card {
+  min-height: 230px;
+  padding: 24px;
+}
+
+.office-guide-card {
+  min-height: 230px;
+  padding: 24px;
+}
+
+.office-page-hero {
+  min-height: 350px;
+  padding: 132px 0 58px;
+}
+
+.office-page-hero h1 {
+  margin-bottom: 12px;
+}
+
+.office-process__grid {
+  gap: 64px;
+}
+
+.office-step {
+  padding-block: 20px;
+}
+
+.office-clients {
+  padding-block: 56px;
+}
+
+.office-clients__title {
+  margin-bottom: 24px;
+}
+
+.office-clients__item {
+  height: 94px;
+}
+
+.office-final-cta {
+  padding-block: 60px;
+}
+
+@media (max-width: 640px) {
+  .office-intro,
+  .office-highlights,
+  .office-areas,
+  .office-guides,
+  .office-process,
+  .office-team {
+    padding-block: 56px;
+  }
+
+  .office-page-hero {
+    min-height: 320px;
+    padding: 112px 0 44px;
+  }
+
+  .office-process__grid {
+    gap: 38px;
+  }
+
+  .office-area-card,
+  .office-guide-card {
+    min-height: 210px;
+  }
+
+  .office-clients {
+    padding-block: 45px;
+  }
+
+  .office-clients__item {
+    height: 76px;
+  }
+
+  .office-final-cta {
+    padding-block: 50px;
+  }
+}
