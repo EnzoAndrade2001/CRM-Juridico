@@ -38,7 +38,8 @@ const siteRoutes = {
 };
 const siteNavItems = [
   { key: 'areas', label: 'Áreas de atuação', path: siteRoutes.areas },
-  { key: 'guides', label: 'Dúvidas', path: siteRoutes.guides },
+  { key: 'sobre', label: 'Quem somos', path: `${siteRoutes.home}#quem-somos` },
+  { key: 'diferenciais', label: 'Diferenciais', path: `${siteRoutes.home}#diferenciais` },
   { key: 'team', label: 'Nossa equipe', path: siteRoutes.team },
 ];
 const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(content.whatsapp.message)}`;
@@ -244,13 +245,33 @@ export default function InstitutionalSite({ section = 'home' }) {
         </section>
       )}
 
-      {isHome && <section className="office-home-editorial">
+      {isHome && <section className="office-home-editorial" id="quem-somos">
         <div className="office-shell office-home-editorial__inner">
-          <div>
+          <div className="office-home-editorial__copy">
             <p className="office-kicker">{content.editorial.kicker}</p>
             <h2>{content.editorial.title}</h2>
+            <p>{content.editorial.text}</p>
           </div>
-          <p>{content.editorial.text}</p>
+          <div className="office-home-editorial__portrait">
+            <img src={aboutPortrait} alt="Pedro Bastos Lund" loading="lazy" />
+          </div>
+        </div>
+      </section>}
+
+      {isHome && <section className="office-differentiators" id="diferenciais">
+        <div className="office-shell">
+          <div className="office-section-heading">
+            <p className="office-kicker">{content.differentiators.kicker}</p>
+            <h2>{content.differentiators.title}</h2>
+          </div>
+          <div className="office-differentiators__grid">
+            {content.differentiators.items.map((item) => (
+              <article className="office-differentiator" key={item.title}>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>}
 

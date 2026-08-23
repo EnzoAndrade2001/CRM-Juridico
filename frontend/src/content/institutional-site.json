@@ -23,9 +23,19 @@
     "titleBreak": "construídas com estratégia."
   },
   "editorial": {
-    "kicker": "Atuação dedicada",
-    "title": "O caso vem primeiro.",
-    "text": "Antes de indicar um caminho, entendemos os fatos, os documentos e o que precisa ser resolvido."
+    "kicker": "Quem somos",
+    "title": "Experiência jurídica com atendimento próximo.",
+    "text": "Pedro Bastos Lund Advocacia atua de forma estratégica, próxima e transparente na defesa dos interesses de pessoas e empresas. Antes de indicar um caminho, entendemos os fatos, os documentos e o que precisa ser resolvido."
+  },
+  "differentiators": {
+    "kicker": "Diferenciais",
+    "title": "O que torna o atendimento diferente.",
+    "items": [
+      { "title": "Atendimento individual", "text": "Cada caso é conduzido de forma dedicada, sem respostas prontas." },
+      { "title": "Comunicação clara", "text": "Explicações objetivas, sem jargão jurídico desnecessário." },
+      { "title": "Análise responsável", "text": "Nenhuma promessa antes de entender os documentos e o contexto." },
+      { "title": "Acompanhamento próximo", "text": "Contato direto do início ao fim de cada demanda." }
+    ]
   },
   "servicesIntro": {
     "kicker": "O que defendemos",
