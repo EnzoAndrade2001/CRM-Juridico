@@ -370,9 +370,6 @@ export default function InstitutionalSite({ section = 'home' }) {
             <p className="office-hero__lead">
               Atuação jurídica para pessoas e empresas, com análise do caso e caminhos objetivos para seguir.
             </p>
-            <a className="office-button office-button--gold" href="#atuacao" aria-label="Conhecer as áreas de atuação">
-              Conheça nossas áreas <ArrowRight size={18} />
-            </a>
           </div>
           <div className="office-hero__portrait">
             <img src={portrait} alt="Pedro Bastos Lund" />
