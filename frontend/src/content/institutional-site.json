@@ -1,0 +1,179 @@
+{
+  "meta": {
+    "description": "Advocacia e consultoria jurídica para contratos, bancos, consumo e empresas."
+  },
+  "whatsapp": {
+    "message": "Olá, vim pelo site do escritório e gostaria de falar com a equipe."
+  },
+  "social": [
+    { "label": "Instagram", "href": "https://www.instagram.com/pedrobastoslund/", "icon": "instagram" },
+    { "label": "Facebook", "href": "https://www.facebook.com/peedrobastoss/", "icon": "facebook" }
+  ],
+  "footer": {
+    "addressLine": "Rua Visconde do Herval, 1092, sala 503",
+    "addressCity": "Menino Deus, Porto Alegre/RS",
+    "phoneDisplay": "(51) 3223-5692",
+    "phoneHref": "+555132235692",
+    "email": "pedro@bastoslund.com.br",
+    "note": "Informações gerais. Não substituem uma consulta jurídica."
+  },
+  "hero": {
+    "eyebrow": "Advocacia e consultoria jurídica",
+    "title": "Soluções jurídicas",
+    "titleBreak": "construídas com estratégia."
+  },
+  "editorial": {
+    "kicker": "Atuação dedicada",
+    "title": "O caso vem primeiro.",
+    "text": "Antes de indicar um caminho, entendemos os fatos, os documentos e o que precisa ser resolvido."
+  },
+  "servicesIntro": {
+    "kicker": "O que defendemos",
+    "title": "Onde podemos atuar.",
+    "text": "Demandas concretas de pessoas, famílias e empresas."
+  },
+  "sectionDetails": {
+    "areas": { "kicker": "O que defendemos", "title": "Serviços jurídicos.", "text": "Contratos, bancos, consumo, trabalho, família e empresas." },
+    "process": { "kicker": "Como trabalhamos", "title": "Atendimento direto.", "text": "Você relata o caso. A equipe analisa os documentos e indica os próximos passos." },
+    "guides": { "kicker": "Dúvidas jurídicas", "title": "Informação prática.", "text": "Orientações práticas sobre direitos, contratos e decisões do dia a dia." },
+    "team": { "kicker": "Nossa equipe", "title": "Equipe jurídica.", "text": "Pedro Bastos Lund e equipe jurídica." }
+  },
+  "areasPage": {
+    "title": "Áreas atendidas.",
+    "text": "Conheça as principais demandas do escritório."
+  },
+  "areas": [
+    {
+      "icon": "Banknote",
+      "title": "Revisional bancário",
+      "text": "Juros, tarifas e seguros cobrados no contrato.",
+      "href": "revisional-bancario",
+      "modal": null
+    },
+    {
+      "icon": "CarFront",
+      "title": "Busca e apreensão",
+      "text": "Defesa em casos de atraso e retomada do veículo.",
+      "href": "",
+      "modal": {
+        "kicker": "Direito bancário",
+        "title": "Busca e apreensão.",
+        "intro": "Análise da notificação, do processo e das alternativas disponíveis.",
+        "points": ["Constituição em mora e notificação", "Etapas da ação de busca e apreensão", "Defesa, quitação e regularização quando cabíveis"],
+        "documents": "Contrato de financiamento, notificações recebidas, comprovantes de pagamento e documentos do veículo.",
+        "note": "A orientação depende da fase do processo."
+      }
+    },
+    {
+      "icon": "FileText",
+      "title": "Contratos e cobranças",
+      "text": "Cláusulas, prazos, valores e cobranças.",
+      "href": "",
+      "modal": {
+        "kicker": "Prevenção jurídica",
+        "title": "Contratos e cobranças.",
+        "intro": "Leitura de obrigações, prazos, multas e pontos de negociação.",
+        "points": ["Cláusulas, prazos e multas", "Cobranças, garantias e obrigações", "Riscos na contratação e alternativas de ajuste"],
+        "documents": "Contrato completo, aditivos, propostas comerciais, comprovantes e comunicações trocadas.",
+        "note": "A análise deve ser feita com o contrato completo."
+      }
+    },
+    {
+      "icon": "Landmark",
+      "title": "Direito do consumidor",
+      "text": "Cobranças indevidas e falhas na prestação do serviço.",
+      "href": "",
+      "modal": {
+        "kicker": "Relações de consumo",
+        "title": "Direito do consumidor.",
+        "intro": "Análise de cobranças, contratos e falhas de atendimento.",
+        "points": ["Informações incompletas ou divergentes", "Tarifas e serviços não reconhecidos", "Falhas de atendimento, segurança ou prestação do serviço"],
+        "documents": "Contrato, faturas, protocolos, comprovantes e registros de atendimento.",
+        "note": "Separe contratos, faturas e protocolos de atendimento."
+      }
+    },
+    {
+      "icon": "BriefcaseBusiness",
+      "title": "Direito trabalhista",
+      "text": "Vínculo, verbas, jornada e rescisão.",
+      "href": "",
+      "modal": {
+        "kicker": "Direito trabalhista",
+        "title": "Direito trabalhista.",
+        "intro": "Análise de vínculo, verbas, jornada e documentos do trabalho.",
+        "points": ["Rescisão, verbas e horas trabalhadas", "Assédio, acidentes e adoecimento", "Reconhecimento de vínculo e demais questões do contrato de trabalho"],
+        "documents": "CTPS, contrato, holerites, termo de rescisão, mensagens e outros registros relevantes.",
+        "note": "Prazos trabalhistas devem ser observados."
+      }
+    },
+    {
+      "icon": "Scale",
+      "title": "Família e sucessões",
+      "text": "Inventário, partilha e patrimônio familiar.",
+      "href": "",
+      "modal": {
+        "kicker": "Direito de família e sucessões",
+        "title": "Família e sucessões.",
+        "intro": "Inventário, partilha, herança e organização patrimonial.",
+        "points": ["Inventário, partilha e cessão de direitos", "Venda de bens durante o inventário", "Organização patrimonial e acordos familiares"],
+        "documents": "Certidões, documentos dos herdeiros, relação de bens, dívidas e eventuais contratos.",
+        "note": "A documentação define os próximos passos."
+      }
+    }
+  ],
+  "guides": [
+    {
+      "category": "Direito bancário",
+      "title": "Direitos do cliente do banco",
+      "excerpt": "Portabilidade, informações, quitação e proteção de dados.",
+      "modal": {
+        "kicker": "Orientação prática",
+        "title": "Direitos bancários.",
+        "intro": "Pontos para conferir antes de aceitar uma cobrança ou contratar um produto.",
+        "points": ["Portabilidade de crédito e produtos financeiros", "Informações claras e completas na contratação", "Desconto proporcional na quitação antecipada", "Proteção e sigilo dos dados fornecidos"],
+        "note": "O contrato deve ser analisado antes de qualquer decisão."
+      }
+    },
+    {
+      "category": "Contratos",
+      "title": "O que conferir em um contrato",
+      "excerpt": "Prazos, multas, garantias e obrigações.",
+      "modal": {
+        "kicker": "Orientação prática",
+        "title": "Antes de assinar.",
+        "intro": "Confira as cláusulas que definem responsabilidades e formas de saída.",
+        "points": ["Verifique objeto, prazo e forma de pagamento", "Observe multas, garantias e hipóteses de rescisão", "Guarde a versão assinada e os documentos da negociação"],
+        "note": "Envie o documento completo para uma análise adequada."
+      }
+    },
+    {
+      "category": "Societário e sucessões",
+      "title": "Decisões sobre patrimônio",
+      "excerpt": "Sócios, inventário, partilha e venda de bens.",
+      "modal": {
+        "kicker": "Orientação prática",
+        "title": "Patrimônio e sucessões.",
+        "intro": "Contratos, prazos e documentos definem a condução de cada etapa.",
+        "points": ["Contrato social, prazo de saída e apuração de haveres", "Responsabilidade por obrigações anteriores", "Inventário, partilha e cessão de direitos hereditários"],
+        "note": "A documentação define a análise do caso."
+      }
+    }
+  ],
+  "process": {
+    "title": "Atendimento jurídico.",
+    "text": "Relato, análise dos documentos e orientação sobre os próximos passos.",
+    "steps": [
+      { "number": "01", "title": "Relato", "text": "Você explica o que aconteceu." },
+      { "number": "02", "title": "Análise", "text": "Conferimos os documentos relevantes." },
+      { "number": "03", "title": "Orientação", "text": "Indicamos os caminhos possíveis." }
+    ]
+  },
+  "team": {
+    "homeTitle": "Quem conduz cada atendimento.",
+    "homeText": "Conheça os profissionais responsáveis pela análise e pelo acompanhamento das demandas.",
+    "members": [
+      { "portraitKey": "pedro", "name": "Pedro Bastos Lund", "eyebrow": "Advogado responsável", "extra": "OAB/RS 74.953", "bio": "Contratos, direito bancário e demandas empresariais." },
+      { "portraitKey": "eduarda", "name": "Eduarda Marranghello", "eyebrow": "Equipe jurídica", "extra": "", "bio": "Atendimento e organização dos documentos." }
+    ]
+  }
+}

@@ -14,6 +14,125 @@ media_folder: "frontend/src/assets/cms-uploads"
 public_folder: "/CRM-Juridico/assets/cms-uploads"
 
 collections:
+  - name: "site_institucional"
+    label: "Site institucional (página inicial)"
+    files:
+      - name: "conteudo"
+        label: "Conteúdo do site"
+        file: "frontend/src/content/institutional-site.json"
+        fields:
+          - { label: "Descrição do site (SEO)", name: "meta.description", widget: "text" }
+          - label: "Mensagem padrão do WhatsApp"
+            name: "whatsapp"
+            widget: "object"
+            fields:
+              - { label: "Mensagem inicial", name: "message", widget: "text" }
+          - label: "Topo (hero) da página inicial"
+            name: "hero"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena acima do título", name: "eyebrow", widget: "string" }
+              - { label: "Título — primeira linha", name: "title", widget: "string" }
+              - { label: "Título — segunda linha", name: "titleBreak", widget: "string" }
+          - label: "Bloco 'O caso vem primeiro'"
+            name: "editorial"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena", name: "kicker", widget: "string" }
+              - { label: "Título", name: "title", widget: "string" }
+              - { label: "Texto", name: "text", widget: "text" }
+          - label: "Introdução da lista de serviços"
+            name: "servicesIntro"
+            widget: "object"
+            fields:
+              - { label: "Frase pequena", name: "kicker", widget: "string" }
+              - { label: "Título", name: "title", widget: "string" }
+              - { label: "Texto", name: "text", widget: "text" }
+          - label: "Áreas de atuação"
+            name: "areas"
+            widget: "list"
+            summary: "{{title}}"
+            fields:
+              - { label: "Ícone", name: "icon", widget: "select", options: ["Banknote", "CarFront", "FileText", "Landmark", "BriefcaseBusiness", "Scale", "Stamp"] }
+              - { label: "Título", name: "title", widget: "string" }
+              - { label: "Texto curto", name: "text", widget: "string" }
+              - { label: "Link direto (deixe vazio para abrir um pop-up com mais detalhes)", name: "href", widget: "string", required: false, hint: "Ex: revisional-bancario — deixe em branco para usar o pop-up abaixo." }
+              - label: "Pop-up com mais detalhes (ignorado se o link acima estiver preenchido)"
+                name: "modal"
+                widget: "object"
+                required: false
+                fields:
+                  - { label: "Categoria", name: "kicker", widget: "string" }
+                  - { label: "Título do pop-up", name: "title", widget: "string" }
+                  - { label: "Texto introdutório", name: "intro", widget: "text" }
+                  - { label: "Pontos (lista)", name: "points", widget: "list" }
+                  - { label: "Documentos necessários", name: "documents", widget: "text", required: false }
+                  - { label: "Observação final", name: "note", widget: "text" }
+          - label: "Conteúdos/dúvidas jurídicas"
+            name: "guides"
+            widget: "list"
+            summary: "{{title}}"
+            fields:
+              - { label: "Categoria", name: "category", widget: "string" }
+              - { label: "Título", name: "title", widget: "string" }
+              - { label: "Resumo curto", name: "excerpt", widget: "string" }
+              - label: "Pop-up com o conteúdo completo"
+                name: "modal"
+                widget: "object"
+                fields:
+                  - { label: "Categoria", name: "kicker", widget: "string" }
+                  - { label: "Título do pop-up", name: "title", widget: "string" }
+                  - { label: "Texto introdutório", name: "intro", widget: "text" }
+                  - { label: "Pontos (lista)", name: "points", widget: "list" }
+                  - { label: "Observação final", name: "note", widget: "text" }
+          - label: "Como funciona (etapas)"
+            name: "process"
+            widget: "object"
+            fields:
+              - { label: "Título", name: "title", widget: "string" }
+              - { label: "Texto", name: "text", widget: "text" }
+              - label: "Passos"
+                name: "steps"
+                widget: "list"
+                fields:
+                  - { label: "Número", name: "number", widget: "string" }
+                  - { label: "Título do passo", name: "title", widget: "string" }
+                  - { label: "Texto do passo", name: "text", widget: "text" }
+          - label: "Equipe"
+            name: "team"
+            widget: "object"
+            fields:
+              - { label: "Título (página inicial)", name: "homeTitle", widget: "string" }
+              - { label: "Texto (página inicial)", name: "homeText", widget: "text" }
+              - label: "Integrantes"
+                name: "members"
+                widget: "list"
+                summary: "{{name}}"
+                fields:
+                  - { label: "Foto", name: "portraitKey", widget: "select", options: ["pedro", "eduarda"], hint: "Por enquanto só as duas fotos já cadastradas no site." }
+                  - { label: "Nome", name: "name", widget: "string" }
+                  - { label: "Cargo", name: "eyebrow", widget: "string" }
+                  - { label: "Complemento (ex: número da OAB)", name: "extra", widget: "string", required: false }
+                  - { label: "Biografia curta", name: "bio", widget: "text" }
+          - label: "Rodapé"
+            name: "footer"
+            widget: "object"
+            fields:
+              - { label: "Endereço — linha 1", name: "addressLine", widget: "string" }
+              - { label: "Endereço — cidade/bairro", name: "addressCity", widget: "string" }
+              - { label: "Telefone (exibido)", name: "phoneDisplay", widget: "string" }
+              - { label: "Telefone (link, só números com DDI)", name: "phoneHref", widget: "string" }
+              - { label: "E-mail", name: "email", widget: "string" }
+              - { label: "Aviso legal", name: "note", widget: "text" }
+          - label: "Redes sociais"
+            name: "social"
+            widget: "list"
+            summary: "{{label}}"
+            fields:
+              - { label: "Nome", name: "label", widget: "string" }
+              - { label: "Link", name: "href", widget: "string" }
+              - { label: "Ícone", name: "icon", widget: "select", options: ["instagram", "facebook"] }
+
   - name: "registro_marca"
     label: "Landing: Registro de Marca"
     files:

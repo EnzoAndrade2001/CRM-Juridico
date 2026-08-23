@@ -17,8 +17,15 @@ import portrait from '../assets/pedro-bastos-lund-hero-cutout.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import eduardaPortrait from '../assets/dra-eduarda-hq.png';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
+import content from '../content/institutional-site.json';
 import './institutional-site.css';
 import './institutional-brand-overrides.css';
+
+// Nomes de ícone (guardados como texto no content JSON, editável pelo CMS)
+// mapeados para os componentes reais do lucide-react.
+const ICONS = { Banknote, CarFront, FileText, Landmark, BriefcaseBusiness, Scale, Stamp };
+// Idem para as fotos da equipe — o JSON só guarda "pedro" ou "eduarda".
+const PORTRAITS = { pedro: aboutPortrait, eduarda: eduardaPortrait };
 
 const whatsappNumber = '555193665581';
 const baseUrl = import.meta.env.BASE_URL || '/';
@@ -34,148 +41,17 @@ const siteNavItems = [
   { key: 'guides', label: 'Dúvidas', path: siteRoutes.guides },
   { key: 'team', label: 'Nossa equipe', path: siteRoutes.team },
 ];
-const sectionDetails = {
-  areas: {
-    kicker: 'O que defendemos',
-    title: 'Serviços jurídicos.',
-    text: 'Contratos, bancos, consumo, trabalho, família e empresas.',
-  },
-  process: {
-    kicker: 'Como trabalhamos',
-    title: 'Atendimento direto.',
-    text: 'Você relata o caso. A equipe analisa os documentos e indica os próximos passos.',
-  },
-  guides: {
-    kicker: 'Dúvidas jurídicas',
-    title: 'Informação prática.',
-    text: 'Orientações práticas sobre direitos, contratos e decisões do dia a dia.',
-  },
-  team: {
-    kicker: 'Nossa equipe',
-    title: 'Equipe jurídica.',
-    text: 'Pedro Bastos Lund e equipe jurídica.',
-  },
-};
-const revisionalUrl = `${baseUrl.replace(/\/$/, '')}/revisional-bancario/`;
-const whatsappMessage = 'Olá, vim pelo site do escritório e gostaria de falar com a equipe.';
-const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
-const socialLinks = [
-  { label: 'Instagram', href: 'https://www.instagram.com/pedrobastoslund/', icon: 'instagram' },
-  { label: 'Facebook', href: 'https://www.facebook.com/peedrobastoss/', icon: 'facebook' },
-];
+const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(content.whatsapp.message)}`;
 
-const areas = [
-  {
-    icon: Banknote,
-    title: 'Revisional bancário',
-    text: 'Juros, tarifas e seguros cobrados no contrato.',
-    href: revisionalUrl,
-  },
-  {
-    icon: CarFront,
-    title: 'Busca e apreensão',
-    text: 'Defesa em casos de atraso e retomada do veículo.',
-    modal: {
-      kicker: 'Direito bancário',
-      title: 'Busca e apreensão.',
-      intro: 'Análise da notificação, do processo e das alternativas disponíveis.',
-      points: ['Constituição em mora e notificação', 'Etapas da ação de busca e apreensão', 'Defesa, quitação e regularização quando cabíveis'],
-      documents: 'Contrato de financiamento, notificações recebidas, comprovantes de pagamento e documentos do veículo.',
-      note: 'A orientação depende da fase do processo.',
-    },
-  },
-  {
-    icon: FileText,
-    title: 'Contratos e cobranças',
-    text: 'Cláusulas, prazos, valores e cobranças.',
-    modal: {
-      kicker: 'Prevenção jurídica',
-      title: 'Contratos e cobranças.',
-      intro: 'Leitura de obrigações, prazos, multas e pontos de negociação.',
-      points: ['Cláusulas, prazos e multas', 'Cobranças, garantias e obrigações', 'Riscos na contratação e alternativas de ajuste'],
-      documents: 'Contrato completo, aditivos, propostas comerciais, comprovantes e comunicações trocadas.',
-      note: 'A análise deve ser feita com o contrato completo.',
-    },
-  },
-  {
-    icon: Landmark,
-    title: 'Direito do consumidor',
-    text: 'Cobranças indevidas e falhas na prestação do serviço.',
-    modal: {
-      kicker: 'Relações de consumo',
-      title: 'Direito do consumidor.',
-      intro: 'Análise de cobranças, contratos e falhas de atendimento.',
-      points: ['Informações incompletas ou divergentes', 'Tarifas e serviços não reconhecidos', 'Falhas de atendimento, segurança ou prestação do serviço'],
-      documents: 'Contrato, faturas, protocolos, comprovantes e registros de atendimento.',
-      note: 'Separe contratos, faturas e protocolos de atendimento.',
-    },
-  },
-  {
-    icon: BriefcaseBusiness,
-    title: 'Direito trabalhista',
-    text: 'Vínculo, verbas, jornada e rescisão.',
-    modal: {
-      kicker: 'Direito trabalhista',
-      title: 'Direito trabalhista.',
-      intro: 'Análise de vínculo, verbas, jornada e documentos do trabalho.',
-      points: ['Rescisão, verbas e horas trabalhadas', 'Assédio, acidentes e adoecimento', 'Reconhecimento de vínculo e demais questões do contrato de trabalho'],
-      documents: 'CTPS, contrato, holerites, termo de rescisão, mensagens e outros registros relevantes.',
-      note: 'Prazos trabalhistas devem ser observados.',
-    },
-  },
-  {
-    icon: Scale,
-    title: 'Família e sucessões',
-    text: 'Inventário, partilha e patrimônio familiar.',
-    modal: {
-      kicker: 'Direito de família e sucessões',
-      title: 'Família e sucessões.',
-      intro: 'Inventário, partilha, herança e organização patrimonial.',
-      points: ['Inventário, partilha e cessão de direitos', 'Venda de bens durante o inventário', 'Organização patrimonial e acordos familiares'],
-      documents: 'Certidões, documentos dos herdeiros, relação de bens, dívidas e eventuais contratos.',
-      note: 'A documentação define os próximos passos.',
-    },
-  },
-];
-
-const guides = [
-  {
-    category: 'Direito bancário',
-    title: 'Direitos do cliente do banco',
-    excerpt: 'Portabilidade, informações, quitação e proteção de dados.',
-    modal: {
-      kicker: 'Orientação prática',
-      title: 'Direitos bancários.',
-      intro: 'Pontos para conferir antes de aceitar uma cobrança ou contratar um produto.',
-      points: ['Portabilidade de crédito e produtos financeiros', 'Informações claras e completas na contratação', 'Desconto proporcional na quitação antecipada', 'Proteção e sigilo dos dados fornecidos'],
-      note: 'O contrato deve ser analisado antes de qualquer decisão.',
-    },
-  },
-  {
-    category: 'Contratos',
-    title: 'O que conferir em um contrato',
-    excerpt: 'Prazos, multas, garantias e obrigações.',
-    modal: {
-      kicker: 'Orientação prática',
-      title: 'Antes de assinar.',
-      intro: 'Confira as cláusulas que definem responsabilidades e formas de saída.',
-      points: ['Verifique objeto, prazo e forma de pagamento', 'Observe multas, garantias e hipóteses de rescisão', 'Guarde a versão assinada e os documentos da negociação'],
-      note: 'Envie o documento completo para uma análise adequada.',
-    },
-  },
-  {
-    category: 'Societário e sucessões',
-    title: 'Decisões sobre patrimônio',
-    excerpt: 'Sócios, inventário, partilha e venda de bens.',
-    modal: {
-      kicker: 'Orientação prática',
-      title: 'Patrimônio e sucessões.',
-      intro: 'Contratos, prazos e documentos definem a condução de cada etapa.',
-      points: ['Contrato social, prazo de saída e apuração de haveres', 'Responsabilidade por obrigações anteriores', 'Inventário, partilha e cessão de direitos hereditários'],
-      note: 'A documentação define a análise do caso.',
-    },
-  },
-];
+// content.areas[].href guarda só o slug (ex: "revisional-bancario"); aqui
+// vira a URL completa considerando o BASE_URL do deploy (raiz ou subpasta
+// do GitHub Pages).
+const areas = content.areas.map((area) => ({
+  ...area,
+  icon: ICONS[area.icon] || FileText,
+  href: area.href ? `${baseUrl.replace(/\/$/, '')}/${area.href}/` : null,
+}));
+const guides = content.guides;
 
 function SocialIcon({ name }) {
   if (name === 'instagram') {
@@ -203,8 +79,8 @@ function WhatsAppLink({ children, className = '', label }) {
   );
 }
 
-function ContentModal({ content, closeButtonRef, onClose }) {
-  if (!content) return null;
+function ContentModal({ content: modalContent, closeButtonRef, onClose }) {
+  if (!modalContent) return null;
 
   return (
     <div className="office-modal" role="presentation" onMouseDown={onClose}>
@@ -218,24 +94,24 @@ function ContentModal({ content, closeButtonRef, onClose }) {
         <button ref={closeButtonRef} className="office-modal__close" type="button" onClick={onClose} aria-label="Fechar conteúdo">
           <X size={19} />
         </button>
-        <p className="office-kicker">{content.kicker}</p>
-        <h2 id="office-modal-title">{content.title}</h2>
-        <p className="office-modal__intro">{content.intro}</p>
+        <p className="office-kicker">{modalContent.kicker}</p>
+        <h2 id="office-modal-title">{modalContent.title}</h2>
+        <p className="office-modal__intro">{modalContent.intro}</p>
         <div className="office-modal__columns">
           <div>
             <h3>Pontos</h3>
             <ul>
-              {content.points.map((point) => <li key={point}>{point}</li>)}
+              {modalContent.points.map((point) => <li key={point}>{point}</li>)}
             </ul>
           </div>
-          {content.documents && (
+          {modalContent.documents && (
             <div>
                 <h3>Documentos</h3>
-              <p>{content.documents}</p>
+              <p>{modalContent.documents}</p>
             </div>
           )}
         </div>
-        <p className="office-modal__note"><ShieldCheck size={18} /> {content.note}</p>
+        <p className="office-modal__note"><ShieldCheck size={18} /> {modalContent.note}</p>
         <WhatsAppLink className="office-button office-button--gold" label="Falar sobre este assunto no WhatsApp">
           Falar com o escritório <ArrowRight size={17} />
         </WhatsAppLink>
@@ -246,7 +122,7 @@ function ContentModal({ content, closeButtonRef, onClose }) {
 
 export default function InstitutionalSite({ section = 'home' }) {
   const isHome = section === 'home';
-  const pageDetails = sectionDetails[section];
+  const pageDetails = content.sectionDetails[section];
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const modalCloseButtonRef = useRef(null);
@@ -269,10 +145,7 @@ export default function InstitutionalSite({ section = 'home' }) {
     document.title = pageDetails
       ? `${pageDetails.title} | Pedro Bastos Lund`
       : 'Pedro Bastos Lund | Advocacia e Consultoria Jurídica';
-    description.setAttribute(
-      'content',
-      'Advocacia e consultoria jurídica para contratos, bancos, consumo e empresas.',
-    );
+    description.setAttribute('content', content.meta.description);
     return () => {
       document.title = previousTitle;
       fontLink.remove();
@@ -315,9 +188,9 @@ export default function InstitutionalSite({ section = 'home' }) {
     document.documentElement.classList.add('office-page-is-leaving');
     window.setTimeout(() => window.location.assign(href), 420);
   };
-  const openModal = (content, event) => {
+  const openModal = (modalContent, event) => {
     lastModalTriggerRef.current = event.currentTarget;
-    setActiveModal(content);
+    setActiveModal(modalContent);
   };
 
   return (
@@ -339,7 +212,7 @@ export default function InstitutionalSite({ section = 'home' }) {
             <MessageCircle size={17} /> Falar no WhatsApp
           </WhatsAppLink>
           <div className="office-social-links" aria-label="Redes sociais">
-            {socialLinks.map(({ label, href, icon }) => (
+            {content.social.map(({ label, href, icon }) => (
               <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label} title={label}>
                 <SocialIcon name={icon} />
               </a>
@@ -352,8 +225,8 @@ export default function InstitutionalSite({ section = 'home' }) {
       <section className="office-hero" id="inicio">
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
-            <p className="office-hero__eyebrow"><span aria-hidden="true" /> Advocacia e consultoria jurídica</p>
-            <h1>Soluções jurídicas<br className="office-hero__title-break" /> construídas com estratégia.</h1>
+            <p className="office-hero__eyebrow"><span aria-hidden="true" /> {content.hero.eyebrow}</p>
+            <h1>{content.hero.title}<br className="office-hero__title-break" /> {content.hero.titleBreak}</h1>
           </div>
           <div className="office-hero__portrait">
             <img src={portrait} alt="Pedro Bastos Lund" />
@@ -374,27 +247,27 @@ export default function InstitutionalSite({ section = 'home' }) {
       {isHome && <section className="office-home-editorial">
         <div className="office-shell office-home-editorial__inner">
           <div>
-            <p className="office-kicker">Atuação dedicada</p>
-            <h2>O caso vem primeiro.</h2>
+            <p className="office-kicker">{content.editorial.kicker}</p>
+            <h2>{content.editorial.title}</h2>
           </div>
-          <p>Antes de indicar um caminho, entendemos os fatos, os documentos e o que precisa ser resolvido.</p>
+          <p>{content.editorial.text}</p>
         </div>
       </section>}
 
       {isHome && <section className="office-home-services" id="atuacao">
         <div className="office-shell">
           <div className="office-section-heading">
-            <p className="office-kicker">O que defendemos</p>
-            <h2>Onde podemos atuar.</h2>
-            <p>Demandas concretas de pessoas, famílias e empresas.</p>
+            <p className="office-kicker">{content.servicesIntro.kicker}</p>
+            <h2>{content.servicesIntro.title}</h2>
+            <p>{content.servicesIntro.text}</p>
           </div>
           <div className="office-home-services__list">
             {areas.map(({ title, text, href, modal }, index) => {
-              const content = <><span className="office-service-row__number">{String(index + 1).padStart(2, '0')}</span><span className="office-service-row__body"><strong>{title}</strong><span>{text}</span></span><ArrowRight size={18} /></>;
+              const rowContent = <><span className="office-service-row__number">{String(index + 1).padStart(2, '0')}</span><span className="office-service-row__body"><strong>{title}</strong><span>{text}</span></span><ArrowRight size={18} /></>;
               return href ? (
-                <a className="office-service-row" href={href} key={title} onClick={(event) => navigateWithTransition(event, href)}>{content}</a>
+                <a className="office-service-row" href={href} key={title} onClick={(event) => navigateWithTransition(event, href)}>{rowContent}</a>
               ) : (
-                <button className="office-service-row" type="button" key={title} onClick={(event) => openModal(modal, event)}>{content}</button>
+                <button className="office-service-row" type="button" key={title} onClick={(event) => openModal(modal, event)}>{rowContent}</button>
               );
             })}
           </div>
@@ -404,8 +277,8 @@ export default function InstitutionalSite({ section = 'home' }) {
       {section === 'areas' && <section className="office-areas" id="atuacao">
         <div className="office-shell">
           <div className="office-section-heading">
-            <h2>Áreas atendidas.</h2>
-            <p>Conheça as principais demandas do escritório.</p>
+            <h2>{content.areasPage.title}</h2>
+            <p>{content.areasPage.text}</p>
           </div>
           <div className="office-areas__grid">
             {areas.map(({ icon: Icon, title, text, href, modal }) => (
@@ -449,16 +322,12 @@ export default function InstitutionalSite({ section = 'home' }) {
       {section === 'process' && <section className="office-process" id="como-funciona">
         <div className="office-shell office-process__grid">
           <div className="office-process__heading">
-            <h2>Atendimento jurídico.</h2>
-            <p>Relato, análise dos documentos e orientação sobre os próximos passos.</p>
+            <h2>{content.process.title}</h2>
+            <p>{content.process.text}</p>
             <WhatsAppLink className="office-text-link" label="Falar com a equipe pelo WhatsApp">Falar no WhatsApp <ArrowRight size={17} /></WhatsAppLink>
           </div>
           <div className="office-process__steps">
-            {[
-              ['01', 'Relato', 'Você explica o que aconteceu.'],
-              ['02', 'Análise', 'Conferimos os documentos relevantes.'],
-              ['03', 'Orientação', 'Indicamos os caminhos possíveis.'],
-            ].map(([number, title, text]) => (
+            {content.process.steps.map(({ number, title, text }) => (
               <article className="office-step" key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></article>
             ))}
           </div>
@@ -471,14 +340,12 @@ export default function InstitutionalSite({ section = 'home' }) {
             <h2>Equipe jurídica.</h2>
           </div>
           <div className="office-team__grid">
-            <article className="office-person">
-              <img src={aboutPortrait} alt="Pedro Bastos Lund" />
-              <div className="office-person__body"><p className="office-person__eyebrow">Advogado responsável</p><h3>Pedro Bastos Lund</h3><span>OAB/RS 74.953</span><p>Contratos, direito bancário e demandas empresariais.</p></div>
-            </article>
-            <article className="office-person">
-              <img src={eduardaPortrait} alt="Eduarda Marranghello" />
-              <div className="office-person__body"><p className="office-person__eyebrow">Equipe jurídica</p><h3>Eduarda Marranghello</h3><p>Atendimento e organização dos documentos.</p></div>
-            </article>
+            {content.team.members.map((member) => (
+              <article className="office-person" key={member.name}>
+                <img src={PORTRAITS[member.portraitKey]} alt={member.name} />
+                <div className="office-person__body"><p className="office-person__eyebrow">{member.eyebrow}</p><h3>{member.name}</h3>{member.extra && <span>{member.extra}</span>}<p>{member.bio}</p></div>
+              </article>
+            ))}
           </div>
         </div>
       </section>}
@@ -486,20 +353,18 @@ export default function InstitutionalSite({ section = 'home' }) {
       {isHome && <section className="office-home-team" id="equipe">
         <div className="office-shell office-home-team__layout">
           <div className="office-section-heading">
-            <p className="office-kicker">Nossa equipe</p>
-            <h2>Quem conduz cada atendimento.</h2>
-            <p>Conheça os profissionais responsáveis pela análise e pelo acompanhamento das demandas.</p>
+            <p className="office-kicker">{content.sectionDetails.team.kicker}</p>
+            <h2>{content.team.homeTitle}</h2>
+            <p>{content.team.homeText}</p>
             <a className="office-text-link" href={siteRoutes.team} onClick={(event) => navigateWithTransition(event, siteRoutes.team)}>Conheça a equipe <ArrowRight size={17} /></a>
           </div>
           <div className="office-home-team__members">
-            <article className="office-team-member">
-              <img src={aboutPortrait} alt="Pedro Bastos Lund" loading="lazy" />
-              <div><p className="office-person__eyebrow">Advogado responsável</p><h3>Pedro Bastos Lund</h3><span>OAB/RS 74.953</span></div>
-            </article>
-            <article className="office-team-member">
-              <img src={eduardaPortrait} alt="Eduarda Marranghello" loading="lazy" />
-              <div><p className="office-person__eyebrow">Equipe jurídica</p><h3>Eduarda Marranghello</h3><span>Atendimento e organização</span></div>
-            </article>
+            {content.team.members.map((member) => (
+              <article className="office-team-member" key={member.name}>
+                <img src={PORTRAITS[member.portraitKey]} alt={member.name} loading="lazy" />
+                <div><p className="office-person__eyebrow">{member.eyebrow}</p><h3>{member.name}</h3>{member.extra && <span>{member.extra}</span>}</div>
+              </article>
+            ))}
           </div>
         </div>
       </section>}
@@ -511,11 +376,11 @@ export default function InstitutionalSite({ section = 'home' }) {
             <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span>
           </div>
           <div className="office-footer__contact" aria-label="Informações de contato">
-            <span><strong>Endereço</strong>Rua Visconde do Herval, 1092, sala 503<br />Menino Deus, Porto Alegre/RS</span>
-            <a href="tel:+555132235692"><strong>Telefone</strong>(51) 3223-5692</a>
-            <a href="mailto:pedro@bastoslund.com.br"><strong>E-mail</strong>pedro@bastoslund.com.br</a>
+            <span><strong>Endereço</strong>{content.footer.addressLine}<br />{content.footer.addressCity}</span>
+            <a href={`tel:${content.footer.phoneHref}`}><strong>Telefone</strong>{content.footer.phoneDisplay}</a>
+            <a href={`mailto:${content.footer.email}`}><strong>E-mail</strong>{content.footer.email}</a>
           </div>
-          <p>Informações gerais. Não substituem uma consulta jurídica.</p>
+          <p>{content.footer.note}</p>
           <span>© {new Date().getFullYear()} Pedro Bastos Lund</span>
         </div>
       </footer>
