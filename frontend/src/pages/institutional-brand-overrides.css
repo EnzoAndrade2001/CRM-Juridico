@@ -1,7 +1,7 @@
 /* Identidade institucional: preto quase puro, no espírito das peças de campanha do escritório. */
 .office-site {
-  --office-navy: #070707;
-  --office-navy-soft: #121212;
+  --office-navy: #07182c;
+  --office-navy-soft: #0e2946;
   font-family: 'Inter', Arial, sans-serif !important;
   letter-spacing: 0;
   animation: office-site-enter 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -12,7 +12,7 @@
   z-index: 200;
   inset: 0;
   pointer-events: none;
-  background: #070707;
+  background: var(--office-navy);
   transform: translateY(100%);
   will-change: transform;
 }
@@ -46,10 +46,10 @@ html.office-page-is-leaving .office-page-transition {
 .office-hero::after {
   background: linear-gradient(
     90deg,
-    #070707 0%,
-    #070707 43%,
-    rgba(7, 7, 7, 0.84) 57%,
-    rgba(7, 7, 7, 0.18) 100%
+    #07182c 0%,
+    #07182c 43%,
+    rgba(7, 24, 44, 0.84) 57%,
+    rgba(7, 24, 44, 0.18) 100%
   );
 }
 
@@ -58,12 +58,16 @@ html.office-page-is-leaving .office-page-transition {
 }
 
 .office-footer {
-  background: #050505;
+  background: #071321;
+}
+
+.office-clients {
+  background: #071321;
 }
 
 @media (max-width: 900px) {
   .office-nav {
-    background: rgba(7, 7, 7, 0.98);
+    background: rgba(7, 24, 44, 0.98);
   }
 }
 
@@ -71,9 +75,9 @@ html.office-page-is-leaving .office-page-transition {
   .office-hero::after {
     background: linear-gradient(
       180deg,
-      rgba(7, 7, 7, 0.35) 0%,
-      #070707 54%,
-      #070707 100%
+      rgba(7, 24, 44, 0.35) 0%,
+      #07182c 54%,
+      #07182c 100%
     );
   }
 }
@@ -171,7 +175,7 @@ html.office-page-is-leaving .office-page-transition {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(7, 9, 13, 0.76);
+  background: rgba(7, 24, 44, 0.76);
 }
 
 .office-modal__dialog {
@@ -367,7 +371,7 @@ html.office-page-is-leaving .office-page-transition {
   min-height: 420px;
   align-items: end;
   padding: 150px 0 75px;
-  background: #070707;
+  background: var(--office-navy);
   color: #fff;
 }
 
