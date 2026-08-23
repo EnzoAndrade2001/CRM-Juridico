@@ -353,7 +353,7 @@ export default function InstitutionalSite({ section = 'home' }) {
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
             <p className="office-hero__eyebrow"><span aria-hidden="true" /> Advocacia e consultoria jurídica</p>
-            <h1>Cada caso pede atenção, estratégia e clareza.</h1>
+            <h1>Soluções jurídicas construídas com estratégia.</h1>
           </div>
           <div className="office-hero__portrait">
             <p className="office-hero__portrait-name"><span>Pedro Bastos Lund</span> OAB/RS 74.953</p>
