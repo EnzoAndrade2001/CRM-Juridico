@@ -13,7 +13,7 @@ import {
   Stamp,
   X,
 } from 'lucide-react';
-import portrait from '../assets/pedro-bastos-lund-hero-cutout.png';
+import portrait from '../assets/pedro-bastos-lund-hero-hq.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import eduardaPortrait from '../assets/dra-eduarda-hq.png';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
@@ -349,17 +349,13 @@ export default function InstitutionalSite({ section = 'home' }) {
       </header>
 
       {isHome ? (
-      <section className="office-hero" id="inicio">
+      <section className="office-hero" id="inicio" style={{ '--office-hero-image': `url(${portrait})` }}>
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
             <p className="office-hero__eyebrow"><span aria-hidden="true" /> Advocacia e consultoria jurídica</p>
             <h1>Cada caso pede atenção, estratégia e clareza.</h1>
-            <p className="office-hero__lead">
-              Atuação jurídica para pessoas e empresas, com análise do caso e caminhos objetivos para seguir.
-            </p>
           </div>
           <div className="office-hero__portrait">
-            <img src={portrait} alt="Pedro Bastos Lund" />
             <p className="office-hero__portrait-name"><span>Pedro Bastos Lund</span> OAB/RS 74.953</p>
           </div>
         </div>
