@@ -5,9 +5,11 @@ import {
   BriefcaseBusiness,
   CarFront,
   FileText,
+  Handshake,
   Landmark,
   Menu,
   MessageCircle,
+  Search,
   Scale,
   ShieldCheck,
   Stamp,
@@ -16,6 +18,7 @@ import {
 import portrait from '../assets/pedro-bastos-lund-hero-cutout.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import eduardaPortrait from '../assets/dra-eduarda-hq.png';
+import ladyJustice from '../assets/lady-justice.png';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
 import content from '../content/institutional-site.json';
 import './institutional-site.css';
@@ -26,6 +29,7 @@ import './institutional-brand-overrides.css';
 const ICONS = { Banknote, CarFront, FileText, Landmark, BriefcaseBusiness, Scale, Stamp };
 // Idem para as fotos da equipe — o JSON só guarda "pedro" ou "eduarda".
 const PORTRAITS = { pedro: aboutPortrait, eduarda: eduardaPortrait };
+const DIFFERENTIATOR_ICONS = [Handshake, Search, MessageCircle];
 
 const whatsappNumber = '555193665581';
 const baseUrl = import.meta.env.BASE_URL || '/';
@@ -174,6 +178,17 @@ export default function InstitutionalSite({ section = 'home' }) {
     };
   }, [activeModal]);
 
+  useEffect(() => {
+    if (!isHome || !window.location.hash) return undefined;
+
+    const sectionId = decodeURIComponent(window.location.hash.slice(1));
+    const frameId = window.requestAnimationFrame(() => {
+      document.getElementById(sectionId)?.scrollIntoView({ block: 'start' });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [isHome]);
+
   const closeMenu = () => setMenuOpen(false);
   const navigateWithTransition = (event, href) => {
     if (
@@ -245,32 +260,39 @@ export default function InstitutionalSite({ section = 'home' }) {
         </section>
       )}
 
-      {isHome && <section className="office-home-editorial" id="quem-somos">
-        <div className="office-shell office-home-editorial__inner">
-          <div className="office-home-editorial__copy">
-            <p className="office-kicker">{content.editorial.kicker}</p>
+      {isHome && <section className="office-about" id="quem-somos">
+        <div className="office-shell office-about__layout">
+          <div className="office-about__card">
             <h2>{content.editorial.title}</h2>
-            <p>{content.editorial.text}</p>
+            {content.editorial.paragraphs.map((paragraph) => (
+              <p key={paragraph.slice(0, 40)}>{paragraph}</p>
+            ))}
           </div>
-          <div className="office-home-editorial__portrait">
+          <div className="office-about__media">
             <img src={aboutPortrait} alt="Pedro Bastos Lund" loading="lazy" />
           </div>
         </div>
       </section>}
 
       {isHome && <section className="office-differentiators" id="diferenciais">
-        <div className="office-shell">
-          <div className="office-section-heading">
-            <p className="office-kicker">{content.differentiators.kicker}</p>
+        <div className="office-shell office-differentiators__layout">
+          <div className="office-differentiators__content">
+            <p className="office-kicker office-kicker--light">{content.differentiators.kicker}</p>
             <h2>{content.differentiators.title}</h2>
+            <div className="office-differentiators__list">
+              {content.differentiators.items.map((item, index) => {
+                const Icon = DIFFERENTIATOR_ICONS[index] || ShieldCheck;
+                return (
+                  <article className="office-differentiator" key={item.title}>
+                    <span className="office-differentiator__icon" aria-hidden="true"><Icon size={34} strokeWidth={1.5} /></span>
+                    <div><h3>{item.title}</h3><p>{item.text}</p></div>
+                  </article>
+                );
+              })}
+            </div>
           </div>
-          <div className="office-differentiators__grid">
-            {content.differentiators.items.map((item) => (
-              <article className="office-differentiator" key={item.title}>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-              </article>
-            ))}
+          <div className="office-differentiators__art" aria-hidden="true">
+            <img src={ladyJustice} alt="" loading="lazy" />
           </div>
         </div>
       </section>}

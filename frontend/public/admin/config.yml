@@ -38,9 +38,8 @@ collections:
             name: "editorial"
             widget: "object"
             fields:
-              - { label: "Frase pequena", name: "kicker", widget: "string" }
-              - { label: "Título", name: "title", widget: "string" }
-              - { label: "Texto", name: "text", widget: "text" }
+              - { label: "Título (no topo do card escuro)", name: "title", widget: "string" }
+              - { label: "Parágrafos", name: "paragraphs", widget: "list", field: { label: "Parágrafo", name: "paragraph", widget: "text" } }
           - label: "Diferenciais"
             name: "differentiators"
             widget: "object"

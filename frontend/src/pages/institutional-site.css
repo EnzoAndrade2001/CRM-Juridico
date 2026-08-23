@@ -61,11 +61,16 @@
 .office-page-hero__inner p { max-width: 560px; margin: 0; color: rgba(255, 255, 255, .7); font-size: 16px; line-height: 1.7; }
 
 /* Quem somos */
-.office-home-editorial { padding: 90px 0; background: #fff; }
-.office-home-editorial__inner { display: grid; grid-template-columns: 1fr .8fr; gap: 64px; align-items: center; }
-.office-home-editorial__copy h2 { margin-bottom: 18px; font-size: clamp(30px, 3.6vw, 44px); line-height: 1.16; }
-.office-home-editorial__copy p:not(.office-kicker) { max-width: 480px; color: var(--office-copy); font-size: 16px; line-height: 1.8; }
-.office-home-editorial__portrait img { width: 100%; height: 420px; border-radius: 4px; object-fit: cover; object-position: center 15%; filter: grayscale(1) contrast(1.05); }
+/* Quem somos: card escuro com texto justificado + imagem em preto e branco */
+.office-about { padding: 90px 0; background: #0f0f0f; }
+.office-about__layout { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: stretch; }
+.office-about__card { display: flex; flex-direction: column; justify-content: center; padding: 54px 48px; background: #2e2e2e; }
+.office-about__card h2 { margin: 0 0 20px; color: #fff; font-size: clamp(22px, 2.2vw, 28px); font-weight: 700; line-height: 1.3; text-align: center; }
+.office-about__card h2::after { display: block; width: 100%; height: 1px; margin-top: 20px; background: var(--office-gold); content: ""; }
+.office-about__card p { margin: 0 0 20px; color: rgba(255, 255, 255, .88); font-size: 15px; line-height: 1.75; text-align: justify; text-justify: inter-word; hyphens: auto; }
+.office-about__card p:last-child { margin-bottom: 0; }
+.office-about__media { min-height: 520px; }
+.office-about__media img { width: 100%; height: 100%; min-height: 520px; object-fit: cover; object-position: center 20%; filter: grayscale(1) contrast(1.05); }
 
 /* Diferenciais */
 .office-differentiators { padding: 80px 0; background: var(--office-cream); border-block: 1px solid #e7e0d5; }
@@ -180,11 +185,12 @@
   .office-hero__inner { flex-direction: column; align-items: flex-start; gap: 22px; }
   .office-hero__portrait { flex-direction: row; align-items: center; gap: 14px; align-self: flex-start; }
   .office-hero__portrait-name { text-align: left; }
-  .office-home-editorial__inner, .office-differentiators__grid, .office-home-services, .office-areas__grid, .office-guides__grid, .office-process__grid, .office-team__grid, .office-home-team__layout { gap: 30px; }
+  .office-about__layout, .office-differentiators__grid, .office-home-services, .office-areas__grid, .office-guides__grid, .office-process__grid, .office-team__grid, .office-home-team__layout { gap: 30px; }
   .office-differentiators__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .office-areas__grid, .office-guides__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .office-home-editorial__inner { grid-template-columns: 1fr; }
-  .office-home-editorial__portrait { order: -1; }
+  .office-about__layout { grid-template-columns: 1fr; }
+  .office-about__card { padding: 40px 32px; }
+  .office-about__media, .office-about__media img { min-height: 380px; }
   .office-process__grid { grid-template-columns: 1fr; }
   .office-team__grid { grid-template-columns: 1fr; }
   .office-home-team__layout { grid-template-columns: 1fr; }

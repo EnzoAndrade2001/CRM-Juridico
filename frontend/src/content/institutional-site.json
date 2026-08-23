@@ -23,18 +23,20 @@
     "titleBreak": "construídas com estratégia."
   },
   "editorial": {
-    "kicker": "Quem somos",
-    "title": "Experiência jurídica com atendimento próximo.",
-    "text": "Pedro Bastos Lund Advocacia atua de forma estratégica, próxima e transparente na defesa dos interesses de pessoas e empresas. Antes de indicar um caminho, entendemos os fatos, os documentos e o que precisa ser resolvido."
+    "title": "Pedro Bastos Lund Advocacia",
+    "paragraphs": [
+      "O escritório Pedro Bastos Lund atua lado a lado com pessoas e empresas, oferecendo soluções jurídicas construídas com estratégia, clareza e responsabilidade. Acreditamos que um bom atendimento vai além da técnica: envolve escuta atenta, confiança e um trabalho conduzido de forma personalizada.",
+      "Antes de indicar um caminho, entendemos os fatos, analisamos os documentos e identificamos o que realmente precisa ser resolvido. O cliente acompanha cada etapa em linguagem acessível, sem excesso de termos técnicos.",
+      "Localizado no bairro Menino Deus, em Porto Alegre, o escritório atende demandas nas áreas de direito bancário, contratos, consumidor, trabalhista, família e sucessões, além de questões empresariais."
+    ]
   },
   "differentiators": {
-    "kicker": "Diferenciais",
-    "title": "O que torna o atendimento diferente.",
+    "kicker": "Atuação dedicada",
+    "title": "Nossos diferenciais",
     "items": [
-      { "title": "Atendimento individual", "text": "Cada caso é conduzido de forma dedicada, sem respostas prontas." },
-      { "title": "Comunicação clara", "text": "Explicações objetivas, sem jargão jurídico desnecessário." },
-      { "title": "Análise responsável", "text": "Nenhuma promessa antes de entender os documentos e o contexto." },
-      { "title": "Acompanhamento próximo", "text": "Contato direto do início ao fim de cada demanda." }
+      { "title": "Contato com quem conduz o caso", "text": "O cliente fala diretamente com a equipe responsável pela demanda." },
+      { "title": "Estratégia definida para cada situação", "text": "Documentos, riscos e objetivos orientam a atuação jurídica." },
+      { "title": "Atualizações em linguagem clara", "text": "O andamento e os próximos passos são comunicados sem excesso de termos técnicos." }
     ]
   },
   "servicesIntro": {
