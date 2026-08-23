@@ -553,13 +553,6 @@ export default function InstitutionalSite({ section = 'home' }) {
         </div>
       </section>}
 
-      {section !== 'process' && <section className="office-final-cta">
-        <div className="office-shell office-final-cta__inner">
-          <div><p className="office-kicker office-kicker--light">Contato</p><h2>Fale com o escritório.</h2><p>Envie uma mensagem sobre o seu caso.</p></div>
-          <WhatsAppLink className="office-button office-button--gold" label="Conversar com a equipe pelo WhatsApp">Falar no WhatsApp <ArrowRight size={18} /></WhatsAppLink>
-        </div>
-      </section>}
-
       <footer className="office-footer"><div className="office-shell office-footer__inner"><div className="office-footer__brand"><img src={logo} alt="" /><span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span></div><p>Informações gerais. Não substituem uma consulta jurídica.</p><span>© {new Date().getFullYear()} Pedro Bastos Lund</span></div></footer>
       <WhatsAppLink className="office-float" label="Abrir conversa no WhatsApp"><MessageCircle size={20} /><span>Fale conosco</span></WhatsAppLink>
       <ContentModal content={activeModal} closeButtonRef={modalCloseButtonRef} onClose={() => setActiveModal(null)} />
