@@ -349,13 +349,14 @@ export default function InstitutionalSite({ section = 'home' }) {
       </header>
 
       {isHome ? (
-      <section className="office-hero" id="inicio" style={{ '--office-hero-image': `url(${portrait})` }}>
+      <section className="office-hero" id="inicio">
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
             <p className="office-hero__eyebrow"><span aria-hidden="true" /> Advocacia e consultoria jurídica</p>
-            <h1>Soluções jurídicas construídas com estratégia.</h1>
+            <h1>Soluções jurídicas<br className="office-hero__title-break" /> construídas com estratégia.</h1>
           </div>
           <div className="office-hero__portrait">
+            <img src={portrait} alt="Pedro Bastos Lund" />
             <p className="office-hero__portrait-name"><span>Pedro Bastos Lund</span> OAB/RS 74.953</p>
           </div>
         </div>
