@@ -1606,3 +1606,57 @@ html.office-page-is-leaving .office-page-transition {
     align-self: flex-end;
   }
 }
+
+/* Retrato recortado sobre o fundo institucional, sem o cenário original. */
+.office-hero__inner {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 0;
+}
+
+.office-hero__copy {
+  max-width: 820px;
+}
+
+.office-hero h1 {
+  font-size: clamp(34px, 2.7vw, 40px);
+  text-wrap: nowrap;
+}
+
+.office-hero__portrait {
+  background: transparent;
+}
+
+.office-hero__portrait img {
+  object-fit: cover;
+  object-position: center 8%;
+}
+
+.office-hero__portrait::after {
+  background: linear-gradient(90deg, rgba(13, 27, 42, 0.18), transparent 48%);
+}
+
+@media (max-width: 900px) {
+  .office-hero__inner {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  }
+
+  .office-hero h1 {
+    font-size: 34px;
+  }
+}
+
+@media (max-width: 640px) {
+  .office-hero__inner {
+    display: flex;
+  }
+
+  .office-hero h1 {
+    white-space: normal;
+    text-wrap: balance;
+  }
+
+  .office-hero__portrait img {
+    object-fit: contain;
+    object-position: center bottom;
+  }
+}
