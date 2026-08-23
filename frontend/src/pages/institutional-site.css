@@ -24,14 +24,15 @@
 
 /* Header */
 .office-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 0; background: var(--office-navy); color: #fff; }
-.office-header .office-shell { display: flex; align-items: center; justify-content: space-between; gap: 24px; width: min(1200px, calc(100% - 48px)); }
+/* Marca e navegação agrupadas ao centro, em vez de coladas nas bordas */
+.office-header .office-shell { display: flex; align-items: center; justify-content: center; gap: 40px; width: min(1320px, calc(100% - 48px)); }
 .office-brand { display: inline-flex; align-items: center; gap: 12px; }
 .office-brand__mark { display: grid; width: 46px; height: 50px; flex: 0 0 auto; place-items: center; }
 .office-brand__mark img { width: 44px; height: 44px; object-fit: contain; }
 .office-brand > span:last-child { display: flex; flex-direction: column; }
 .office-brand strong { font-size: 17px; font-weight: 700; letter-spacing: .02em; }
 .office-brand small { margin-top: 2px; color: var(--office-gold-light); font-size: 8px; letter-spacing: .15em; text-transform: uppercase; }
-.office-nav { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.office-nav { display: flex; align-items: center; gap: 10px; }
 .office-nav > a { border: 1px solid rgba(214, 182, 110, .35); padding: 10px 14px; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; transition: border-color .2s ease, background .2s ease; }
 .office-nav > a:hover { border-color: var(--office-gold); background: rgba(189, 147, 69, .12); }
 .office-button-link { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
@@ -42,17 +43,18 @@
 .office-social-links a:hover { border-color: var(--office-gold); color: var(--office-gold-light); }
 .office-menu-toggle { display: none; border: 1px solid rgba(255, 255, 255, .3); padding: 9px; background: transparent; color: #fff; cursor: pointer; }
 
-/* Hero (barra compacta, não full-bleed) */
-.office-hero { background: var(--office-navy); color: #fff; border-top: 1px solid rgba(255, 255, 255, .08); }
-.office-hero__inner { display: flex; align-items: center; justify-content: space-between; gap: 32px; padding: 52px 0; }
-.office-hero__copy { max-width: 720px; }
-.office-hero__eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; color: var(--office-gold-light); font-size: 11px; font-weight: 800; letter-spacing: .19em; text-transform: uppercase; }
+/* Hero: frase em linha única à esquerda, retrato preenchendo a coluna direita */
+.office-hero { background: var(--office-navy); color: #fff; border-top: 1px solid rgba(255, 255, 255, .08); overflow: hidden; }
+.office-hero__inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 38%); gap: 28px; min-height: 500px; align-items: stretch; }
+.office-hero__copy { align-self: center; padding: 48px 0; }
+.office-hero__eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; color: var(--office-gold-light); font-size: 11px; font-weight: 800; letter-spacing: .19em; text-transform: uppercase; }
 .office-hero__eyebrow span { width: 34px; height: 1px; background: var(--office-gold); }
-.office-hero h1 { margin-bottom: 0; color: #fff; font-family: "Dancing Script", cursive; font-weight: 700; font-size: clamp(32px, 3.6vw, 46px); line-height: 1.25; }
+/* nowrap + tamanho limitado pela largura da coluna mantém a frase em uma linha só */
+.office-hero h1 { margin-bottom: 0; color: #fff; font-family: "Dancing Script", cursive; font-weight: 700; font-size: min(2.5vw, 31px); line-height: 1.3; white-space: nowrap; }
 .office-hero__title-break { display: none; }
-.office-hero__portrait { display: flex; flex-direction: column; align-items: flex-end; flex: 0 0 auto; }
-.office-hero__portrait img { width: 108px; height: 108px; border-radius: 6px; object-fit: cover; object-position: center 20%; }
-.office-hero__portrait-name { margin: 10px 0 0; text-align: right; font-size: 11px; color: rgba(255, 255, 255, .6); }
+.office-hero__portrait { position: relative; align-self: stretch; min-height: 500px; }
+.office-hero__portrait img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 18%; }
+.office-hero__portrait-name { position: absolute; right: 0; bottom: 26px; margin: 0; text-align: right; font-size: 11px; color: rgba(255, 255, 255, .6); }
 .office-hero__portrait-name span { display: block; margin-bottom: 2px; color: #fff; font-size: 15px; font-weight: 700; }
 
 /* Página interna (áreas/como funciona/dúvidas/equipe) */
@@ -182,9 +184,9 @@
 @media (max-width: 980px) {
   .office-nav { display: none; }
   .office-menu-toggle { display: grid; place-items: center; }
-  .office-hero__inner { flex-direction: column; align-items: flex-start; gap: 22px; }
-  .office-hero__portrait { flex-direction: row; align-items: center; gap: 14px; align-self: flex-start; }
-  .office-hero__portrait-name { text-align: left; }
+  .office-hero__inner { grid-template-columns: minmax(0, 1fr) minmax(220px, 40%); gap: 18px; min-height: 400px; }
+  .office-hero__portrait { min-height: 400px; }
+  .office-hero h1 { font-size: 3vw; }
   .office-about__layout, .office-differentiators__grid, .office-home-services, .office-areas__grid, .office-guides__grid, .office-process__grid, .office-team__grid, .office-home-team__layout { gap: 30px; }
   .office-differentiators__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .office-areas__grid, .office-guides__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -199,7 +201,12 @@
 
 @media (max-width: 640px) {
   .office-shell { width: min(100% - 32px, 520px); }
-  .office-hero__title-break { display: block; }
+  .office-hero__inner { grid-template-columns: minmax(0, 1fr) 38%; gap: 12px; min-height: 320px; }
+  .office-hero__copy { padding: 32px 0; }
+  .office-hero__portrait { min-height: 320px; }
+  .office-hero h1 { font-size: 4.2vw; }
+  .office-hero__portrait-name { bottom: 14px; font-size: 9px; }
+  .office-hero__portrait-name span { font-size: 12px; }
   .office-differentiators__grid { grid-template-columns: 1fr; }
   .office-areas__grid, .office-guides__grid { grid-template-columns: 1fr; }
   .office-home-team__members { grid-template-columns: 1fr; }
