@@ -1266,3 +1266,111 @@ html.office-page-is-leaving .office-page-transition {
     font-size: 13px;
   }
 }
+
+/* Ajuste final do hero: frase contínua e fotografia com mais presença. */
+.office-hero {
+  min-height: 650px;
+}
+
+.office-hero__inner {
+  position: relative;
+  display: block;
+  min-height: 650px;
+  padding-top: 168px;
+}
+
+.office-hero__copy {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
+  padding-top: 0;
+}
+
+.office-hero h1 {
+  max-width: none;
+  font-size: 54px;
+  line-height: 1.08;
+  white-space: nowrap;
+}
+
+.office-hero__lead {
+  max-width: 620px;
+}
+
+.office-hero__portrait {
+  position: absolute;
+  z-index: 1;
+  right: -8px;
+  bottom: 0;
+  width: 440px;
+  height: 620px;
+  min-height: 0;
+}
+
+.office-hero__portrait img {
+  max-height: none;
+}
+
+@media (max-width: 1100px) {
+  .office-hero h1 {
+    font-size: 46px;
+  }
+
+  .office-hero__portrait {
+    width: 390px;
+    height: 590px;
+  }
+}
+
+@media (max-width: 900px) {
+  .office-hero,
+  .office-hero__inner {
+    min-height: 620px;
+  }
+
+  .office-hero__inner {
+    padding-top: 145px;
+  }
+
+  .office-hero h1 {
+    max-width: 700px;
+    font-size: 42px;
+    white-space: normal;
+  }
+
+  .office-hero__portrait {
+    right: -12px;
+    width: 340px;
+    height: 500px;
+  }
+}
+
+@media (max-width: 640px) {
+  .office-hero,
+  .office-hero__inner {
+    min-height: 680px;
+  }
+
+  .office-hero__inner {
+    display: block;
+    padding-top: 118px;
+  }
+
+  .office-hero h1 {
+    max-width: 430px;
+    font-size: 40px;
+  }
+
+  .office-hero__portrait {
+    right: -4px;
+    width: min(300px, 72vw);
+    height: 380px;
+    margin: 0;
+  }
+
+  .office-hero__portrait-name {
+    bottom: 10px;
+  }
+}
