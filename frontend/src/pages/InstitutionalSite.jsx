@@ -368,7 +368,7 @@ export default function InstitutionalSite({ section = 'home' }) {
           <div className="office-hero__copy">
             <h1>Sobre o escritório</h1>
             <p className="office-hero__lead">
-              Atendimento jurídico direto para pessoas e empresas.
+              O escritório Pedro Bastos Lund oferece advocacia e consultoria jurídica para pessoas e empresas, com análise técnica, comunicação clara e orientação prática para cada caso.
             </p>
             <WhatsAppLink className="office-button office-button--gold" label="Iniciar atendimento com o escritório">
               Falar com o escritório <ArrowRight size={18} />

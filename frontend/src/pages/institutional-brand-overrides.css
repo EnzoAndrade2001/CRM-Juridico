@@ -606,6 +606,12 @@ html.office-page-is-leaving .office-page-transition {
   text-justify: inter-word;
 }
 
+.office-hero__lead {
+  max-width: 520px;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
 .office-intro,
 .office-highlights,
 .office-areas,
