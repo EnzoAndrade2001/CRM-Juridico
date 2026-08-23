@@ -353,16 +353,10 @@ export default function InstitutionalSite({ section = 'home' }) {
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
             <p className="office-hero__eyebrow"><span aria-hidden="true" /> Advocacia e consultoria jurídica</p>
-            <h1>Decisões importantes pedem orientação clara.</h1>
+            <h1>Cada caso pede atenção, estratégia e clareza.</h1>
             <p className="office-hero__lead">
               Atuação jurídica para pessoas e empresas, com análise do caso e caminhos objetivos para seguir.
             </p>
-            <div className="office-hero__services" aria-label="Principais áreas de atuação">
-              <p>Principais áreas de atuação</p>
-              <ul>
-                {areas.map(({ title }) => <li key={title}>{title}</li>)}
-              </ul>
-            </div>
           </div>
           <div className="office-hero__portrait">
             <img src={portrait} alt="Pedro Bastos Lund" />
