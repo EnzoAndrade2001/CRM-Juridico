@@ -366,9 +366,9 @@ export default function InstitutionalSite({ section = 'home' }) {
       <section className="office-hero" id="inicio" style={{ '--office-hero-image': `url(${portrait})` }}>
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
-            <h1>Orientação jurídica. <span>Decisões mais seguras.</span></h1>
+            <h1>Sobre o escritório</h1>
             <p className="office-hero__lead">
-              Atendimento direto para contratos, bancos, consumo e empresas.
+              Atendimento jurídico direto para pessoas e empresas.
             </p>
             <WhatsAppLink className="office-button office-button--gold" label="Iniciar atendimento com o escritório">
               Falar com o escritório <ArrowRight size={18} />

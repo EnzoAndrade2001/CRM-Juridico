@@ -345,10 +345,10 @@ html.office-page-is-leaving .office-page-transition {
 }
 
 .office-hero h1 {
-  max-width: 590px;
-  font-size: clamp(46px, 5vw, 70px);
+  max-width: 460px;
+  font-size: clamp(40px, 4.2vw, 58px);
   font-weight: 700;
-  line-height: 1.04;
+  line-height: 1.08;
   letter-spacing: 0;
 }
 
