@@ -666,6 +666,61 @@ html.office-page-is-leaving .office-page-transition {
   padding-block: 60px;
 }
 
+.office-nav {
+  gap: 8px;
+}
+
+.office-nav > a:not(.office-button-link) {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  border: 1px solid rgba(214, 182, 110, 0.38);
+  padding: 0 14px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.office-nav > a:not(.office-button-link):hover,
+.office-nav > a:not(.office-button-link):focus-visible {
+  border-color: var(--office-gold-light);
+  background: rgba(214, 182, 110, 0.12);
+  color: #fff;
+}
+
+.office-social-links {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 3px;
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+  padding-left: 10px;
+}
+
+.office-social-links a {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(214, 182, 110, 0.5);
+  color: rgba(255, 255, 255, 0.88);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.office-social-links a:hover,
+.office-social-links a:focus-visible {
+  border-color: var(--office-gold-light);
+  background: var(--office-gold);
+  color: var(--office-navy);
+}
+
+.office-social-links a:focus-visible,
+.office-nav > a:not(.office-button-link):focus-visible {
+  outline: 3px solid rgba(214, 182, 110, 0.45);
+  outline-offset: 3px;
+}
+
 @media (max-width: 640px) {
   .office-intro,
   .office-highlights,
@@ -700,5 +755,13 @@ html.office-page-is-leaving .office-page-transition {
 
   .office-final-cta {
     padding-block: 50px;
+  }
+
+  .office-social-links {
+    justify-content: flex-start;
+    margin: 8px 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    border-left: 0;
+    padding: 10px 0 0;
   }
 }

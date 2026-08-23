@@ -65,6 +65,10 @@ const sectionDetails = {
 const revisionalUrl = `${baseUrl.replace(/\/$/, '')}/revisional-bancario/`;
 const whatsappMessage = 'Olá, vim pelo site do escritório e gostaria de falar com a equipe.';
 const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+const socialLinks = [
+  { label: 'Instagram', href: 'https://www.instagram.com/pedrobastoslund/', icon: 'instagram' },
+  { label: 'Facebook', href: 'https://www.facebook.com/peedrobastoss/', icon: 'facebook' },
+];
 
 const areas = [
   {
@@ -220,6 +224,24 @@ const highlights = [
   },
 ];
 
+function SocialIcon({ name }) {
+  if (name === 'instagram') {
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.8" />
+        <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+        <circle cx="17.5" cy="6.5" r="1" fill="currentColor" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M14.5 8H17V5h-2.5C11.46 5 10 6.58 10 9.5V11H7v3h3v6h3v-6h3l1-3h-4V9.6c0-1.06.4-1.6 1.5-1.6Z" />
+    </svg>
+  );
+}
+
 function WhatsAppLink({ children, className = '', label }) {
   return (
     <a className={`office-button-link ${className}`} href={whatsappUrl} target="_blank" rel="noreferrer" aria-label={label}>
@@ -364,6 +386,13 @@ export default function InstitutionalSite({ section = 'home' }) {
           <WhatsAppLink className="office-header__cta" label="Falar com o escritório pelo WhatsApp" >
             <MessageCircle size={17} /> Falar no WhatsApp
           </WhatsAppLink>
+          <div className="office-social-links" aria-label="Redes sociais">
+            {socialLinks.map(({ label, href, icon }) => (
+              <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label} title={label}>
+                <SocialIcon name={icon} />
+              </a>
+            ))}
+          </div>
         </nav>
       </header>
 
