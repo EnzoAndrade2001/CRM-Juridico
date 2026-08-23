@@ -1,4 +1,4 @@
-/* Identidade institucional: preto quase puro, no espírito das peças de campanha do escritório. */
+/* Identidade institucional: azul profundo, dourado discreto e leitura editorial. */
 .office-site {
   --office-navy: #07182c;
   --office-navy-soft: #0e2946;
@@ -135,8 +135,7 @@ html.office-page-is-leaving .office-page-transition {
 
 .office-guide-card:hover {
   border-color: rgba(189, 147, 69, 0.65);
-  box-shadow: 0 15px 35px rgba(21, 34, 54, 0.08);
-  transform: translateY(-3px);
+  box-shadow: none;
 }
 
 .office-guide-card__category {
@@ -492,7 +491,7 @@ html.office-page-is-leaving .office-page-transition {
 }
 
 .office-highlights__content {
-  animation: office-highlight-enter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: none;
 }
 
 @keyframes office-highlight-enter {
@@ -522,6 +521,11 @@ html.office-page-is-leaving .office-page-transition {
 
 .office-area-card {
   grid-column: auto;
+}
+
+.office-area-card:hover {
+  box-shadow: none;
+  transform: none;
 }
 
 .office-guides__grid {

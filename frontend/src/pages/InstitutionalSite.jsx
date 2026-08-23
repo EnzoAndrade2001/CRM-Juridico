@@ -45,22 +45,22 @@ const sectionDetails = {
   areas: {
     kicker: 'Atuação',
     title: 'Áreas de atuação',
-    text: 'Escolha o assunto mais próximo da sua situação e veja como organizar o próximo passo.',
+    text: 'Conheça as situações em que o escritório pode orientar você.',
   },
   process: {
     kicker: 'O que oferecemos',
-    title: 'Seu caso merece análise e estratégia.',
-    text: 'Entendemos o que está em jogo, organizamos os documentos e apresentamos os caminhos possíveis para você decidir com clareza.',
+    title: 'Seu caso merece atenção de verdade.',
+    text: 'Você fala diretamente com a equipe, apresenta o que aconteceu e recebe uma leitura honesta sobre os caminhos possíveis.',
   },
   guides: {
     kicker: 'Conteúdos jurídicos',
-    title: 'Informação para decidir com segurança',
-    text: 'Orientações objetivas para ajudar você a reconhecer riscos e fazer boas perguntas.',
+    title: 'Direito explicado sem rodeios',
+    text: 'Informações práticas para entender seus direitos antes de tomar uma decisão.',
   },
   team: {
     kicker: 'O escritório',
-    title: 'Atendimento próximo em cada etapa',
-    text: 'Uma equipe que organiza as informações e acompanha a demanda com responsabilidade.',
+    title: 'Pessoas que acompanham o seu caso.',
+    text: 'Conheça quem está à frente do atendimento e da condução das demandas.',
   },
 };
 const revisionalUrl = `${baseUrl.replace(/\/$/, '')}/revisional-bancario/`;
@@ -193,31 +193,31 @@ const highlights = [
     mark: '01',
     label: 'Direito Civil',
     title: 'Direito Civil',
-    text: 'Contratos, responsabilidade civil e obrigações analisados com atenção às particularidades de cada caso.',
+    text: 'Contratos, indenizações e obrigações civis tratados a partir dos fatos e dos documentos do caso.',
   },
   {
     mark: '02',
     label: 'Direito Empresarial',
     title: 'Direito Empresarial',
-    text: 'Orientação societária, contratos comerciais e prevenção de riscos na rotina do seu negócio.',
+    text: 'Contratos comerciais, relações entre sócios e decisões importantes para a rotina da empresa.',
   },
   {
     mark: '03',
     label: 'Direito do Consumidor',
     title: 'Direito do Consumidor',
-    text: 'Defesa de direitos em relações de consumo diante de práticas abusivas ou cobranças indevidas.',
+    text: 'Cobranças indevidas, falhas na prestação de serviços e outros problemas de consumo.',
   },
   {
     mark: '04',
     label: 'Direito Bancário',
     title: 'Direito Bancário',
-    text: 'Análise de juros, tarifas, seguros e demais encargos em contratos bancários e financeiros.',
+    text: 'Conferência de juros, tarifas, seguros e demais encargos cobrados em contratos bancários.',
   },
   {
     mark: '05',
     label: 'Registro de Marcas',
     title: 'Registro de Marcas',
-    text: 'Proteção da identidade e dos ativos intangíveis da empresa junto ao INPI.',
+    text: 'Pedido e acompanhamento do registro que protege o nome e a identidade da sua empresa.',
   },
 ];
 
@@ -372,17 +372,17 @@ export default function InstitutionalSite({ section = 'home' }) {
       <section className="office-hero" id="inicio" style={{ '--office-hero-image': `url(${portrait})` }}>
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
-            <h1>Quando o que está em jogo importa. <span>Estratégia faz diferença.</span></h1>
+            <h1>O seu caso merece ser ouvido. <span>O próximo passo, bem orientado.</span></h1>
             <p className="office-hero__lead">
-              Análise cuidadosa e orientação objetiva para decisões importantes.
+              Conte o que aconteceu. Nós ajudamos você a entender as opções e decidir com mais segurança.
             </p>
             <WhatsAppLink className="office-button office-button--gold" label="Iniciar atendimento com o escritório">
               Iniciar atendimento <ArrowRight size={18} />
             </WhatsAppLink>
             <div className="office-hero__assurances" aria-label="Compromissos do escritório">
-              <span><Check size={15} /> Atendimento individual</span>
-              <span><Check size={15} /> Comunicação clara</span>
-              <span><Check size={15} /> Análise responsável</span>
+              <span><Check size={15} /> Contato direto com a equipe</span>
+              <span><Check size={15} /> Leitura dos documentos</span>
+              <span><Check size={15} /> Orientação sem juridiquês</span>
             </div>
           </div>
           <p className="office-hero__name"><span>Pedro Bastos Lund</span> OAB/RS 74.953</p>
@@ -402,10 +402,10 @@ export default function InstitutionalSite({ section = 'home' }) {
         <div className="office-shell office-intro__grid">
           <div>
             <p className="office-kicker">Atuação dedicada</p>
-            <h2>Antes de decidir, entenda o seu caso.</h2>
+            <h2>Primeiro, a gente entende o que aconteceu.</h2>
           </div>
           <div className="office-intro__copy">
-            <p>Uma conversa objetiva ajuda a organizar os fatos, os documentos e as possibilidades.</p>
+            <p>O atendimento começa com uma conversa direta sobre os fatos, os documentos e o que você precisa resolver.</p>
           </div>
         </div>
       </section>}
@@ -414,7 +414,7 @@ export default function InstitutionalSite({ section = 'home' }) {
         <div className="office-shell">
           <div className="office-section-heading">
             <p className="office-kicker office-kicker--light">Áreas de destaque</p>
-            <h2>Conheça as frentes mais procuradas.</h2>
+            <h2>Atuação para situações concretas.</h2>
           </div>
           <div className="office-highlights__grid">
             <div className="office-highlights__art" aria-hidden="true">
@@ -445,31 +445,11 @@ export default function InstitutionalSite({ section = 'home' }) {
         </div>
       </section>}
 
-      {isHome && (
-        <section className="office-home-directory" aria-labelledby="office-home-directory-title">
-          <div className="office-shell">
-            <div className="office-section-heading">
-              <p className="office-kicker">Explore o escritório</p>
-              <h2 id="office-home-directory-title">Escolha o assunto que você quer conhecer.</h2>
-            </div>
-            <div className="office-home-directory__grid">
-              {siteNavItems.map((item) => (
-                <a className="office-home-directory__item" key={item.key} href={item.path} onClick={(event) => navigateWithTransition(event, item.path)}>
-                  <span>{item.number}</span>
-                  <div><h3>{item.label}</h3><p>{item.description}</p></div>
-                  <ArrowRight size={18} aria-hidden="true" />
-                </a>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {section === 'areas' && <section className="office-areas" id="atuacao">
         <div className="office-shell">
           <div className="office-section-heading">
-            <h2>Escolha a frente mais próxima da sua situação.</h2>
-            <p>Escolha uma frente e veja o que vale organizar antes de conversar com a equipe.</p>
+            <h2>Veja onde podemos ajudar.</h2>
+            <p>Conheça as principais demandas atendidas pelo escritório e os documentos que costumam ser importantes em cada uma delas.</p>
           </div>
           <div className="office-areas__grid">
             {areas.map(({ icon: Icon, title, text, href, modal }) => (
@@ -491,8 +471,8 @@ export default function InstitutionalSite({ section = 'home' }) {
       {section === 'guides' && <section className="office-guides" id="conteudos">
         <div className="office-shell">
           <div className="office-section-heading">
-            <h2>Assuntos para consultar antes de conversar.</h2>
-            <p>Textos curtos para reconhecer riscos e fazer boas perguntas.</p>
+            <h2>Informação jurídica para a vida real.</h2>
+            <p>Textos diretos sobre situações que aparecem no dia a dia de pessoas e empresas.</p>
           </div>
           <div className="office-guides__grid">
             {guides.map((guide) => (
@@ -506,22 +486,22 @@ export default function InstitutionalSite({ section = 'home' }) {
               </article>
             ))}
           </div>
-          <p className="office-guides__source">Conteúdo informativo. A análise jurídica depende das particularidades de cada caso.</p>
+          <p className="office-guides__source">Material geral para consulta inicial. Cada orientação depende dos fatos e documentos apresentados.</p>
         </div>
       </section>}
 
       {section === 'process' && <section className="office-process" id="como-funciona">
         <div className="office-shell office-process__grid">
           <div className="office-process__heading">
-            <h2>Orientação para o que realmente importa.</h2>
-            <p>Você recebe uma leitura cuidadosa da situação, dos documentos e das alternativas jurídicas antes de escolher o próximo passo.</p>
+            <h2>Uma conversa que coloca as coisas no lugar.</h2>
+            <p>Você conta o que aconteceu, nós analisamos os documentos e mostramos os caminhos que fazem sentido para o seu caso.</p>
             <WhatsAppLink className="office-text-link" label="Falar com a equipe pelo WhatsApp">Falar com a equipe <ArrowRight size={17} /></WhatsAppLink>
           </div>
           <div className="office-process__steps">
             {[
-              ['01', 'Análise do seu caso', 'Entendemos os fatos, os documentos e o que está realmente em jogo.'],
-              ['02', 'Orientação estratégica', 'Apresentamos riscos, possibilidades e o que merece atenção.'],
-              ['03', 'Próximos passos claros', 'Você sabe quais caminhos pode avaliar antes de decidir.'],
+              ['01', 'Você conta o que aconteceu', 'A conversa começa pelos fatos e pelas dúvidas que trouxeram você até aqui.'],
+              ['02', 'Analisamos os documentos', 'Conferimos contratos, mensagens, comprovantes e outros registros importantes.'],
+              ['03', 'Indicamos os caminhos possíveis', 'Você entende riscos, alternativas e o que precisa ser feito a seguir.'],
             ].map(([number, title, text]) => (
               <article className="office-step" key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></article>
             ))}
@@ -532,16 +512,16 @@ export default function InstitutionalSite({ section = 'home' }) {
       {section === 'team' && <section className="office-team" id="equipe">
         <div className="office-shell">
           <div className="office-section-heading office-section-heading--team">
-            <h2>Quem acompanha cada demanda.</h2>
+            <h2>Profissionais que cuidam do seu caso.</h2>
           </div>
           <div className="office-team__grid">
             <article className="office-person">
               <img src={aboutPortrait} alt="Pedro Bastos Lund" />
-              <div className="office-person__body"><p className="office-person__eyebrow">Advogado responsável</p><h3>Pedro Bastos Lund</h3><span>OAB/RS 74.953</span><p>Atuação dedicada à análise criteriosa dos contratos e à orientação jurídica clara.</p></div>
+              <div className="office-person__body"><p className="office-person__eyebrow">Advogado responsável</p><h3>Pedro Bastos Lund</h3><span>OAB/RS 74.953</span><p>Atendimento direto e atuação na análise de contratos, questões bancárias e demandas empresariais.</p></div>
             </article>
             <article className="office-person">
               <img src={eduardaPortrait} alt="Eduarda Marranghello" />
-              <div className="office-person__body"><p className="office-person__eyebrow">Equipe jurídica</p><h3>Eduarda Marranghello</h3><p>Organização das informações e acompanhamento cuidadoso de cada demanda, do primeiro contato à conclusão do caso.</p></div>
+              <div className="office-person__body"><p className="office-person__eyebrow">Equipe jurídica</p><h3>Eduarda Marranghello</h3><p>Recepção, organização dos documentos e acompanhamento próximo durante o atendimento.</p></div>
             </article>
           </div>
         </div>
@@ -566,12 +546,12 @@ export default function InstitutionalSite({ section = 'home' }) {
 
       <section className="office-final-cta">
         <div className="office-shell office-final-cta__inner">
-          <div><p className="office-kicker office-kicker--light">Fale com o escritório</p><h2>Uma orientação clara começa com uma boa conversa.</h2><p>Envie uma mensagem e conte como podemos ajudar.</p></div>
+          <div><p className="office-kicker office-kicker--light">Fale com o escritório</p><h2>Converse diretamente com a nossa equipe.</h2><p>Explique a sua situação e veja como podemos orientar você.</p></div>
           <WhatsAppLink className="office-button office-button--gold" label="Conversar com a equipe pelo WhatsApp">Conversar com a equipe <ArrowRight size={18} /></WhatsAppLink>
         </div>
       </section>
 
-      <footer className="office-footer"><div className="office-shell office-footer__inner"><div className="office-footer__brand"><img src={logo} alt="" /><span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span></div><p>Conteúdo informativo. A análise jurídica depende das particularidades de cada caso.</p><span>© {new Date().getFullYear()} Pedro Bastos Lund</span></div></footer>
+      <footer className="office-footer"><div className="office-shell office-footer__inner"><div className="office-footer__brand"><img src={logo} alt="" /><span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span></div><p>Informações gerais para consulta. O atendimento considera os documentos e os fatos de cada situação.</p><span>© {new Date().getFullYear()} Pedro Bastos Lund</span></div></footer>
       <WhatsAppLink className="office-float" label="Abrir conversa no WhatsApp"><MessageCircle size={20} /><span>Fale conosco</span></WhatsAppLink>
       <ContentModal content={activeModal} closeButtonRef={modalCloseButtonRef} onClose={() => setActiveModal(null)} />
     </main>
