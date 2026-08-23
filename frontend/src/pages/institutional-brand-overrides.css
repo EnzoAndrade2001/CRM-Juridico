@@ -1475,3 +1475,73 @@ html.office-page-is-leaving .office-page-transition {
     align-self: flex-start;
   }
 }
+
+.office-hero__services {
+  max-width: 720px;
+  margin-top: 42px;
+}
+
+.office-hero__services > p {
+  margin: 0 0 12px;
+  color: var(--office-gold-light);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.office-hero__services ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.office-hero__services li {
+  border-top: 1px solid rgba(214, 182, 110, 0.42);
+  padding-top: 9px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+@media (max-width: 900px) {
+  .office-hero__services {
+    max-width: 560px;
+    margin-top: 30px;
+  }
+
+  .office-hero__services ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .office-hero__portrait {
+    top: 390px;
+  }
+}
+
+@media (max-width: 640px) {
+  .office-hero,
+  .office-hero__inner {
+    min-height: 790px;
+  }
+
+  .office-hero__services {
+    max-width: 420px;
+    margin-top: 28px;
+  }
+
+  .office-hero__services ul {
+    gap: 9px 16px;
+  }
+
+  .office-hero__services li {
+    font-size: 11px;
+  }
+
+  .office-hero__portrait {
+    top: 505px;
+  }
+}
