@@ -4,7 +4,6 @@ import {
   Banknote,
   BriefcaseBusiness,
   CarFront,
-  Check,
   FileText,
   Landmark,
   Menu,
@@ -36,31 +35,31 @@ const siteRoutes = {
   team: `${baseUrl}equipe/`,
 };
 const siteNavItems = [
-  { key: 'areas', label: 'Áreas de atuação', path: siteRoutes.areas, number: '01', description: 'Conheça as principais frentes de atendimento.' },
-  { key: 'process', label: 'Como podemos ajudar', path: siteRoutes.process, number: '02', description: 'Veja o que você recebe do escritório.' },
-  { key: 'guides', label: 'Conteúdos', path: siteRoutes.guides, number: '03', description: 'Informação jurídica para decidir melhor.' },
-  { key: 'team', label: 'Equipe', path: siteRoutes.team, number: '04', description: 'Conheça quem acompanha cada demanda.' },
+  { key: 'areas', label: 'Áreas', path: siteRoutes.areas },
+  { key: 'process', label: 'Atendimento', path: siteRoutes.process },
+  { key: 'guides', label: 'Conteúdos', path: siteRoutes.guides },
+  { key: 'team', label: 'Equipe', path: siteRoutes.team },
 ];
 const sectionDetails = {
   areas: {
     kicker: 'Atuação',
     title: 'Áreas de atuação',
-    text: 'Conheça as situações em que o escritório pode orientar você.',
+    text: 'Contratos, bancos, consumo, trabalho, família e empresas.',
   },
   process: {
-    kicker: 'O que oferecemos',
-    title: 'Seu caso merece atenção de verdade.',
-    text: 'Você fala diretamente com a equipe, apresenta o que aconteceu e recebe uma leitura honesta sobre os caminhos possíveis.',
+    kicker: 'Atendimento',
+    title: 'Atendimento direto.',
+    text: 'Você relata o caso. A equipe analisa os documentos e indica os próximos passos.',
   },
   guides: {
     kicker: 'Conteúdos jurídicos',
-    title: 'Direito explicado sem rodeios',
-    text: 'Informações práticas para entender seus direitos antes de tomar uma decisão.',
+    title: 'Informação jurídica.',
+    text: 'Orientações práticas sobre direitos, contratos e decisões do dia a dia.',
   },
   team: {
     kicker: 'O escritório',
-    title: 'Pessoas que acompanham o seu caso.',
-    text: 'Conheça quem está à frente do atendimento e da condução das demandas.',
+    title: 'A equipe.',
+    text: 'Pedro Bastos Lund e equipe jurídica.',
   },
 };
 const revisionalUrl = `${baseUrl.replace(/\/$/, '')}/revisional-bancario/`;
@@ -71,72 +70,72 @@ const areas = [
   {
     icon: Banknote,
     title: 'Revisional bancário',
-    text: 'Revisão de juros, tarifas e seguros no contrato.',
+    text: 'Juros, tarifas e seguros cobrados no contrato.',
     href: revisionalUrl,
   },
   {
     icon: CarFront,
     title: 'Busca e apreensão',
-    text: 'Defesa e orientação quando o financiamento entra em conflito.',
+    text: 'Defesa em casos de atraso e retomada do veículo.',
     modal: {
       kicker: 'Direito bancário',
-      title: 'Busca e apreensão exige atenção ao procedimento completo.',
-      intro: 'O atraso da parcela é apenas o início. A notificação, a ação judicial e os prazos seguintes podem definir quais alternativas ainda estão disponíveis.',
+      title: 'Busca e apreensão.',
+      intro: 'Análise da notificação, do processo e das alternativas disponíveis.',
       points: ['Constituição em mora e notificação', 'Etapas da ação de busca e apreensão', 'Defesa, quitação e regularização quando cabíveis'],
       documents: 'Contrato de financiamento, notificações recebidas, comprovantes de pagamento e documentos do veículo.',
-      note: 'Cada caso depende da fase do processo e dos documentos disponíveis.',
+      note: 'A orientação depende da fase do processo.',
     },
   },
   {
     icon: FileText,
     title: 'Contratos e cobranças',
-    text: 'Leitura de cláusulas, valores, prazos e cobranças.',
+    text: 'Cláusulas, prazos, valores e cobranças.',
     modal: {
       kicker: 'Prevenção jurídica',
-      title: 'Antes de assinar, leia. Entenda. Decida com segurança.',
-      intro: 'Um contrato pode produzir efeitos importantes muito depois da assinatura. A análise preventiva ajuda a identificar obrigações, riscos e pontos que precisam de negociação.',
+      title: 'Contratos e cobranças.',
+      intro: 'Leitura de obrigações, prazos, multas e pontos de negociação.',
       points: ['Cláusulas, prazos e multas', 'Cobranças, garantias e obrigações', 'Riscos na contratação e alternativas de ajuste'],
       documents: 'Contrato completo, aditivos, propostas comerciais, comprovantes e comunicações trocadas.',
-      note: 'A orientação jurídica antes da assinatura pode evitar conflitos e custos posteriores.',
+      note: 'A análise deve ser feita com o contrato completo.',
     },
   },
   {
     icon: Landmark,
     title: 'Direito do consumidor',
-    text: 'Resposta a cobranças indevidas e falhas na prestação do serviço.',
+    text: 'Cobranças indevidas e falhas na prestação do serviço.',
     modal: {
       kicker: 'Relações de consumo',
-      title: 'Informação clara também é um direito.',
-      intro: 'Instituições e empresas devem apresentar condições de contratação de forma clara, segura e completa. Quando isso não acontece, vale organizar os documentos e avaliar os próximos passos.',
+      title: 'Direito do consumidor.',
+      intro: 'Análise de cobranças, contratos e falhas de atendimento.',
       points: ['Informações incompletas ou divergentes', 'Tarifas e serviços não reconhecidos', 'Falhas de atendimento, segurança ou prestação do serviço'],
       documents: 'Contrato, faturas, protocolos, comprovantes e registros de atendimento.',
-      note: 'A análise considera a relação contratual e as circunstâncias específicas de cada consumidor.',
+      note: 'Separe contratos, faturas e protocolos de atendimento.',
     },
   },
   {
     icon: BriefcaseBusiness,
     title: 'Direito trabalhista',
-    text: 'Organização de documentos sobre vínculo, verbas e jornada.',
+    text: 'Vínculo, verbas, jornada e rescisão.',
     modal: {
       kicker: 'Direito trabalhista',
-      title: 'Organize os fatos antes de decidir o caminho.',
-      intro: 'Relações de trabalho envolvem documentos, datas e provas. Uma conversa inicial bem organizada ajuda a compreender direitos, riscos e possibilidades de atuação.',
+      title: 'Direito trabalhista.',
+      intro: 'Análise de vínculo, verbas, jornada e documentos do trabalho.',
       points: ['Rescisão, verbas e horas trabalhadas', 'Assédio, acidentes e adoecimento', 'Reconhecimento de vínculo e demais questões do contrato de trabalho'],
       documents: 'CTPS, contrato, holerites, termo de rescisão, mensagens e outros registros relevantes.',
-      note: 'Prazos trabalhistas podem ser importantes. Procure orientação assim que surgir a dúvida.',
+      note: 'Prazos trabalhistas devem ser observados.',
     },
   },
   {
     icon: Scale,
     title: 'Família e sucessões',
-    text: 'Inventário, partilha e decisões patrimoniais com cuidado.',
+    text: 'Inventário, partilha e patrimônio familiar.',
     modal: {
       kicker: 'Direito de família e sucessões',
-      title: 'Patrimônio e família pedem orientação cuidadosa.',
-      intro: 'Inventários, heranças e decisões familiares envolvem pessoas, documentos e efeitos duradouros. A orientação adequada ajuda a preservar direitos e reduzir conflitos.',
+      title: 'Família e sucessões.',
+      intro: 'Inventário, partilha, herança e organização patrimonial.',
       points: ['Inventário, partilha e cessão de direitos', 'Venda de bens durante o inventário', 'Organização patrimonial e acordos familiares'],
       documents: 'Certidões, documentos dos herdeiros, relação de bens, dívidas e eventuais contratos.',
-      note: 'A venda ou negociação de um bem hereditário pode exigir formalidades e análise individual.',
+      note: 'A documentação define os próximos passos.',
     },
   },
 ];
@@ -144,38 +143,38 @@ const areas = [
 const guides = [
   {
     category: 'Direito bancário',
-    title: 'Quatro direitos que o cliente do banco precisa conhecer',
-    excerpt: 'Portabilidade, informações da contratação, quitação antecipada e segurança dos dados.',
+    title: 'Direitos do cliente do banco',
+    excerpt: 'Portabilidade, informações, quitação e proteção de dados.',
     modal: {
       kicker: 'Orientação prática',
-      title: 'O cliente do banco tem direitos que merecem ser conhecidos.',
-      intro: 'A relação bancária deve ser transparente. Conhecer as regras ajuda o consumidor a fazer perguntas, comparar propostas e identificar quando uma cobrança precisa ser analisada.',
+      title: 'Direitos bancários.',
+      intro: 'Pontos para conferir antes de aceitar uma cobrança ou contratar um produto.',
       points: ['Portabilidade de crédito e produtos financeiros', 'Informações claras e completas na contratação', 'Desconto proporcional na quitação antecipada', 'Proteção e sigilo dos dados fornecidos'],
-      note: 'Este conteúdo é informativo e não substitui a análise do contrato ou da situação concreta.',
+      note: 'O contrato deve ser analisado antes de qualquer decisão.',
     },
   },
   {
     category: 'Contratos',
-    title: 'Leia antes de assinar: o contrato continua depois da assinatura',
-    excerpt: 'Uma orientação preventiva pode revelar prazos, multas, garantias e obrigações que passam despercebidos.',
+    title: 'O que conferir em um contrato',
+    excerpt: 'Prazos, multas, garantias e obrigações.',
     modal: {
       kicker: 'Orientação prática',
-      title: 'A melhor hora para entender um contrato é antes de assiná-lo.',
-      intro: 'O texto contratual define responsabilidades e pode dificultar uma saída futura. Reserve tempo para entender as cláusulas e peça orientação quando houver dúvida.',
+      title: 'Antes de assinar.',
+      intro: 'Confira as cláusulas que definem responsabilidades e formas de saída.',
       points: ['Verifique objeto, prazo e forma de pagamento', 'Observe multas, garantias e hipóteses de rescisão', 'Guarde a versão assinada e os documentos da negociação'],
-      note: 'Uma avaliação jurídica preventiva é feita a partir do documento completo e do contexto da contratação.',
+      note: 'Envie o documento completo para uma análise adequada.',
     },
   },
   {
     category: 'Societário e sucessões',
-    title: 'Decisões patrimoniais precisam de método',
-    excerpt: 'Saída de sócio, apuração de haveres, inventário e venda de bens exigem documentos e etapas bem definidos.',
+    title: 'Decisões sobre patrimônio',
+    excerpt: 'Sócios, inventário, partilha e venda de bens.',
     modal: {
       kicker: 'Orientação prática',
-      title: 'Quando patrimônio e relações pessoais se encontram, cada etapa importa.',
-      intro: 'A saída de uma sociedade ou a organização de uma herança não se resolve apenas com um aviso ou um acordo informal. Contratos, prazos e critérios de cálculo precisam ser conferidos.',
+      title: 'Patrimônio e sucessões.',
+      intro: 'Contratos, prazos e documentos definem a condução de cada etapa.',
       points: ['Contrato social, prazo de saída e apuração de haveres', 'Responsabilidade por obrigações anteriores', 'Inventário, partilha e cessão de direitos hereditários'],
-      note: 'A solução adequada depende dos documentos, da estrutura patrimonial e do estágio da negociação ou do processo.',
+      note: 'A documentação define a análise do caso.',
     },
   },
 ];
@@ -249,21 +248,21 @@ function ContentModal({ content, closeButtonRef, onClose }) {
         <p className="office-modal__intro">{content.intro}</p>
         <div className="office-modal__columns">
           <div>
-            <h3>O que vale observar</h3>
+            <h3>Pontos</h3>
             <ul>
               {content.points.map((point) => <li key={point}>{point}</li>)}
             </ul>
           </div>
           {content.documents && (
             <div>
-              <h3>Documentos iniciais</h3>
+                <h3>Documentos</h3>
               <p>{content.documents}</p>
             </div>
           )}
         </div>
         <p className="office-modal__note"><ShieldCheck size={18} /> {content.note}</p>
         <WhatsAppLink className="office-button office-button--gold" label="Falar sobre este assunto no WhatsApp">
-          Falar sobre este assunto <ArrowRight size={17} />
+          Falar com o escritório <ArrowRight size={17} />
         </WhatsAppLink>
       </section>
     </div>
@@ -298,7 +297,7 @@ export default function InstitutionalSite({ section = 'home' }) {
       : 'Pedro Bastos Lund | Advocacia e Consultoria Jurídica';
     description.setAttribute(
       'content',
-      'Advocacia e consultoria jurídica com análise responsável, comunicação clara e acompanhamento próximo em cada etapa.',
+      'Advocacia e consultoria jurídica para contratos, bancos, consumo e empresas.',
     );
     return () => {
       document.title = previousTitle;
@@ -363,7 +362,7 @@ export default function InstitutionalSite({ section = 'home' }) {
             <a key={item.key} href={item.path} onClick={(event) => { closeMenu(); navigateWithTransition(event, item.path); }}>{item.label}</a>
           ))}
           <WhatsAppLink className="office-header__cta" label="Falar com o escritório pelo WhatsApp" >
-            <MessageCircle size={17} /> Falar com a equipe
+            <MessageCircle size={17} /> Falar no WhatsApp
           </WhatsAppLink>
         </nav>
       </header>
@@ -372,18 +371,13 @@ export default function InstitutionalSite({ section = 'home' }) {
       <section className="office-hero" id="inicio" style={{ '--office-hero-image': `url(${portrait})` }}>
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
-            <h1>O seu caso merece ser ouvido. <span>O próximo passo, bem orientado.</span></h1>
+            <h1>Orientação jurídica. <span>Decisões mais seguras.</span></h1>
             <p className="office-hero__lead">
-              Conte o que aconteceu. Nós ajudamos você a entender as opções e decidir com mais segurança.
+              Atendimento direto para contratos, bancos, consumo e empresas.
             </p>
             <WhatsAppLink className="office-button office-button--gold" label="Iniciar atendimento com o escritório">
-              Iniciar atendimento <ArrowRight size={18} />
+              Falar com o escritório <ArrowRight size={18} />
             </WhatsAppLink>
-            <div className="office-hero__assurances" aria-label="Compromissos do escritório">
-              <span><Check size={15} /> Contato direto com a equipe</span>
-              <span><Check size={15} /> Leitura dos documentos</span>
-              <span><Check size={15} /> Orientação sem juridiquês</span>
-            </div>
           </div>
           <p className="office-hero__name"><span>Pedro Bastos Lund</span> OAB/RS 74.953</p>
         </div>
@@ -401,11 +395,11 @@ export default function InstitutionalSite({ section = 'home' }) {
       {isHome && <section className="office-intro">
         <div className="office-shell office-intro__grid">
           <div>
-            <p className="office-kicker">Atuação dedicada</p>
-            <h2>Primeiro, a gente entende o que aconteceu.</h2>
+            <p className="office-kicker">Atendimento</p>
+            <h2>Análise individual.</h2>
           </div>
           <div className="office-intro__copy">
-            <p>O atendimento começa com uma conversa direta sobre os fatos, os documentos e o que você precisa resolver.</p>
+            <p>Você apresenta os fatos e os documentos. A equipe orienta os próximos passos.</p>
           </div>
         </div>
       </section>}
@@ -413,8 +407,8 @@ export default function InstitutionalSite({ section = 'home' }) {
       {isHome && <section className="office-highlights" id="destaque">
         <div className="office-shell">
           <div className="office-section-heading">
-            <p className="office-kicker office-kicker--light">Áreas de destaque</p>
-            <h2>Atuação para situações concretas.</h2>
+            <p className="office-kicker office-kicker--light">Áreas de atuação</p>
+            <h2>Principais áreas.</h2>
           </div>
           <div className="office-highlights__grid">
             <div className="office-highlights__art" aria-hidden="true">
@@ -448,8 +442,8 @@ export default function InstitutionalSite({ section = 'home' }) {
       {section === 'areas' && <section className="office-areas" id="atuacao">
         <div className="office-shell">
           <div className="office-section-heading">
-            <h2>Veja onde podemos ajudar.</h2>
-            <p>Conheça as principais demandas atendidas pelo escritório e os documentos que costumam ser importantes em cada uma delas.</p>
+            <h2>Áreas atendidas.</h2>
+            <p>Conheça as principais demandas do escritório.</p>
           </div>
           <div className="office-areas__grid">
             {areas.map(({ icon: Icon, title, text, href, modal }) => (
@@ -457,9 +451,9 @@ export default function InstitutionalSite({ section = 'home' }) {
                 <span className="office-area-card__icon"><Icon size={23} /></span>
                 <h3>{title}</h3>
                 <p>{text}</p>
-                {href ? <a href={href} onClick={(event) => navigateWithTransition(event, href)}>Conhecer atendimento <ArrowRight size={16} /></a> : (
+                {href ? <a href={href} onClick={(event) => navigateWithTransition(event, href)}>Saiba mais <ArrowRight size={16} /></a> : (
                   <button className="office-card-link" type="button" onClick={(event) => openModal(modal, event)}>
-                    Ver orientação <ArrowRight size={16} />
+                    Ver detalhes <ArrowRight size={16} />
                   </button>
                 )}
               </article>
@@ -471,8 +465,8 @@ export default function InstitutionalSite({ section = 'home' }) {
       {section === 'guides' && <section className="office-guides" id="conteudos">
         <div className="office-shell">
           <div className="office-section-heading">
-            <h2>Informação jurídica para a vida real.</h2>
-            <p>Textos diretos sobre situações que aparecem no dia a dia de pessoas e empresas.</p>
+            <h2>Conteúdos jurídicos.</h2>
+            <p>Informação prática para consulta.</p>
           </div>
           <div className="office-guides__grid">
             {guides.map((guide) => (
@@ -481,27 +475,27 @@ export default function InstitutionalSite({ section = 'home' }) {
                 <h3>{guide.title}</h3>
                 <p>{guide.excerpt}</p>
                 <button className="office-card-link" type="button" onClick={(event) => openModal(guide.modal, event)}>
-                  Ler orientação <ArrowRight size={16} />
+                  Ler conteúdo <ArrowRight size={16} />
                 </button>
               </article>
             ))}
           </div>
-          <p className="office-guides__source">Material geral para consulta inicial. Cada orientação depende dos fatos e documentos apresentados.</p>
+          <p className="office-guides__source">Conteúdo informativo. A análise depende de cada caso.</p>
         </div>
       </section>}
 
       {section === 'process' && <section className="office-process" id="como-funciona">
         <div className="office-shell office-process__grid">
           <div className="office-process__heading">
-            <h2>Uma conversa que coloca as coisas no lugar.</h2>
-            <p>Você conta o que aconteceu, nós analisamos os documentos e mostramos os caminhos que fazem sentido para o seu caso.</p>
-            <WhatsAppLink className="office-text-link" label="Falar com a equipe pelo WhatsApp">Falar com a equipe <ArrowRight size={17} /></WhatsAppLink>
+            <h2>Atendimento jurídico.</h2>
+            <p>Relato, análise dos documentos e orientação sobre os próximos passos.</p>
+            <WhatsAppLink className="office-text-link" label="Falar com a equipe pelo WhatsApp">Falar no WhatsApp <ArrowRight size={17} /></WhatsAppLink>
           </div>
           <div className="office-process__steps">
             {[
-              ['01', 'Você conta o que aconteceu', 'A conversa começa pelos fatos e pelas dúvidas que trouxeram você até aqui.'],
-              ['02', 'Analisamos os documentos', 'Conferimos contratos, mensagens, comprovantes e outros registros importantes.'],
-              ['03', 'Indicamos os caminhos possíveis', 'Você entende riscos, alternativas e o que precisa ser feito a seguir.'],
+              ['01', 'Relato', 'Você explica o que aconteceu.'],
+              ['02', 'Análise', 'Conferimos os documentos relevantes.'],
+              ['03', 'Orientação', 'Indicamos os caminhos possíveis.'],
             ].map(([number, title, text]) => (
               <article className="office-step" key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></article>
             ))}
@@ -512,16 +506,16 @@ export default function InstitutionalSite({ section = 'home' }) {
       {section === 'team' && <section className="office-team" id="equipe">
         <div className="office-shell">
           <div className="office-section-heading office-section-heading--team">
-            <h2>Profissionais que cuidam do seu caso.</h2>
+            <h2>Equipe jurídica.</h2>
           </div>
           <div className="office-team__grid">
             <article className="office-person">
               <img src={aboutPortrait} alt="Pedro Bastos Lund" />
-              <div className="office-person__body"><p className="office-person__eyebrow">Advogado responsável</p><h3>Pedro Bastos Lund</h3><span>OAB/RS 74.953</span><p>Atendimento direto e atuação na análise de contratos, questões bancárias e demandas empresariais.</p></div>
+              <div className="office-person__body"><p className="office-person__eyebrow">Advogado responsável</p><h3>Pedro Bastos Lund</h3><span>OAB/RS 74.953</span><p>Contratos, direito bancário e demandas empresariais.</p></div>
             </article>
             <article className="office-person">
               <img src={eduardaPortrait} alt="Eduarda Marranghello" />
-              <div className="office-person__body"><p className="office-person__eyebrow">Equipe jurídica</p><h3>Eduarda Marranghello</h3><p>Recepção, organização dos documentos e acompanhamento próximo durante o atendimento.</p></div>
+              <div className="office-person__body"><p className="office-person__eyebrow">Equipe jurídica</p><h3>Eduarda Marranghello</h3><p>Atendimento e organização dos documentos.</p></div>
             </article>
           </div>
         </div>
@@ -529,7 +523,7 @@ export default function InstitutionalSite({ section = 'home' }) {
 
       {isHome && <section className="office-clients" id="clientes">
         <div className="office-shell">
-          <p className="office-clients__title">Clientes e Parceiros</p>
+          <p className="office-clients__title">Clientes e parceiros</p>
           <div className="office-clients__grid">
             {clients.map((client) => (
               <span className="office-clients__item" key={client.name}>
@@ -546,12 +540,12 @@ export default function InstitutionalSite({ section = 'home' }) {
 
       <section className="office-final-cta">
         <div className="office-shell office-final-cta__inner">
-          <div><p className="office-kicker office-kicker--light">Fale com o escritório</p><h2>Converse diretamente com a nossa equipe.</h2><p>Explique a sua situação e veja como podemos orientar você.</p></div>
-          <WhatsAppLink className="office-button office-button--gold" label="Conversar com a equipe pelo WhatsApp">Conversar com a equipe <ArrowRight size={18} /></WhatsAppLink>
+          <div><p className="office-kicker office-kicker--light">Contato</p><h2>Fale com o escritório.</h2><p>Envie uma mensagem sobre o seu caso.</p></div>
+          <WhatsAppLink className="office-button office-button--gold" label="Conversar com a equipe pelo WhatsApp">Falar no WhatsApp <ArrowRight size={18} /></WhatsAppLink>
         </div>
       </section>
 
-      <footer className="office-footer"><div className="office-shell office-footer__inner"><div className="office-footer__brand"><img src={logo} alt="" /><span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span></div><p>Informações gerais para consulta. O atendimento considera os documentos e os fatos de cada situação.</p><span>© {new Date().getFullYear()} Pedro Bastos Lund</span></div></footer>
+      <footer className="office-footer"><div className="office-shell office-footer__inner"><div className="office-footer__brand"><img src={logo} alt="" /><span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span></div><p>Informações gerais. Não substituem uma consulta jurídica.</p><span>© {new Date().getFullYear()} Pedro Bastos Lund</span></div></footer>
       <WhatsAppLink className="office-float" label="Abrir conversa no WhatsApp"><MessageCircle size={20} /><span>Fale conosco</span></WhatsAppLink>
       <ContentModal content={activeModal} closeButtonRef={modalCloseButtonRef} onClose={() => setActiveModal(null)} />
     </main>
