@@ -366,13 +366,14 @@ export default function InstitutionalSite({ section = 'home' }) {
       <section className="office-hero" id="inicio" style={{ '--office-hero-image': `url(${portrait})` }}>
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
-            <h1>Sobre o escritório</h1>
+            <p className="office-hero__eyebrow"><span aria-hidden="true" /> Advocacia e consultoria jurídica</p>
+            <h1>Decisões importantes pedem orientação clara.</h1>
             <p className="office-hero__lead">
-              O escritório Pedro Bastos Lund oferece advocacia e consultoria jurídica para pessoas e empresas, com análise técnica, comunicação clara e orientação prática para cada caso.
+              Atuação jurídica para pessoas e empresas, com análise do caso e caminhos objetivos para seguir.
             </p>
-            <WhatsAppLink className="office-button office-button--gold" label="Iniciar atendimento com o escritório">
-              Falar com o escritório <ArrowRight size={18} />
-            </WhatsAppLink>
+            <a className="office-button office-button--gold" href="#atuacao" aria-label="Conhecer as áreas de atuação">
+              Conheça nossas áreas <ArrowRight size={18} />
+            </a>
           </div>
           <p className="office-hero__name"><span>Pedro Bastos Lund</span> OAB/RS 74.953</p>
         </div>
@@ -387,26 +388,13 @@ export default function InstitutionalSite({ section = 'home' }) {
         </section>
       )}
 
-      {isHome && <section className="office-intro">
-        <div className="office-shell">
-          <div className="office-section-heading">
-            <p className="office-kicker">Por que o escritório</p>
-            <h2>Objetividade em cada atendimento.</h2>
+      {isHome && <section className="office-home-editorial">
+        <div className="office-shell office-home-editorial__inner">
+          <div>
+            <p className="office-kicker">Atuação dedicada</p>
+            <h2>O caso vem primeiro.</h2>
           </div>
-          <div className="office-intro__points">
-            <article>
-              <h3>Contato direto</h3>
-              <p>Você fala com a equipe responsável pelo atendimento.</p>
-            </article>
-            <article>
-              <h3>Análise documental</h3>
-              <p>Contratos, registros e informações entram na avaliação.</p>
-            </article>
-            <article>
-              <h3>Próximos passos</h3>
-              <p>Orientação objetiva sobre as alternativas do caso.</p>
-            </article>
-          </div>
+          <p>Antes de indicar um caminho, entendemos os fatos, os documentos e o que precisa ser resolvido.</p>
         </div>
       </section>}
 
@@ -414,22 +402,18 @@ export default function InstitutionalSite({ section = 'home' }) {
         <div className="office-shell">
           <div className="office-section-heading">
             <p className="office-kicker">O que defendemos</p>
-            <h2>Serviços jurídicos.</h2>
-            <p>Atuação para problemas concretos de pessoas e empresas.</p>
+            <h2>Onde podemos atuar.</h2>
+            <p>Demandas concretas de pessoas, famílias e empresas.</p>
           </div>
-          <div className="office-home-services__grid">
-            {areas.map(({ icon: Icon, title, text, href, modal }) => (
-              <article className="office-area-card office-home-services__card" key={title}>
-                <span className="office-area-card__icon"><Icon size={23} /></span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-                {href ? <a href={href} onClick={(event) => navigateWithTransition(event, href)}>Saiba mais <ArrowRight size={16} /></a> : (
-                  <button className="office-card-link" type="button" onClick={(event) => openModal(modal, event)}>
-                    Ver detalhes <ArrowRight size={16} />
-                  </button>
-                )}
-              </article>
-            ))}
+          <div className="office-home-services__list">
+            {areas.map(({ title, text, href, modal }, index) => {
+              const content = <><span className="office-service-row__number">{String(index + 1).padStart(2, '0')}</span><span className="office-service-row__body"><strong>{title}</strong><span>{text}</span></span><ArrowRight size={18} /></>;
+              return href ? (
+                <a className="office-service-row" href={href} key={title} onClick={(event) => navigateWithTransition(event, href)}>{content}</a>
+              ) : (
+                <button className="office-service-row" type="button" key={title} onClick={(event) => openModal(modal, event)}>{content}</button>
+              );
+            })}
           </div>
         </div>
       </section>}
@@ -517,20 +501,21 @@ export default function InstitutionalSite({ section = 'home' }) {
       </section>}
 
       {isHome && <section className="office-home-team" id="equipe">
-        <div className="office-shell">
+        <div className="office-shell office-home-team__layout">
           <div className="office-section-heading">
             <p className="office-kicker">Nossa equipe</p>
-            <h2>Quem atende você.</h2>
-            <p>Profissionais responsáveis pela análise e pelo acompanhamento das demandas.</p>
+            <h2>Quem conduz cada atendimento.</h2>
+            <p>Conheça os profissionais responsáveis pela análise e pelo acompanhamento das demandas.</p>
+            <a className="office-text-link" href={siteRoutes.team} onClick={(event) => navigateWithTransition(event, siteRoutes.team)}>Conheça a equipe <ArrowRight size={17} /></a>
           </div>
-          <div className="office-home-team__grid">
-            <article className="office-person">
+          <div className="office-home-team__members">
+            <article className="office-team-member">
               <img src={aboutPortrait} alt="Pedro Bastos Lund" loading="lazy" />
-              <div className="office-person__body"><p className="office-person__eyebrow">Advogado responsável</p><h3>Pedro Bastos Lund</h3><span>OAB/RS 74.953</span><p>Contratos, direito bancário e demandas empresariais.</p></div>
+              <div><p className="office-person__eyebrow">Advogado responsável</p><h3>Pedro Bastos Lund</h3><span>OAB/RS 74.953</span></div>
             </article>
-            <article className="office-person">
+            <article className="office-team-member">
               <img src={eduardaPortrait} alt="Eduarda Marranghello" loading="lazy" />
-              <div className="office-person__body"><p className="office-person__eyebrow">Equipe jurídica</p><h3>Eduarda Marranghello</h3><p>Atendimento e organização dos documentos.</p></div>
+              <div><p className="office-person__eyebrow">Equipe jurídica</p><h3>Eduarda Marranghello</h3><span>Atendimento e organização</span></div>
             </article>
           </div>
         </div>
