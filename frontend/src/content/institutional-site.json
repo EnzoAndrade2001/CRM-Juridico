@@ -143,7 +143,7 @@
     {
       "icon": "BriefcaseBusiness",
       "title": "Direito trabalhista",
-      "text": "Vínculo, verbas, jornada e rescisão.",
+      "text": "Relações de trabalho, verbas, jornada, rescisão e negociações.",
       "href": "",
       "modal": {
         "kicker": "Direito trabalhista",
@@ -174,6 +174,168 @@
         ],
         "documents": "Certidões, documentos dos herdeiros, relação de bens, dívidas e eventuais contratos.",
         "note": "A documentação define os próximos passos."
+      }
+    },
+    {
+      "icon": "LockKeyhole",
+      "title": "Direito digital e proteção de dados",
+      "text": "Segurança digital, crimes virtuais e adequação à LGPD.",
+      "href": "",
+      "modal": {
+        "kicker": "Direito digital",
+        "title": "Direito digital e proteção de dados.",
+        "intro": "Orientação jurídica sobre relações digitais, segurança da informação e tratamento de dados pessoais.",
+        "points": [
+          "Crimes virtuais e uso indevido de dados",
+          "Adequação de empresas às regras da LGPD",
+          "Contratos, políticas e incidentes no ambiente digital"
+        ],
+        "documents": "Registros eletrônicos, mensagens, contratos, políticas de privacidade e evidências do incidente.",
+        "note": "Evidências digitais devem ser preservadas desde o primeiro momento."
+      }
+    },
+    {
+      "icon": "BadgeDollarSign",
+      "title": "Direito previdenciário",
+      "text": "Aposentadorias, pensões e benefícios pagos pelo INSS.",
+      "href": "",
+      "modal": {
+        "kicker": "Direito previdenciário",
+        "title": "Direito previdenciário.",
+        "intro": "Análise de contribuições, requisitos e benefícios previdenciários.",
+        "points": [
+          "Aposentadorias e planejamento previdenciário",
+          "Pensões e benefícios por incapacidade",
+          "Requerimentos e revisões perante o INSS"
+        ],
+        "documents": "CNIS, carteira de trabalho, comprovantes de contribuição, laudos e decisões do INSS.",
+        "note": "O histórico contributivo é essencial para avaliar cada benefício."
+      }
+    },
+    {
+      "icon": "Building2",
+      "title": "Direito imobiliário",
+      "text": "Compra, venda, locação e regularização de imóveis.",
+      "href": "",
+      "modal": {
+        "kicker": "Direito imobiliário",
+        "title": "Direito imobiliário.",
+        "intro": "Assessoria em negócios, contratos e regularização relacionados a imóveis.",
+        "points": [
+          "Compra, venda e análise documental",
+          "Locação, revisão e encerramento de contratos",
+          "Regularização registral e questões de posse"
+        ],
+        "documents": "Matrícula atualizada, contratos, certidões, comprovantes e documentos das partes.",
+        "note": "A matrícula e os contratos devem ser analisados antes da decisão."
+      }
+    },
+    {
+      "icon": "Scale",
+      "title": "Direito civil",
+      "text": "Relações entre pessoas, bens, obrigações e responsabilidade civil.",
+      "href": "",
+      "modal": {
+        "kicker": "Direito civil",
+        "title": "Direito civil.",
+        "intro": "Orientação para conflitos e obrigações presentes nas relações privadas.",
+        "points": [
+          "Responsabilidade civil e indenizações",
+          "Obrigações, contratos e patrimônio",
+          "Prevenção e resolução de conflitos"
+        ],
+        "documents": "Contratos, comprovantes, mensagens, notificações e demais registros relacionados ao caso.",
+        "note": "Os fatos e documentos definem a estratégia adequada."
+      }
+    },
+    {
+      "icon": "Gavel",
+      "title": "Direito penal",
+      "text": "Crimes, contravenções, investigações e aplicação de penas.",
+      "href": "",
+      "modal": {
+        "kicker": "Direito penal",
+        "title": "Direito penal.",
+        "intro": "Atuação técnica em investigações e processos de natureza criminal.",
+        "points": [
+          "Acompanhamento de investigações",
+          "Defesa em processos criminais",
+          "Orientação sobre medidas e procedimentos penais"
+        ],
+        "documents": "Intimações, boletins, decisões, registros e demais documentos relacionados ao procedimento.",
+        "note": "Demandas criminais exigem análise imediata dos prazos e das medidas cabíveis."
+      }
+    },
+    {
+      "icon": "BookOpen",
+      "title": "Direito constitucional",
+      "text": "Constituição, poderes do Estado e direitos fundamentais.",
+      "href": "",
+      "modal": {
+        "kicker": "Direito constitucional",
+        "title": "Direito constitucional.",
+        "intro": "Análise de direitos fundamentais e da aplicação das normas constitucionais.",
+        "points": [
+          "Proteção de direitos e garantias fundamentais",
+          "Questões relacionadas aos poderes do Estado",
+          "Compatibilidade de atos e normas com a Constituição"
+        ],
+        "documents": "Decisões, atos administrativos, normas e documentos relacionados à possível violação.",
+        "note": "A via adequada depende do direito envolvido e do ato questionado."
+      }
+    },
+    {
+      "icon": "Landmark",
+      "title": "Direito administrativo",
+      "text": "Administração pública, servidores, contratos e empresas.",
+      "href": "",
+      "modal": {
+        "kicker": "Direito administrativo",
+        "title": "Direito administrativo.",
+        "intro": "Orientação nas relações de pessoas e empresas com a administração pública.",
+        "points": [
+          "Processos administrativos e defesa de servidores",
+          "Licitações e contratos públicos",
+          "Atos, sanções e responsabilidades administrativas"
+        ],
+        "documents": "Editais, contratos, notificações, decisões e cópia integral do processo administrativo.",
+        "note": "Prazos administrativos devem ser conferidos assim que a notificação for recebida."
+      }
+    },
+    {
+      "icon": "ReceiptText",
+      "title": "Direito tributário",
+      "text": "Impostos, taxas, obrigações e arrecadação tributária.",
+      "href": "",
+      "modal": {
+        "kicker": "Direito tributário",
+        "title": "Direito tributário.",
+        "intro": "Análise de tributos, obrigações fiscais e medidas de regularização.",
+        "points": [
+          "Impostos, taxas e obrigações acessórias",
+          "Defesas e questionamentos tributários",
+          "Planejamento e regularização fiscal"
+        ],
+        "documents": "Guias, declarações, notificações fiscais, autos de infração e documentos contábeis.",
+        "note": "A análise deve considerar a operação e o período de cada cobrança."
+      }
+    },
+    {
+      "icon": "BriefcaseBusiness",
+      "title": "Direito empresarial",
+      "text": "Sociedades, contratos empresariais, reorganização e falências.",
+      "href": "",
+      "modal": {
+        "kicker": "Direito empresarial",
+        "title": "Direito empresarial.",
+        "intro": "Assessoria jurídica para organização, operação e proteção das empresas.",
+        "points": [
+          "Constituição e reorganização de sociedades",
+          "Contratos e relações empresariais",
+          "Crises, recuperação e falência"
+        ],
+        "documents": "Contrato social, alterações, contratos, documentos contábeis e registros da operação.",
+        "note": "A estratégia deve considerar os objetivos e os riscos do negócio."
       }
     }
   ],

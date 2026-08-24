@@ -2,16 +2,22 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   Banknote,
+  BadgeDollarSign,
+  BookOpen,
   BriefcaseBusiness,
+  Building2,
   CarFront,
   FileText,
+  Gavel,
   Handshake,
   Landmark,
+  LockKeyhole,
   Mail,
   MapPin,
   Menu,
   MessageCircle,
   Phone,
+  ReceiptText,
   Search,
   Scale,
   ShieldCheck,
@@ -31,7 +37,21 @@ import './institutional-brand-overrides.css';
 
 // Nomes de ícone (guardados como texto no content JSON, editável pelo CMS)
 // mapeados para os componentes reais do lucide-react.
-const ICONS = { Banknote, CarFront, FileText, Landmark, BriefcaseBusiness, Scale, Stamp };
+const ICONS = {
+  Banknote,
+  BadgeDollarSign,
+  BookOpen,
+  BriefcaseBusiness,
+  Building2,
+  CarFront,
+  FileText,
+  Gavel,
+  Landmark,
+  LockKeyhole,
+  ReceiptText,
+  Scale,
+  Stamp,
+};
 // Idem para as fotos da equipe — o JSON só guarda "pedro" ou "eduarda".
 const PORTRAITS = { pedro: aboutPortrait, eduarda: eduardaPortrait };
 const DIFFERENTIATOR_ICONS = [Handshake, Search, MessageCircle];
@@ -226,7 +246,8 @@ export default function InstitutionalSite({ section = 'home' }) {
     const sectionId = decodeURIComponent(window.location.hash.slice(1));
     const timeoutId = window.setTimeout(() => {
       const target = document.getElementById(sectionId);
-      if (target) window.scrollTo({ top: target.offsetTop, behavior: 'auto' });
+      const headerHeight = document.querySelector('.office-header')?.offsetHeight || 0;
+      if (target) window.scrollTo({ top: Math.max(0, target.offsetTop - headerHeight), behavior: 'auto' });
     }, 700);
 
     return () => window.clearTimeout(timeoutId);
