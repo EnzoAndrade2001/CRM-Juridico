@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Stamp,
   X,
+  ChevronUp,
 } from 'lucide-react';
 import portrait from '../assets/pedro-bastos-lund-hero-blue.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
@@ -140,8 +141,23 @@ export default function InstitutionalSite({ section = 'home' }) {
   const pageDetails = content.sectionDetails[section];
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const modalCloseButtonRef = useRef(null);
   const lastModalTriggerRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Clear the hash from the URL so F5 doesn't jump back down
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  };
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -225,7 +241,6 @@ export default function InstitutionalSite({ section = 'home' }) {
 
     if (isHome && anchor) {
       event.preventDefault();
-      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${anchor}`);
       document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
@@ -395,6 +410,14 @@ export default function InstitutionalSite({ section = 'home' }) {
         </div>
       </footer>
       <WhatsAppLink className="office-float" label="Abrir conversa no WhatsApp"><WhatsAppIcon /><span>Fale conosco</span></WhatsAppLink>
+      <button
+        type="button"
+        className={`office-scroll-top ${showScrollTop ? 'is-visible' : ''}`}
+        onClick={scrollToTop}
+        aria-label="Voltar ao topo"
+      >
+        <ChevronUp size={24} />
+      </button>
       <ContentModal content={activeModal} closeButtonRef={modalCloseButtonRef} onClose={() => setActiveModal(null)} />
     </main>
   );
