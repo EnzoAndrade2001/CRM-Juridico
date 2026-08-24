@@ -34,23 +34,40 @@ import logo from '../assets/pedro-bastos-lund-monogram.png';
 import blogVehicle from '../assets/blog-busca-apreensao.png';
 import blogInheritance from '../assets/blog-inventario.png';
 import blogProperty from '../assets/blog-bem-familia.png';
-import areaBanking from '../assets/services/revisional-bancario.jpg';
-import areaVehicle from '../assets/services/busca-apreensao.jpg';
-import areaContracts from '../assets/services/contratos-cobrancas.jpg';
-import areaConsumer from '../assets/services/direito-consumidor.jpg';
-import areaLabor from '../assets/services/direito-trabalhista.jpg';
-import areaFamily from '../assets/services/familia-sucessoes.jpg';
-import areaDigital from '../assets/services/direito-digital.jpg';
-import areaSocialSecurity from '../assets/services/direito-previdenciario.jpg';
+import areaBanking from '../assets/services/revisional-bancario-v2.jpg';
+import areaVehicle from '../assets/services/busca-apreensao-v2.jpg';
+import areaContracts from '../assets/services/contratos-cobrancas-v2.jpg';
+import areaConsumer from '../assets/services/direito-consumidor-v2.jpg';
+import areaLabor from '../assets/services/direito-trabalhista-v2.jpg';
+import areaFamily from '../assets/services/familia-sucessoes-v2.jpg';
+import areaDigital from '../assets/services/direito-digital-v2.jpg';
+import areaSocialSecurity from '../assets/services/direito-previdenciario-v2.jpg';
 import areaProperty from '../assets/services/direito-imobiliario.jpg';
-import areaCriminal from '../assets/services/direito-penal.jpg';
-import areaTax from '../assets/services/direito-tributario.jpg';
-import areaBusiness from '../assets/services/direito-empresarial.jpg';
-import clientBoomMania from '../assets/clients/boom-mania.png';
-import clientDgiLog from '../assets/clients/dgi-log.png';
-import clientHamorim from '../assets/clients/hamorim.png';
-import clientRodrigues from '../assets/clients/rodrigues.png';
-import clientSia from '../assets/clients/sia.png';
+import areaCriminal from '../assets/services/direito-penal-v2.jpg';
+import areaTax from '../assets/services/direito-tributario-v2.jpg';
+import areaBusiness from '../assets/services/direito-empresarial-v2.jpg';
+import partnerSia from '../assets/clients/partner-sia.png';
+import partnerWorkshop from '../assets/clients/partner-workshop.png';
+import partnerBarcelos from '../assets/clients/partner-barcelos.png';
+import partnerGabrielleAdames from '../assets/clients/partner-gabrielle-adames.png';
+import partnerRodrigues from '../assets/clients/partner-rodrigues.png';
+import partnerItalinea from '../assets/clients/partner-italinea.png';
+import partnerKwa from '../assets/clients/partner-kwa.png';
+import partnerDellAnno from '../assets/clients/partner-dell-anno.png';
+import partnerDgiLog from '../assets/clients/partner-dgilog.png';
+import partnerBoomMania from '../assets/clients/partner-boom-mania.png';
+import partnerHarmony from '../assets/clients/partner-harmony.png';
+import partnerAtenas from '../assets/clients/partner-atenas.png';
+import partnerViaVerde from '../assets/clients/partner-via-verde.png';
+import partnerMega from '../assets/clients/partner-mega.png';
+import partnerHamorim from '../assets/clients/partner-hamorim.png';
+import partnerVilaFinamor from '../assets/clients/partner-vila-finamor.png';
+import partnerMagnani from '../assets/clients/partner-magnani.png';
+import partnerDbOrtoli from '../assets/clients/partner-db-ortoli.png';
+import partnerTiaCarmen from '../assets/clients/partner-tia-carmen.png';
+import partnerGrupoDekka from '../assets/clients/partner-grupo-dekka.png';
+import partnerBersaglio from '../assets/clients/partner-bersaglio.png';
+import partnerCimentoGuaiba from '../assets/clients/partner-cimento-guaiba.png';
 import content from '../content/institutional-site.json';
 import './institutional-site.css';
 import './institutional-brand-overrides.css';
@@ -89,11 +106,28 @@ const AREA_IMAGES = {
   business: areaBusiness,
 };
 const CLIENT_LOGOS = [
-  { name: 'Boom Mania', image: clientBoomMania },
-  { name: 'DGI Log', image: clientDgiLog },
-  { name: 'Hamorim', image: clientHamorim },
-  { name: 'Rodrigues', image: clientRodrigues },
-  { name: 'SIA', image: clientSia },
+  { name: 'SIA', image: partnerSia },
+  { name: 'Workshop Móveis para Escritório', image: partnerWorkshop },
+  { name: 'Barcelos', image: partnerBarcelos },
+  { name: 'Gabrielle Adames Clínica', image: partnerGabrielleAdames },
+  { name: 'Rodrigues Distribuidora', image: partnerRodrigues },
+  { name: 'Italínea', image: partnerItalinea },
+  { name: 'Grupo KWA Iluminação', image: partnerKwa },
+  { name: 'Dell Anno Porto Alegre', image: partnerDellAnno },
+  { name: 'DGI Log', image: partnerDgiLog },
+  { name: 'Boom Mania', image: partnerBoomMania },
+  { name: 'Harmony Serralheria', image: partnerHarmony },
+  { name: 'Atenas Contabilidade', image: partnerAtenas },
+  { name: 'Via Verde Restaurante', image: partnerViaVerde },
+  { name: 'Mega Supermercado', image: partnerMega },
+  { name: 'Hamorim', image: partnerHamorim },
+  { name: 'Vila Finamor Terra & Mar', image: partnerVilaFinamor },
+  { name: 'Magnani Mármores', image: partnerMagnani },
+  { name: 'DB Ortoli Segurança', image: partnerDbOrtoli },
+  { name: 'Tia Carmen', image: partnerTiaCarmen },
+  { name: 'Grupo Dekka', image: partnerGrupoDekka },
+  { name: 'Bersaglio Alimentos', image: partnerBersaglio },
+  { name: 'Cimento Guaíba', image: partnerCimentoGuaiba },
 ];
 const DIFFERENTIATOR_ICONS = [Handshake, Search, MessageCircle];
 

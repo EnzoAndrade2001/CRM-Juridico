@@ -38,7 +38,7 @@ html.office-page-is-leaving .office-page-transition {
 }
 
 .office-clients {
-  background: #0a1724;
+  background: #000;
 }
 
 @media (prefers-reduced-motion: reduce) {
