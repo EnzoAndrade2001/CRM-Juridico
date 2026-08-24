@@ -255,7 +255,6 @@ export default function InstitutionalSite({ section = 'home' }) {
       <section className="office-hero" id="inicio">
         <div className="office-shell office-hero__inner">
           <div className="office-hero__copy">
-            <p className="office-hero__eyebrow"><span aria-hidden="true" /> {content.hero.eyebrow}</p>
             <h1>{content.hero.title}<br className="office-hero__title-break" /> {content.hero.titleBreak}</h1>
           </div>
           <div className="office-hero__portrait">

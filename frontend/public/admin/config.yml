@@ -31,7 +31,6 @@ collections:
             name: "hero"
             widget: "object"
             fields:
-              - { label: "Frase pequena acima do título", name: "eyebrow", widget: "string" }
               - { label: "Título — primeira linha", name: "title", widget: "string" }
               - { label: "Título — segunda linha", name: "titleBreak", widget: "string" }
           - label: "Quem somos"
