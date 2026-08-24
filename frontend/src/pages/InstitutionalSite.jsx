@@ -7,8 +7,11 @@ import {
   FileText,
   Handshake,
   Landmark,
+  Mail,
+  MapPin,
   Menu,
   MessageCircle,
+  Phone,
   Search,
   Scale,
   ShieldCheck,
@@ -21,6 +24,7 @@ import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import editorialPortrait from '../assets/pedro-bastos-lund-editorial.png';
 import eduardaPortrait from '../assets/dra-eduarda-hq.png';
 import ladyJustice from '../assets/lady-justice.png';
+import contactEditorial from '../assets/office-contact-editorial.png';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
 import content from '../content/institutional-site.json';
 import './institutional-site.css';
@@ -48,6 +52,7 @@ const siteNavItems = [
   { key: 'areas', label: 'Áreas de atuação', path: `${siteRoutes.home}#atuacao` },
   { key: 'diferenciais', label: 'Diferenciais', path: `${siteRoutes.home}#diferenciais` },
   { key: 'team', label: 'Nossa equipe', path: `${siteRoutes.home}#equipe` },
+  { key: 'contact', label: 'Contato', path: `${siteRoutes.home}#contato` },
 ];
 const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(content.whatsapp.message)}`;
 
@@ -261,11 +266,8 @@ export default function InstitutionalSite({ section = 'home' }) {
         </button>
         <nav className={`office-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegação principal">
           {siteNavItems.map((item) => (
-            <a key={item.key} href={item.path} onClick={(event) => handleNavItemClick(event, item)}>{item.label}</a>
+            <a className={item.key === 'contact' ? 'office-header__cta' : undefined} key={item.key} href={item.path} onClick={(event) => handleNavItemClick(event, item)}>{item.label}</a>
           ))}
-          <WhatsAppLink className="office-header__cta" label="Falar com o escritório pelo WhatsApp" >
-            <MessageCircle size={17} /> Falar no WhatsApp
-          </WhatsAppLink>
           <div className="office-social-links" aria-label="Redes sociais">
             {content.social.map(({ label, href, icon }) => (
               <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label} title={label}>
@@ -312,6 +314,26 @@ export default function InstitutionalSite({ section = 'home' }) {
         </div>
       </section>}
 
+      {isHome && <section className="office-home-services" id="atuacao">
+        <div className="office-shell">
+          <div className="office-section-heading">
+            <p className="office-kicker">{content.servicesIntro.kicker}</p>
+            <h2>{content.servicesIntro.title}</h2>
+            <p>{content.servicesIntro.text}</p>
+          </div>
+          <div className="office-home-services__list">
+            {areas.map(({ title, text, href, modal }, index) => {
+              const rowContent = <><span className="office-service-row__number">{String(index + 1).padStart(2, '0')}</span><span className="office-service-row__body"><strong>{title}</strong><span>{text}</span></span><ArrowRight size={18} /></>;
+              return href ? (
+                <a className="office-service-row" href={href} key={title} onClick={(event) => navigateWithTransition(event, href)}>{rowContent}</a>
+              ) : (
+                <button className="office-service-row" type="button" key={title} onClick={(event) => openModal(modal, event)}>{rowContent}</button>
+              );
+            })}
+          </div>
+        </div>
+      </section>}
+
       {isHome && <section className="office-differentiators" id="diferenciais">
         <div className="office-shell office-differentiators__layout">
           <div className="office-differentiators__content">
@@ -331,26 +353,6 @@ export default function InstitutionalSite({ section = 'home' }) {
           </div>
           <div className="office-differentiators__art" aria-hidden="true">
             <img src={ladyJustice} alt="" loading="lazy" />
-          </div>
-        </div>
-      </section>}
-
-      {isHome && <section className="office-home-services" id="atuacao">
-        <div className="office-shell">
-          <div className="office-section-heading">
-            <p className="office-kicker">{content.servicesIntro.kicker}</p>
-            <h2>{content.servicesIntro.title}</h2>
-            <p>{content.servicesIntro.text}</p>
-          </div>
-          <div className="office-home-services__list">
-            {areas.map(({ title, text, href, modal }, index) => {
-              const rowContent = <><span className="office-service-row__number">{String(index + 1).padStart(2, '0')}</span><span className="office-service-row__body"><strong>{title}</strong><span>{text}</span></span><ArrowRight size={18} /></>;
-              return href ? (
-                <a className="office-service-row" href={href} key={title} onClick={(event) => navigateWithTransition(event, href)}>{rowContent}</a>
-              ) : (
-                <button className="office-service-row" type="button" key={title} onClick={(event) => openModal(modal, event)}>{rowContent}</button>
-              );
-            })}
           </div>
         </div>
       </section>}
@@ -390,6 +392,36 @@ export default function InstitutionalSite({ section = 'home' }) {
                 <div className="office-person__body"><p className="office-person__eyebrow">{member.eyebrow}</p><h3>{member.name}</h3>{member.extra && <span>{member.extra}</span>}<p>{member.bio}</p></div>
               </article>
             ))}
+          </div>
+        </div>
+      </section>}
+
+      {isHome && <section className="office-contact" id="contato">
+        <div className="office-shell office-contact__layout">
+          <div className="office-contact__media">
+            <img src={contactEditorial} alt="Pedro Bastos Lund analisando documentos no escritório" loading="lazy" />
+          </div>
+          <div className="office-contact__content">
+            <p className="office-kicker office-kicker--light">Fale com o escritório</p>
+            <h2>Contatos</h2>
+            <div className="office-contact__details" aria-label="Canais de contato do escritório">
+              <div className="office-contact__row">
+                <Phone aria-hidden="true" />
+                <div><span>Telefones</span><a href={`tel:${content.footer.phoneHref}`}>{content.footer.phoneDisplay}</a><WhatsAppLink label="Conversar com o escritório pelo WhatsApp">(51) 9366-5581</WhatsAppLink></div>
+              </div>
+              <div className="office-contact__row">
+                <Mail aria-hidden="true" />
+                <div><span>E-mail</span><a href={`mailto:${content.footer.email}`}>{content.footer.email}</a></div>
+              </div>
+              <div className="office-contact__row">
+                <SocialIcon name="instagram" />
+                <div><span>Instagram</span><a href={content.social[0].href} target="_blank" rel="noreferrer">@pbl.adv</a></div>
+              </div>
+              <div className="office-contact__row">
+                <MapPin aria-hidden="true" />
+                <div><span>Endereço</span><a href="https://www.google.com/maps/search/?api=1&query=Rua+Visconde+do+Herval+1092+sala+503+Porto+Alegre+RS" target="_blank" rel="noreferrer">{content.footer.addressLine}<br />{content.footer.addressCity}</a></div>
+              </div>
+            </div>
           </div>
         </div>
       </section>}
