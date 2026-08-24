@@ -151,6 +151,17 @@ export default function InstitutionalSite({ section = 'home' }) {
   const lastModalTriggerRef = useRef(null);
 
   useEffect(() => {
+    document.documentElement.classList.remove('office-page-is-leaving');
+    const handlePageShow = (event) => {
+      if (event.persisted) {
+        document.documentElement.classList.remove('office-page-is-leaving');
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
+  useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 300);
     };
