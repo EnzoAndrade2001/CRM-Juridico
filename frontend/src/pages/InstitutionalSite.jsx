@@ -15,7 +15,7 @@ import {
   Stamp,
   X,
 } from 'lucide-react';
-import portrait from '../assets/pedro-bastos-lund-hero-hq.png';
+import portrait from '../assets/pedro-bastos-lund-hero-blue.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import editorialPortrait from '../assets/pedro-bastos-lund-editorial.png';
 import eduardaPortrait from '../assets/dra-eduarda-hq.png';
