@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import {
   ArrowRight,
   Banknote,
@@ -31,6 +32,9 @@ import eduardaPortrait from '../assets/dra-eduarda-hq.png';
 import ladyJustice from '../assets/lady-justice.png';
 import contactEditorial from '../assets/office-contact-editorial.png';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
+import blogVehicle from '../assets/blog-busca-apreensao.png';
+import blogInheritance from '../assets/blog-inventario.png';
+import blogProperty from '../assets/blog-bem-familia.png';
 import content from '../content/institutional-site.json';
 import './institutional-site.css';
 import './institutional-brand-overrides.css';
@@ -54,6 +58,7 @@ const ICONS = {
 };
 // Idem para as fotos da equipe — o JSON só guarda "pedro" ou "eduarda".
 const PORTRAITS = { pedro: aboutPortrait, eduarda: eduardaPortrait };
+const BLOG_IMAGES = { vehicle: blogVehicle, inheritance: blogInheritance, property: blogProperty };
 const DIFFERENTIATOR_ICONS = [Handshake, Search, MessageCircle];
 
 const whatsappNumber = '555193665581';
@@ -71,7 +76,7 @@ const siteNavItems = [
   { key: 'areas', label: 'Áreas de atuação', path: `${siteRoutes.home}#atuacao` },
   { key: 'diferenciais', label: 'Diferenciais', path: `${siteRoutes.home}#diferenciais` },
   { key: 'team', label: 'Nossa equipe', path: `${siteRoutes.home}#equipe` },
-  { key: 'blog', label: 'Blog', disabled: true },
+  { key: 'blog', label: 'Blog', path: `${siteRoutes.home}#blog` },
   { key: 'contact', label: 'Contato', path: `${siteRoutes.home}#contato` },
 ];
 const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(content.whatsapp.message)}`;
@@ -162,8 +167,14 @@ function ContentModal({ content: modalContent, closeButtonRef, onClose }) {
 }
 
 export default function InstitutionalSite({ section = 'home' }) {
+  const { articleSlug } = useParams();
   const isHome = section === 'home';
-  const pageDetails = content.sectionDetails[section];
+  const article = section === 'article'
+    ? content.blog.posts.find((post) => post.slug === articleSlug)
+    : null;
+  const pageDetails = content.sectionDetails[section] || (section === 'article'
+    ? { title: 'Conteúdo não encontrado', text: 'Esta matéria não está disponível.' }
+    : null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -209,7 +220,9 @@ export default function InstitutionalSite({ section = 'home' }) {
     fontLink.rel = 'stylesheet';
     fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap';
     document.head.appendChild(fontLink);
-    document.title = pageDetails
+    document.title = article
+      ? `${article.title} | Pedro Bastos Lund`
+      : pageDetails
       ? `${pageDetails.title} | Pedro Bastos Lund`
       : 'Pedro Bastos Lund | Advocacia e Consultoria Jurídica';
     description.setAttribute('content', content.meta.description);
@@ -219,7 +232,7 @@ export default function InstitutionalSite({ section = 'home' }) {
       if (createdDescription) description.remove();
       else description.setAttribute('content', previousDescription || '');
     };
-  }, [pageDetails]);
+  }, [article, pageDetails]);
 
   useEffect(() => {
     if (!activeModal) {
@@ -312,7 +325,27 @@ export default function InstitutionalSite({ section = 'home' }) {
         </nav>
       </header>
 
-      {isHome ? (
+      {article ? (
+        <article className="office-article">
+          <header className="office-article__hero">
+            <div className="office-shell office-article__hero-inner">
+              <a href={`${siteRoutes.home}#blog`} onClick={(event) => navigateWithTransition(event, `${siteRoutes.home}#blog`)}>
+                <ArrowRight size={15} /> Voltar ao blog
+              </a>
+              <p>{article.category}</p>
+              <h1>{article.title}</h1>
+            </div>
+          </header>
+          <div className="office-shell office-article__layout">
+            <figure className="office-article__media">
+              <img src={BLOG_IMAGES[article.imageKey]} alt="" />
+            </figure>
+            <div className="office-article__body">
+              {article.paragraphs.map((paragraph) => <p key={paragraph.slice(0, 50)}>{paragraph}</p>)}
+            </div>
+          </div>
+        </article>
+      ) : isHome ? (
       <section className="office-hero" id="inicio">
         <div className="office-shell office-hero__inner">
           <img className="office-hero__watermark" src={logo} alt="" aria-hidden="true" />
@@ -429,6 +462,31 @@ export default function InstitutionalSite({ section = 'home' }) {
         </div>
       </section>}
 
+      {isHome && <section className="office-blog" id="blog">
+        <div className="office-shell">
+          <div className="office-section-heading office-section-heading--dark">
+            <h2>{content.blog.title}</h2>
+          </div>
+          <div className="office-blog__grid">
+            {content.blog.posts.map((post) => {
+              const href = `${baseUrl.replace(/\/$/, '')}/blog/${post.slug}/`;
+              return (
+                <article className="office-blog-card" key={post.slug}>
+                  <a className="office-blog-card__media" href={href} onClick={(event) => navigateWithTransition(event, href)} aria-label={`Ler ${post.title}`}>
+                    <img src={BLOG_IMAGES[post.imageKey]} alt="" loading="lazy" />
+                  </a>
+                  <div className="office-blog-card__body">
+                    <p>{post.category}</p>
+                    <h3>{post.title}</h3>
+                    <a href={href} onClick={(event) => navigateWithTransition(event, href)}>Leia mais <ArrowRight size={15} /></a>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>}
+
       {isHome && <section className="office-contact" id="contato">
         <div className="office-shell office-contact__layout">
           <div className="office-contact__media">
@@ -471,7 +529,6 @@ export default function InstitutionalSite({ section = 'home' }) {
             <a href={`mailto:${content.footer.email}`}><strong>E-mail</strong>{content.footer.email}</a>
           </div>
           <p>{content.footer.note}</p>
-          <span>© {new Date().getFullYear()} Pedro Bastos Lund</span>
         </div>
       </footer>
       <WhatsAppLink className="office-float" label="Abrir conversa no WhatsApp"><WhatsAppIcon /><span>Fale conosco</span></WhatsAppLink>
