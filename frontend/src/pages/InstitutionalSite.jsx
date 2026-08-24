@@ -15,7 +15,7 @@ import {
   Stamp,
   X,
 } from 'lucide-react';
-import portrait from '../assets/pedro-bastos-lund-hero-cutout.png';
+import portrait from '../assets/pedro-bastos-lund-hero-hq.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import editorialPortrait from '../assets/pedro-bastos-lund-editorial.png';
 import eduardaPortrait from '../assets/dra-eduarda-hq.png';
@@ -38,7 +38,6 @@ const siteRoutes = {
   home: baseUrl,
   areas: `${baseUrl}atuacao/`,
   process: `${baseUrl}como-funciona/`,
-  guides: `${baseUrl}conteudos/`,
   team: `${baseUrl}equipe/`,
 };
 // Todos os destinos do menu vivem na própria home: os botões rolam até a
@@ -60,7 +59,6 @@ const areas = content.areas.map((area) => ({
   icon: ICONS[area.icon] || FileText,
   href: area.href ? `${baseUrl.replace(/\/$/, '')}/${area.href}/` : null,
 }));
-const guides = content.guides;
 
 function SocialIcon({ name }) {
   if (name === 'instagram') {
@@ -354,28 +352,6 @@ export default function InstitutionalSite({ section = 'home' }) {
               </article>
             ))}
           </div>
-        </div>
-      </section>}
-
-      {(isHome || section === 'guides') && <section className="office-guides" id="conteudos">
-        <div className="office-shell">
-          <div className="office-section-heading">
-            <h2>Conteúdos jurídicos.</h2>
-            <p>Informação prática para consulta.</p>
-          </div>
-          <div className="office-guides__grid">
-            {guides.map((guide) => (
-              <article className="office-guide-card" key={guide.title}>
-                <p className="office-guide-card__category">{guide.category}</p>
-                <h3>{guide.title}</h3>
-                <p>{guide.excerpt}</p>
-                <button className="office-card-link" type="button" onClick={(event) => openModal(guide.modal, event)}>
-                  Ler conteúdo <ArrowRight size={16} />
-                </button>
-              </article>
-            ))}
-          </div>
-          <p className="office-guides__source">Conteúdo informativo. A análise depende de cada caso.</p>
         </div>
       </section>}
 
