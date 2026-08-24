@@ -41,11 +41,14 @@ const siteRoutes = {
   guides: `${baseUrl}conteudos/`,
   team: `${baseUrl}equipe/`,
 };
+// Todos os destinos do menu vivem na própria home: os botões rolam até a
+// seção em vez de trocar de página. As rotas dedicadas seguem existindo para
+// quem chegar por link direto.
 const siteNavItems = [
-  { key: 'areas', label: 'Áreas de atuação', path: siteRoutes.areas },
   { key: 'sobre', label: 'Quem somos', path: `${siteRoutes.home}#quem-somos` },
+  { key: 'areas', label: 'Áreas de atuação', path: `${siteRoutes.home}#atuacao` },
   { key: 'diferenciais', label: 'Diferenciais', path: `${siteRoutes.home}#diferenciais` },
-  { key: 'team', label: 'Nossa equipe', path: siteRoutes.team },
+  { key: 'team', label: 'Nossa equipe', path: `${siteRoutes.home}#equipe` },
 ];
 const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(content.whatsapp.message)}`;
 
@@ -354,7 +357,7 @@ export default function InstitutionalSite({ section = 'home' }) {
         </div>
       </section>}
 
-      {section === 'guides' && <section className="office-guides" id="conteudos">
+      {(isHome || section === 'guides') && <section className="office-guides" id="conteudos">
         <div className="office-shell">
           <div className="office-section-heading">
             <h2>Conteúdos jurídicos.</h2>
@@ -376,7 +379,7 @@ export default function InstitutionalSite({ section = 'home' }) {
         </div>
       </section>}
 
-      {section === 'process' && <section className="office-process" id="como-funciona">
+      {(isHome || section === 'process') && <section className="office-process" id="como-funciona">
         <div className="office-shell office-process__grid">
           <div className="office-process__heading">
             <h2>{content.process.title}</h2>
@@ -391,7 +394,7 @@ export default function InstitutionalSite({ section = 'home' }) {
         </div>
       </section>}
 
-      {section === 'team' && <section className="office-team" id="equipe">
+      {(isHome || section === 'team') && <section className="office-team" id="equipe">
         <div className="office-shell">
           <div className="office-section-heading office-section-heading--team">
             <h2>Equipe jurídica.</h2>
