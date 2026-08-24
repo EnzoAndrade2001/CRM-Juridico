@@ -386,7 +386,7 @@ export default function InstitutionalSite({ section = 'home' }) {
       {(isHome || section === 'team') && <section className="office-team" id="equipe">
         <div className="office-shell">
           <div className="office-section-heading office-section-heading--team">
-            <h2>Equipe jurídica.</h2>
+            <h2>Nosso time</h2>
           </div>
           <div className="office-team__grid">
             {content.team.members.map((member) => (
