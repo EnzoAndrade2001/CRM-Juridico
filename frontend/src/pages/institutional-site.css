@@ -51,7 +51,7 @@
 .office-hero { position: relative; background: var(--office-navy); color: #fff; border-top: 1px solid rgba(255, 255, 255, .08); overflow: hidden; }
 .office-hero__inner { position: relative; display: flex; width: 100%; max-width: none; min-height: 320px; align-items: center; justify-content: center; margin-inline: 0; padding-inline: max(48px, calc((100% - 1600px) / 2)); }
 .office-hero__copy { position: relative; z-index: 2; width: 100%; max-width: none; padding: 34px 0; text-align: center; }
-.office-hero h1 { margin-bottom: 0; color: #fff; font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: clamp(28px, 3.4vw, 56px); line-height: 1.04; white-space: nowrap; }
+.office-hero h1 { margin-bottom: 0; color: #fff; font-family: "Poppins", Inter, ui-sans-serif, system-ui, sans-serif; font-weight: 600; font-size: clamp(26px, 3vw, 48px); line-height: 1.08; white-space: nowrap; }
 .office-hero__watermark { position: absolute; z-index: 1; top: 50%; left: 50%; width: clamp(170px, 20vw, 300px); height: clamp(170px, 20vw, 300px); object-fit: contain; opacity: .09; transform: translate(-50%, -50%); pointer-events: none; user-select: none; }
 
 /* Página interna (áreas/como funciona/dúvidas/equipe) */
