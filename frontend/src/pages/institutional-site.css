@@ -60,12 +60,12 @@
 
 /* Quem somos */
 /* Quem somos: card escuro com texto justificado + imagem em preto e branco */
-.office-about { padding: 48px 0; background: #0f0f0f; }
-.office-about__layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; min-height: clamp(540px, 45vw, 650px); align-items: stretch; }
-.office-about__card { display: flex; height: 100%; flex-direction: column; justify-content: center; padding: 24px 28px; background: #2e2e2e; }
-.office-about__card h2 { margin: 0 0 16px; color: #fff; font-size: clamp(28px, 2.4vw, 36px); font-weight: 700; line-height: 1.15; text-align: center; }
-.office-about__card h2::after { display: block; width: 100%; height: 1px; margin-top: 14px; background: var(--office-gold); content: ""; }
-.office-about__card p { margin: 0 0 16px; color: rgba(255, 255, 255, .88); font-size: clamp(16px, 1.25vw, 18px); line-height: 1.62; text-align: justify; text-justify: inter-word; hyphens: auto; }
+.office-about { padding: 28px 0; background: #0f0f0f; }
+.office-about__layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; min-height: clamp(430px, 36vw, 500px); align-items: stretch; }
+.office-about__card { display: flex; height: 100%; flex-direction: column; justify-content: center; padding: 20px 24px; background: #2e2e2e; }
+.office-about__card h2 { margin: 0 0 12px; color: #fff; font-size: clamp(24px, 2vw, 30px); font-weight: 700; line-height: 1.12; text-align: center; }
+.office-about__card h2::after { display: block; width: 100%; height: 1px; margin-top: 10px; background: var(--office-gold); content: ""; }
+.office-about__card p { margin: 0 0 12px; color: rgba(255, 255, 255, .88); font-size: clamp(14px, 1vw, 15.5px); line-height: 1.48; text-align: justify; text-justify: inter-word; hyphens: auto; }
 .office-about__card p:last-child { margin-bottom: 0; }
 .office-about__media { position: relative; height: 100%; min-height: 0; overflow: hidden; }
 .office-about__media img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; filter: grayscale(1) contrast(1.05); }
@@ -209,8 +209,8 @@
   .office-hero h1 { font-size: clamp(27px, 4.1vw, 42px); }
   .office-about__layout, .office-differentiators__grid, .office-home-services, .office-areas__grid,   .office-differentiators__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .office-about__layout { grid-template-columns: 1fr; min-height: 0; }
-  .office-about__card { height: auto; padding: 28px; }
-  .office-about__media { height: clamp(460px, 115vw, 720px); min-height: 0; }
+  .office-about__card { height: auto; padding: 24px; }
+  .office-about__media { height: clamp(360px, 82vw, 520px); min-height: 0; }
   .office-about__media img { min-height: 0; object-position: center top; }
   .office-team__grid { grid-template-columns: 1fr; }
   .office-blog__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -307,6 +307,7 @@
   .office-hero h1 { font-size: clamp(24px, 6.5vw, 28px); line-height: 1.08; white-space: normal; }
   .office-hero__watermark { width: 180px; height: 180px; opacity: .14; }
   .office-about, .office-home-services, .office-areas, .office-team, .office-contact { padding: 36px 0; }
+  .office-about { padding: 24px 0; }
   .office-about__card { padding: 24px 20px; }
   .office-person > img { min-height: 200px; }
   .office-contact__media { width: 100%; height: auto; aspect-ratio: 1037 / 1517; }
