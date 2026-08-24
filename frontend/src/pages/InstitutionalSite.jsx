@@ -279,7 +279,7 @@ export default function InstitutionalSite({ section = 'home' }) {
           {siteNavItems.map((item) => (
             item.disabled
               ? <span className="office-nav__placeholder" key={item.key} aria-disabled="true">{item.label}</span>
-              : <a className={item.key === 'contact' ? 'office-header__cta' : undefined} key={item.key} href={item.path} onClick={(event) => handleNavItemClick(event, item)}>{item.label}</a>
+              : <a key={item.key} href={item.path} onClick={(event) => handleNavItemClick(event, item)}>{item.label}</a>
           ))}
           <div className="office-social-links" aria-label="Redes sociais">
             {content.social.map(({ label, href, icon }) => href ? (
