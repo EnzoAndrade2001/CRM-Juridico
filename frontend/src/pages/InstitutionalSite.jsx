@@ -19,7 +19,6 @@ import {
   X,
   ChevronUp,
 } from 'lucide-react';
-import portrait from '../assets/pedro-bastos-lund-hero-blue.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
 import editorialPortrait from '../assets/pedro-bastos-lund-editorial.png';
 import eduardaPortrait from '../assets/dra-eduarda-hq.png';
@@ -284,12 +283,9 @@ export default function InstitutionalSite({ section = 'home' }) {
       {isHome ? (
       <section className="office-hero" id="inicio">
         <div className="office-shell office-hero__inner">
+          <img className="office-hero__watermark" src={logo} alt="" aria-hidden="true" />
           <div className="office-hero__copy">
-            <h1>{content.hero.title}<br className="office-hero__title-break" /> {content.hero.titleBreak}</h1>
-          </div>
-          <div className="office-hero__portrait">
-            <img src={portrait} alt="Pedro Bastos Lund" />
-            <p className="office-hero__portrait-name"><span>Pedro Bastos Lund</span> OAB/RS 74.953</p>
+            <h1>{content.hero.title} {content.hero.titleBreak}</h1>
           </div>
         </div>
       </section>
