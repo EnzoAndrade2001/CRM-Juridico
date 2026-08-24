@@ -81,14 +81,6 @@
 
 /* Serviços (home) */
 .office-home-services { padding: 48px 0; background: var(--office-cream); border-block: 1px solid #e7e0d5; }
-.office-home-services__list { border-top: 1px solid #e2ddd3; }
-.office-service-row { display: flex; align-items: center; gap: 16px; width: 100%; border: 0; border-bottom: 1px solid #e2ddd3; padding: 15px 8px; background: transparent; color: var(--office-ink); font: inherit; text-align: left; cursor: pointer; transition: background .2s ease, padding-left .2s ease; }
-.office-service-row:hover { background: #fff; padding-left: 16px; }
-.office-service-row__number { flex: 0 0 auto; color: #c9bfa9; font-size: 13px; font-weight: 800; }
-.office-service-row__body { display: flex; flex: 1 1 auto; flex-direction: column; gap: 4px; }
-.office-service-row__body strong { font-size: 16px; }
-.office-service-row__body span { color: var(--office-copy); font-size: 13px; }
-.office-service-row svg { flex: 0 0 auto; color: var(--office-gold); }
 
 /* Áreas de atuação (página) */
 .office-areas { padding: 48px 0; background: var(--office-cream); border-block: 1px solid #e7e0d5; }
@@ -175,7 +167,7 @@
   .office-hero__inner { min-height: 280px; padding-inline: 24px; }
   .office-hero h1 { font-size: clamp(27px, 4.1vw, 42px); }
   .office-about__layout, .office-differentiators__grid, .office-home-services, .office-areas__grid,   .office-differentiators__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .office-areas__grid,   .office-about__layout { grid-template-columns: 1fr; }
+  .office-about__layout { grid-template-columns: 1fr; }
   .office-about__card { padding: 28px; }
   .office-about__media { height: min(92vw, 500px); min-height: 0; }
   .office-about__media img { min-height: 0; object-position: center 30%; }

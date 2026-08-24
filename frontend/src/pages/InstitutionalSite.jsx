@@ -292,7 +292,7 @@ export default function InstitutionalSite({ section = 'home' }) {
       ) : (
         <section className="office-page-hero">
           <div className="office-shell office-page-hero__inner">
-            <p className="office-kicker office-kicker--light">{pageDetails.kicker}</p>
+            {pageDetails.kicker && <p className="office-kicker office-kicker--light">{pageDetails.kicker}</p>}
             <h1>{pageDetails.title}</h1>
             <p>{pageDetails.text}</p>
           </div>
@@ -316,19 +316,22 @@ export default function InstitutionalSite({ section = 'home' }) {
       {isHome && <section className="office-home-services" id="atuacao">
         <div className="office-shell">
           <div className="office-section-heading">
-            <p className="office-kicker">{content.servicesIntro.kicker}</p>
             <h2>{content.servicesIntro.title}</h2>
             <p>{content.servicesIntro.text}</p>
           </div>
-          <div className="office-home-services__list">
-            {areas.map(({ title, text, href, modal }, index) => {
-              const rowContent = <><span className="office-service-row__number">{String(index + 1).padStart(2, '0')}</span><span className="office-service-row__body"><strong>{title}</strong><span>{text}</span></span><ArrowRight size={18} /></>;
-              return href ? (
-                <a className="office-service-row" href={href} key={title} onClick={(event) => navigateWithTransition(event, href)}>{rowContent}</a>
-              ) : (
-                <button className="office-service-row" type="button" key={title} onClick={(event) => openModal(modal, event)}>{rowContent}</button>
-              );
-            })}
+          <div className="office-areas__grid">
+            {areas.map(({ icon: Icon, title, text, href, modal }) => (
+              <article className="office-area-card" key={title}>
+                <span className="office-area-card__icon"><Icon size={23} /></span>
+                <h3>{title}</h3>
+                <p>{text}</p>
+                {href ? <a href={href} onClick={(event) => navigateWithTransition(event, href)}>Saiba mais <ArrowRight size={16} /></a> : (
+                  <button className="office-card-link" type="button" onClick={(event) => openModal(modal, event)}>
+                    Ver detalhes <ArrowRight size={16} />
+                  </button>
+                )}
+              </article>
+            ))}
           </div>
         </div>
       </section>}
