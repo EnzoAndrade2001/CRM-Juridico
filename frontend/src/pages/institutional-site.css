@@ -26,7 +26,7 @@
 /* Header */
 /* O header não tem .office-shell interno: o recuo lateral é feito aqui, no
    próprio elemento, para o fundo continuar sangrando de ponta a ponta. */
-.office-header { position: relative; z-index: 30; display: flex; align-items: center; gap: 28px; padding: 12px max(24px, calc((100% - 1320px) / 2)); background: var(--office-navy); color: #fff; }
+.office-header { position: sticky; top: 0; width: 100%; z-index: 30; display: flex; align-items: center; gap: 28px; padding: 12px max(24px, calc((100% - 1320px) / 2)); background: var(--office-navy); color: #fff; }
 .office-brand { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 12px; }
 .office-brand__mark { display: grid; width: 46px; height: 50px; flex: 0 0 auto; place-items: center; }
 .office-brand__mark img { width: 44px; height: 44px; object-fit: contain; }
