@@ -436,7 +436,7 @@ export default function InstitutionalSite({ section = 'home' }) {
             <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span>
           </div>
           <div className="office-footer__contact" aria-label="Informações de contato">
-            <span><strong>Endereço</strong>{content.footer.addressLine}<br />{content.footer.addressCity}</span>
+            <span><strong>Endereço</strong>{content.footer.addressLine}, {content.footer.addressCity}</span>
             <a href={`tel:${content.footer.phoneHref}`}><strong>Telefone</strong>{content.footer.phoneDisplay}</a>
             <a href={`mailto:${content.footer.email}`}><strong>E-mail</strong>{content.footer.email}</a>
           </div>

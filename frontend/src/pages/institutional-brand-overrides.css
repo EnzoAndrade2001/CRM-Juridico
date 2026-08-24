@@ -59,20 +59,20 @@ html.office-page-is-leaving .office-page-transition {
 .office-differentiators__layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(340px, 0.72fr);
-  gap: 70px;
-  min-height: 690px;
+  gap: 44px;
+  min-height: 520px;
   align-items: stretch;
 }
 
 .office-differentiators__content {
   align-self: center;
-  padding: 90px 0;
+  padding: 48px 0;
 }
 
 .office-differentiators__content > h2 {
-  margin: 0 0 38px;
+  margin: 0 0 24px;
   color: #fff;
-  font-size: clamp(42px, 4.8vw, 64px);
+  font-size: clamp(36px, 4vw, 50px);
   line-height: 1.05;
   letter-spacing: 0;
 }
@@ -88,7 +88,7 @@ html.office-page-is-leaving .office-page-transition {
   align-items: center;
   border: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.18);
-  padding: 25px 0;
+  padding: 17px 0;
   background: transparent;
   transition: none;
 }
@@ -138,7 +138,7 @@ html.office-page-is-leaving .office-page-transition {
 .office-differentiators__art {
   position: relative;
   display: flex;
-  min-height: 690px;
+  min-height: 520px;
   align-items: flex-end;
   justify-content: center;
 }
@@ -156,7 +156,7 @@ html.office-page-is-leaving .office-page-transition {
 .office-differentiators__art img {
   display: block;
   width: min(100%, 500px);
-  height: 640px;
+  height: 480px;
   object-fit: contain;
   object-position: center bottom;
 }
@@ -164,18 +164,18 @@ html.office-page-is-leaving .office-page-transition {
 @media (max-width: 900px) {
   .office-differentiators__layout {
     grid-template-columns: minmax(0, 1fr) minmax(260px, 0.62fr);
-    gap: 34px;
-    min-height: 620px;
+    gap: 28px;
+    min-height: 500px;
   }
 
   .office-differentiators__content {
-    padding: 72px 0;
+    padding: 42px 0;
   }
 
   .office-differentiators__art,
   .office-differentiators__art img {
-    min-height: 620px;
-    height: 620px;
+    min-height: 500px;
+    height: 500px;
   }
 }
 
@@ -186,12 +186,12 @@ html.office-page-is-leaving .office-page-transition {
   }
 
   .office-differentiators__content {
-    padding: 68px 0 24px;
+    padding: 38px 0 16px;
   }
 
   .office-differentiators__content > h2 {
-    margin-bottom: 28px;
-    font-size: 36px;
+    margin-bottom: 20px;
+    font-size: 32px;
   }
 
   .office-differentiator {
@@ -199,7 +199,7 @@ html.office-page-is-leaving .office-page-transition {
     min-width: 0;
     grid-template-columns: 54px minmax(0, 1fr);
     gap: 14px;
-    padding: 21px 0;
+    padding: 16px 0;
   }
 
   .office-differentiator__icon {
@@ -212,7 +212,7 @@ html.office-page-is-leaving .office-page-transition {
   }
 
   .office-differentiators__art {
-    min-height: 430px;
+    min-height: 320px;
   }
 
   .office-differentiators__art::before {
@@ -220,7 +220,7 @@ html.office-page-is-leaving .office-page-transition {
   }
 
   .office-differentiators__art img {
-    width: min(100%, 340px);
-    height: 430px;
+    width: min(100%, 300px);
+    height: 320px;
   }
 }
