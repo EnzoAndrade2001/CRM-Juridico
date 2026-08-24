@@ -336,7 +336,6 @@ export default function InstitutionalSite({ section = 'home' }) {
       {isHome && <section className="office-differentiators" id="diferenciais">
         <div className="office-shell office-differentiators__layout">
           <div className="office-differentiators__content">
-            <p className="office-kicker office-kicker--light">{content.differentiators.kicker}</p>
             <h2>{content.differentiators.title}</h2>
             <div className="office-differentiators__list">
               {content.differentiators.items.map((item, index) => {
