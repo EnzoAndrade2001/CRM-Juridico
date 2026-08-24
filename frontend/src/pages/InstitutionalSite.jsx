@@ -37,7 +37,6 @@ const baseUrl = import.meta.env.BASE_URL || '/';
 const siteRoutes = {
   home: baseUrl,
   areas: `${baseUrl}atuacao/`,
-  process: `${baseUrl}como-funciona/`,
   team: `${baseUrl}equipe/`,
 };
 // Todos os destinos do menu vivem na própria home: os botões rolam até a
@@ -359,21 +358,6 @@ export default function InstitutionalSite({ section = 'home' }) {
                   </button>
                 )}
               </article>
-            ))}
-          </div>
-        </div>
-      </section>}
-
-      {(isHome || section === 'process') && <section className="office-process" id="como-funciona">
-        <div className="office-shell office-process__grid">
-          <div className="office-process__heading">
-            <h2>{content.process.title}</h2>
-            <p>{content.process.text}</p>
-            <WhatsAppLink className="office-text-link" label="Falar com a equipe pelo WhatsApp">Falar no WhatsApp <ArrowRight size={17} /></WhatsAppLink>
-          </div>
-          <div className="office-process__steps">
-            {content.process.steps.map(({ number, title, text }) => (
-              <article className="office-step" key={number}><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></article>
             ))}
           </div>
         </div>

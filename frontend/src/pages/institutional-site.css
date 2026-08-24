@@ -113,18 +113,6 @@
 .office-area-card > a:hover, .office-card-link:hover { color: var(--office-navy); }
 
 
-/* Como funciona */
-.office-process { padding: 90px 0; background: var(--office-navy); color: #fff; }
-.office-process__grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 70px; align-items: start; }
-.office-process h2 { margin-bottom: 16px; color: #fff; }
-.office-process__heading > p:not(.office-kicker) { max-width: 460px; color: rgba(255, 255, 255, .7); font-size: 15px; line-height: 1.75; }
-.office-text-link { display: inline-flex; align-items: center; gap: 9px; margin-top: 16px; border-bottom: 1px solid var(--office-gold); padding-bottom: 8px; color: var(--office-gold-light); font-size: 14px; font-weight: 750; }
-.office-process__steps { border-top: 1px solid rgba(255, 255, 255, .16); }
-.office-step { display: grid; grid-template-columns: 55px 1fr; gap: 18px; border-bottom: 1px solid rgba(255, 255, 255, .16); padding: 24px 0; }
-.office-step > span { color: var(--office-gold-light); font-size: 24px; font-weight: 700; }
-.office-step h3 { margin-bottom: 6px; color: #fff; font-size: 19px; }
-.office-step p { margin: 0; color: rgba(255, 255, 255, .6); font-size: 14px; line-height: 1.6; }
-
 /* Equipe */
 .office-team { padding: 90px 0; background: #fff; }
 .office-section-heading--team { margin-bottom: 34px; }
@@ -186,7 +174,6 @@
   .office-about__card { padding: 40px 32px; }
   .office-about__media { height: min(125vw, 620px); min-height: 0; }
   .office-about__media img { min-height: 0; object-position: center 30%; }
-  .office-process__grid { grid-template-columns: 1fr; }
   .office-team__grid { grid-template-columns: 1fr; }
   .office-footer__inner { grid-template-columns: 1fr 1fr; }
 }
