@@ -407,25 +407,6 @@ export default function InstitutionalSite({ section = 'home' }) {
         </div>
       </section>}
 
-      {isHome && <section className="office-home-team" id="equipe">
-        <div className="office-shell office-home-team__layout">
-          <div className="office-section-heading">
-            <p className="office-kicker">{content.sectionDetails.team.kicker}</p>
-            <h2>{content.team.homeTitle}</h2>
-            <p>{content.team.homeText}</p>
-            <a className="office-text-link" href={siteRoutes.team} onClick={(event) => navigateWithTransition(event, siteRoutes.team)}>Conheça a equipe <ArrowRight size={17} /></a>
-          </div>
-          <div className="office-home-team__members">
-            {content.team.members.map((member) => (
-              <article className="office-team-member" key={member.name}>
-                <img src={PORTRAITS[member.portraitKey]} alt={member.name} loading="lazy" />
-                <div><p className="office-person__eyebrow">{member.eyebrow}</p><h3>{member.name}</h3>{member.extra && <span>{member.extra}</span>}</div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>}
-
       <footer className="office-footer">
         <div className="office-shell office-footer__inner">
           <div className="office-footer__brand">
