@@ -81,6 +81,7 @@
   "areas": [
     {
       "icon": "Banknote",
+      "imageKey": "banking",
       "title": "Revisional bancário",
       "text": "Juros, tarifas e seguros cobrados no contrato.",
       "href": "revisional-bancario",
@@ -88,6 +89,7 @@
     },
     {
       "icon": "CarFront",
+      "imageKey": "vehicle",
       "title": "Busca e apreensão",
       "text": "Defesa em casos de atraso e retomada do veículo.",
       "href": "",
@@ -106,6 +108,7 @@
     },
     {
       "icon": "FileText",
+      "imageKey": "contracts",
       "title": "Contratos e cobranças",
       "text": "Cláusulas, prazos, valores e cobranças.",
       "href": "",
@@ -124,6 +127,7 @@
     },
     {
       "icon": "Landmark",
+      "imageKey": "consumer",
       "title": "Direito do consumidor",
       "text": "Cobranças indevidas e falhas na prestação do serviço.",
       "href": "",
@@ -142,6 +146,7 @@
     },
     {
       "icon": "BriefcaseBusiness",
+      "imageKey": "labor",
       "title": "Direito trabalhista",
       "text": "Relações de trabalho, verbas, jornada, rescisão e negociações.",
       "href": "",
@@ -160,6 +165,7 @@
     },
     {
       "icon": "Scale",
+      "imageKey": "family",
       "title": "Família e sucessões",
       "text": "Inventário, partilha e patrimônio familiar.",
       "href": "",
@@ -178,6 +184,7 @@
     },
     {
       "icon": "LockKeyhole",
+      "imageKey": "digital",
       "title": "Direito digital e proteção de dados",
       "text": "Segurança digital, crimes virtuais e adequação à LGPD.",
       "href": "",
@@ -196,6 +203,7 @@
     },
     {
       "icon": "BadgeDollarSign",
+      "imageKey": "socialSecurity",
       "title": "Direito previdenciário",
       "text": "Aposentadorias, pensões e benefícios pagos pelo INSS.",
       "href": "",
@@ -214,6 +222,7 @@
     },
     {
       "icon": "Building2",
+      "imageKey": "property",
       "title": "Direito imobiliário",
       "text": "Compra, venda, locação e regularização de imóveis.",
       "href": "",
@@ -231,25 +240,8 @@
       }
     },
     {
-      "icon": "Scale",
-      "title": "Direito civil",
-      "text": "Relações entre pessoas, bens, obrigações e responsabilidade civil.",
-      "href": "",
-      "modal": {
-        "kicker": "Direito civil",
-        "title": "Direito civil.",
-        "intro": "Orientação para conflitos e obrigações presentes nas relações privadas.",
-        "points": [
-          "Responsabilidade civil e indenizações",
-          "Obrigações, contratos e patrimônio",
-          "Prevenção e resolução de conflitos"
-        ],
-        "documents": "Contratos, comprovantes, mensagens, notificações e demais registros relacionados ao caso.",
-        "note": "Os fatos e documentos definem a estratégia adequada."
-      }
-    },
-    {
       "icon": "Gavel",
+      "imageKey": "criminal",
       "title": "Direito penal",
       "text": "Crimes, contravenções, investigações e aplicação de penas.",
       "href": "",
@@ -267,43 +259,8 @@
       }
     },
     {
-      "icon": "BookOpen",
-      "title": "Direito constitucional",
-      "text": "Constituição, poderes do Estado e direitos fundamentais.",
-      "href": "",
-      "modal": {
-        "kicker": "Direito constitucional",
-        "title": "Direito constitucional.",
-        "intro": "Análise de direitos fundamentais e da aplicação das normas constitucionais.",
-        "points": [
-          "Proteção de direitos e garantias fundamentais",
-          "Questões relacionadas aos poderes do Estado",
-          "Compatibilidade de atos e normas com a Constituição"
-        ],
-        "documents": "Decisões, atos administrativos, normas e documentos relacionados à possível violação.",
-        "note": "A via adequada depende do direito envolvido e do ato questionado."
-      }
-    },
-    {
-      "icon": "Landmark",
-      "title": "Direito administrativo",
-      "text": "Administração pública, servidores, contratos e empresas.",
-      "href": "",
-      "modal": {
-        "kicker": "Direito administrativo",
-        "title": "Direito administrativo.",
-        "intro": "Orientação nas relações de pessoas e empresas com a administração pública.",
-        "points": [
-          "Processos administrativos e defesa de servidores",
-          "Licitações e contratos públicos",
-          "Atos, sanções e responsabilidades administrativas"
-        ],
-        "documents": "Editais, contratos, notificações, decisões e cópia integral do processo administrativo.",
-        "note": "Prazos administrativos devem ser conferidos assim que a notificação for recebida."
-      }
-    },
-    {
       "icon": "ReceiptText",
+      "imageKey": "tax",
       "title": "Direito tributário",
       "text": "Impostos, taxas, obrigações e arrecadação tributária.",
       "href": "",
@@ -322,6 +279,7 @@
     },
     {
       "icon": "BriefcaseBusiness",
+      "imageKey": "business",
       "title": "Direito empresarial",
       "text": "Sociedades, contratos empresariais, reorganização e falências.",
       "href": "",

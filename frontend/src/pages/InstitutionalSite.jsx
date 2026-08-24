@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Banknote,
   BadgeDollarSign,
-  BookOpen,
   BriefcaseBusiness,
   Building2,
   CarFront,
@@ -35,6 +34,23 @@ import logo from '../assets/pedro-bastos-lund-monogram.png';
 import blogVehicle from '../assets/blog-busca-apreensao.png';
 import blogInheritance from '../assets/blog-inventario.png';
 import blogProperty from '../assets/blog-bem-familia.png';
+import areaBanking from '../assets/services/revisional-bancario.jpg';
+import areaVehicle from '../assets/services/busca-apreensao.jpg';
+import areaContracts from '../assets/services/contratos-cobrancas.jpg';
+import areaConsumer from '../assets/services/direito-consumidor.jpg';
+import areaLabor from '../assets/services/direito-trabalhista.jpg';
+import areaFamily from '../assets/services/familia-sucessoes.jpg';
+import areaDigital from '../assets/services/direito-digital.jpg';
+import areaSocialSecurity from '../assets/services/direito-previdenciario.jpg';
+import areaProperty from '../assets/services/direito-imobiliario.jpg';
+import areaCriminal from '../assets/services/direito-penal.jpg';
+import areaTax from '../assets/services/direito-tributario.jpg';
+import areaBusiness from '../assets/services/direito-empresarial.jpg';
+import clientBoomMania from '../assets/clients/boom-mania.png';
+import clientDgiLog from '../assets/clients/dgi-log.png';
+import clientHamorim from '../assets/clients/hamorim.png';
+import clientRodrigues from '../assets/clients/rodrigues.png';
+import clientSia from '../assets/clients/sia.png';
 import content from '../content/institutional-site.json';
 import './institutional-site.css';
 import './institutional-brand-overrides.css';
@@ -44,7 +60,6 @@ import './institutional-brand-overrides.css';
 const ICONS = {
   Banknote,
   BadgeDollarSign,
-  BookOpen,
   BriefcaseBusiness,
   Building2,
   CarFront,
@@ -59,6 +74,27 @@ const ICONS = {
 // Idem para as fotos da equipe — o JSON só guarda "pedro" ou "eduarda".
 const PORTRAITS = { pedro: aboutPortrait, eduarda: eduardaPortrait };
 const BLOG_IMAGES = { vehicle: blogVehicle, inheritance: blogInheritance, property: blogProperty };
+const AREA_IMAGES = {
+  banking: areaBanking,
+  vehicle: areaVehicle,
+  contracts: areaContracts,
+  consumer: areaConsumer,
+  labor: areaLabor,
+  family: areaFamily,
+  digital: areaDigital,
+  socialSecurity: areaSocialSecurity,
+  property: areaProperty,
+  criminal: areaCriminal,
+  tax: areaTax,
+  business: areaBusiness,
+};
+const CLIENT_LOGOS = [
+  { name: 'Boom Mania', image: clientBoomMania },
+  { name: 'DGI Log', image: clientDgiLog, theme: 'dark' },
+  { name: 'Hamorim', image: clientHamorim, theme: 'dark' },
+  { name: 'Rodrigues', image: clientRodrigues },
+  { name: 'SIA', image: clientSia },
+];
 const DIFFERENTIATOR_ICONS = [Handshake, Search, MessageCircle];
 
 const whatsappNumber = '555193665581';
@@ -87,6 +123,7 @@ const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(c
 const areas = content.areas.map((area) => ({
   ...area,
   icon: ICONS[area.icon] || FileText,
+  image: AREA_IMAGES[area.imageKey],
   href: area.href ? `${baseUrl.replace(/\/$/, '')}/${area.href}/` : null,
 }));
 
@@ -122,6 +159,28 @@ function WhatsAppLink({ children, className = '', label }) {
     <a className={`office-button-link ${className}`} href={whatsappUrl} target="_blank" rel="noreferrer" aria-label={label}>
       {children}
     </a>
+  );
+}
+
+function AreaCard({ area, onNavigate, onOpenModal }) {
+  const { icon: Icon, image, title, text, href, modal } = area;
+
+  return (
+    <article className="office-area-card">
+      <div className="office-area-card__media" aria-hidden="true">
+        <img src={image} alt="" width="1200" height="800" loading="lazy" />
+      </div>
+      <div className="office-area-card__panel">
+        <span className="office-area-card__icon"><Icon size={22} /></span>
+        <h3>{title}</h3>
+        <p>{text}</p>
+        {href ? <a href={href} onClick={(event) => onNavigate(event, href)}>Saiba mais <ArrowRight size={16} /></a> : (
+          <button className="office-card-link" type="button" onClick={(event) => onOpenModal(modal, event)}>
+            Ver detalhes <ArrowRight size={16} />
+          </button>
+        )}
+      </div>
+    </article>
   );
 }
 
@@ -388,17 +447,24 @@ export default function InstitutionalSite({ section = 'home' }) {
             <p>{content.servicesIntro.text}</p>
           </div>
           <div className="office-areas__grid">
-            {areas.map(({ icon: Icon, title, text, href, modal }) => (
-              <article className="office-area-card" key={title}>
-                <span className="office-area-card__icon"><Icon size={23} /></span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-                {href ? <a href={href} onClick={(event) => navigateWithTransition(event, href)}>Saiba mais <ArrowRight size={16} /></a> : (
-                  <button className="office-card-link" type="button" onClick={(event) => openModal(modal, event)}>
-                    Ver detalhes <ArrowRight size={16} />
-                  </button>
-                )}
-              </article>
+            {areas.map((area) => (
+              <AreaCard key={area.title} area={area} onNavigate={navigateWithTransition} onOpenModal={openModal} />
+            ))}
+          </div>
+        </div>
+      </section>}
+
+      {isHome && <section className="office-clients" aria-labelledby="office-clients-title">
+        <div className="office-shell office-clients__layout">
+          <div className="office-clients__heading">
+            <p className="office-kicker office-kicker--light">Clientes parceiros</p>
+            <h2 id="office-clients-title">Relações profissionais construídas com confiança.</h2>
+          </div>
+          <div className="office-clients__grid" aria-label="Clientes parceiros do escritório">
+            {CLIENT_LOGOS.map((client) => (
+              <figure className={`office-client-logo ${client.theme === 'dark' ? 'office-client-logo--dark' : ''}`} key={client.name}>
+                <img src={client.image} alt={client.name} loading="lazy" />
+              </figure>
             ))}
           </div>
         </div>
@@ -433,17 +499,8 @@ export default function InstitutionalSite({ section = 'home' }) {
             <p>{content.areasPage.text}</p>
           </div>
           <div className="office-areas__grid">
-            {areas.map(({ icon: Icon, title, text, href, modal }) => (
-              <article className="office-area-card" key={title}>
-                <span className="office-area-card__icon"><Icon size={23} /></span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-                {href ? <a href={href} onClick={(event) => navigateWithTransition(event, href)}>Saiba mais <ArrowRight size={16} /></a> : (
-                  <button className="office-card-link" type="button" onClick={(event) => openModal(modal, event)}>
-                    Ver detalhes <ArrowRight size={16} />
-                  </button>
-                )}
-              </article>
+            {areas.map((area) => (
+              <AreaCard key={area.title} area={area} onNavigate={navigateWithTransition} onOpenModal={openModal} />
             ))}
           </div>
         </div>
