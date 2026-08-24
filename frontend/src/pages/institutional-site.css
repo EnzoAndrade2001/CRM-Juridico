@@ -100,11 +100,12 @@
 
 /* Clientes parceiros: seção própria, sem misturar marcas às áreas jurídicas. */
 .office-clients { padding: 42px 0; background: #000; color: #fff; }
+.office-clients .office-shell { width: min(1500px, calc(100% - 48px)); }
 .office-clients__layout { display: grid; grid-template-columns: 1fr; gap: 22px; }
 .office-clients__heading h2 { margin: 0; color: #fff; font-size: clamp(28px, 2.7vw, 42px); line-height: 1.08; text-transform: uppercase; }
-.office-clients__grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(14px, 2vw, 28px); align-items: center; }
-.office-client-logo { display: grid; min-width: 0; min-height: 126px; place-items: center; margin: 0; }
-.office-client-logo img { display: block; width: min(100%, 245px); max-height: 122px; object-fit: contain; opacity: .96; transition: opacity .2s ease, transform .2s ease; }
+.office-clients__grid { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 14px 10px; align-items: center; }
+.office-client-logo { display: grid; min-width: 0; min-height: 110px; place-items: center; margin: 0; }
+.office-client-logo img { display: block; width: min(100%, 150px); max-height: 96px; object-fit: contain; opacity: .96; transition: opacity .2s ease, transform .2s ease; }
 .office-client-logo:hover img { opacity: 1; transform: scale(1.035); }
 
 
@@ -230,6 +231,7 @@
   .office-team__grid { grid-template-columns: 1fr; }
   .office-clients__layout { grid-template-columns: 1fr; gap: 24px; }
   .office-clients__heading h2 { max-width: 640px; }
+  .office-clients__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .office-blog__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .office-article__layout { grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 32px; }
   .office-contact__layout { grid-template-columns: 1fr; gap: 24px; }
@@ -252,7 +254,10 @@
   .office-hero__portrait-name span { font-size: 12px; }
   .office-differentiators__grid { grid-template-columns: 1fr; }
   .office-areas__grid,   .office-person { grid-template-columns: 1fr; }
-  .office-clients__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .office-clients .office-shell { width: min(100% - 32px, 520px); }
+  .office-clients__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .office-client-logo { min-height: 96px; }
+  .office-client-logo img { width: min(100%, 170px); max-height: 82px; }
   .office-client-logo:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .office-footer__inner { grid-template-columns: 1fr 1fr; }
 }
