@@ -48,16 +48,20 @@
    O retrato é posicionado contra a <section> (e não contra o .office-shell) para
    poder ultrapassar a largura do container e preencher todo o lado direito. */
 .office-hero { position: relative; background: var(--office-navy); color: #fff; border-top: 1px solid rgba(255, 255, 255, .08); overflow: hidden; }
-.office-hero__inner { display: flex; min-height: 430px; align-items: center; }
-.office-hero__copy { position: relative; z-index: 2; max-width: 74%; padding: 44px 0; }
+/* Sobrepõe o .office-shell: aqui o texto usa um container bem mais largo,
+   começando perto da borda esquerda em vez de respeitar os 1160px centrais. */
+.office-hero__inner { display: flex; width: 100%; max-width: none; min-height: 430px; align-items: center; margin-inline: 0; padding-inline: max(48px, calc((100% - 1600px) / 2)); }
+.office-hero__copy { position: relative; z-index: 2; padding: 44px 0; }
 /* nowrap + tamanho preso ao viewport mantém a frase em uma linha só, ocupando
    a maior largura possível antes de encostar no retrato */
-.office-hero h1 { margin-bottom: 0; color: #fff; font-family: "Dancing Script", cursive; font-weight: 700; font-size: min(3vw, 44px); line-height: 1.3; white-space: nowrap; }
+.office-hero h1 { margin-bottom: 0; color: #fff; font-family: "Dancing Script", cursive; font-weight: 700; font-size: min(3.8vw, 60px); line-height: 1.3; white-space: nowrap; }
 .office-hero__title-break { display: none; }
 .office-hero__portrait { position: absolute; z-index: 1; top: 0; right: 0; bottom: 0; width: min(42%, 760px); }
 .office-hero__portrait img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 12%; }
 /* Véu suave à esquerda da foto para a transição com o fundo não ficar dura */
-.office-hero__portrait::before { position: absolute; z-index: 1; top: 0; bottom: 0; left: 0; width: 180px; background: linear-gradient(90deg, var(--office-navy), transparent); content: ""; pointer-events: none; }
+/* Véu mantém o fundo sólido no primeiro terço para o fim da frase, que avança
+   sobre essa faixa, continuar legível; só depois dissolve na foto. */
+.office-hero__portrait::before { position: absolute; z-index: 1; top: 0; bottom: 0; left: 0; width: 260px; background: linear-gradient(90deg, var(--office-navy) 0%, var(--office-navy) 35%, transparent 100%); content: ""; pointer-events: none; }
 .office-hero__portrait-name { position: absolute; z-index: 2; right: 24px; bottom: 24px; margin: 0; text-align: right; font-size: 11px; color: rgba(255, 255, 255, .7); }
 .office-hero__portrait-name span { display: block; margin-bottom: 2px; color: #fff; font-size: 15px; font-weight: 700; }
 
@@ -181,10 +185,10 @@
   /* Sem o menu no fluxo, marca e botão hambúrguer ficam nas pontas */
   .office-header { justify-content: space-between; }
   .office-menu-toggle { display: grid; place-items: center; }
-  .office-hero__inner { min-height: 380px; }
-  .office-hero__copy { max-width: 70%; }
+  .office-hero__inner { min-height: 380px; padding-inline: 32px; }
   .office-hero__portrait { width: 38%; }
-  .office-hero h1 { font-size: 3.2vw; }
+  .office-hero__portrait::before { width: 190px; }
+  .office-hero h1 { font-size: 4vw; }
   .office-about__layout, .office-differentiators__grid, .office-home-services, .office-areas__grid, .office-guides__grid, .office-process__grid, .office-team__grid { gap: 30px; }
   .office-differentiators__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .office-areas__grid, .office-guides__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -198,10 +202,10 @@
 
 @media (max-width: 640px) {
   .office-shell { width: min(100% - 32px, 520px); }
-  .office-hero__inner { min-height: 300px; }
-  .office-hero__copy { max-width: 70%; padding: 32px 0; }
+  .office-hero__inner { min-height: 300px; padding-inline: 16px; }
+  .office-hero__copy { padding: 32px 0; }
   .office-hero__portrait { width: 34%; }
-  .office-hero__portrait::before { width: 70px; }
+  .office-hero__portrait::before { width: 90px; }
   /* Frase inteira em uma linha num celular obriga uma fonte bem pequena */
   .office-hero h1 { font-size: 3.4vw; }
   .office-hero__portrait-name { right: 12px; bottom: 14px; font-size: 9px; }
