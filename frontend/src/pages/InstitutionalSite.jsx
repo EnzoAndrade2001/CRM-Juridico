@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import portrait from '../assets/pedro-bastos-lund-hero-cutout.png';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
+import editorialPortrait from '../assets/pedro-bastos-lund-editorial.png';
 import eduardaPortrait from '../assets/dra-eduarda-hq.png';
 import ladyJustice from '../assets/lady-justice.png';
 import logo from '../assets/pedro-bastos-lund-monogram.png';
@@ -282,7 +283,7 @@ export default function InstitutionalSite({ section = 'home' }) {
             ))}
           </div>
           <div className="office-about__media">
-            <img src={aboutPortrait} alt="Pedro Bastos Lund" loading="lazy" />
+            <img src={editorialPortrait} alt="Pedro Bastos Lund" width="739" height="984" loading="eager" />
           </div>
         </div>
       </section>}
