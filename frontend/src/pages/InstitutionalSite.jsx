@@ -52,6 +52,7 @@ const siteNavItems = [
   { key: 'areas', label: 'Áreas de atuação', path: `${siteRoutes.home}#atuacao` },
   { key: 'diferenciais', label: 'Diferenciais', path: `${siteRoutes.home}#diferenciais` },
   { key: 'team', label: 'Nossa equipe', path: `${siteRoutes.home}#equipe` },
+  { key: 'blog', label: 'Blog', disabled: true },
   { key: 'contact', label: 'Contato', path: `${siteRoutes.home}#contato` },
 ];
 const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(content.whatsapp.message)}`;
@@ -266,7 +267,9 @@ export default function InstitutionalSite({ section = 'home' }) {
         </button>
         <nav className={`office-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegação principal">
           {siteNavItems.map((item) => (
-            <a className={item.key === 'contact' ? 'office-header__cta' : undefined} key={item.key} href={item.path} onClick={(event) => handleNavItemClick(event, item)}>{item.label}</a>
+            item.disabled
+              ? <span className="office-nav__placeholder" key={item.key} aria-disabled="true">{item.label}</span>
+              : <a className={item.key === 'contact' ? 'office-header__cta' : undefined} key={item.key} href={item.path} onClick={(event) => handleNavItemClick(event, item)}>{item.label}</a>
           ))}
           <div className="office-social-links" aria-label="Redes sociais">
             {content.social.map(({ label, href, icon }) => (

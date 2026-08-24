@@ -34,8 +34,9 @@
 .office-brand small { margin-top: 2px; color: var(--office-gold-light); font-size: 8px; letter-spacing: .15em; text-transform: uppercase; }
 /* Ocupa o espaço restante e centraliza o menu entre a marca e a borda direita */
 .office-nav { display: flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: 10px; }
-.office-nav > a { border: 1px solid rgba(214, 182, 110, .35); padding: 10px 14px; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; transition: border-color .2s ease, background .2s ease; }
+.office-nav > a, .office-nav__placeholder { border: 1px solid rgba(214, 182, 110, .35); padding: 10px 14px; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; transition: border-color .2s ease, background .2s ease; }
 .office-nav > a:hover { border-color: var(--office-gold); background: rgba(189, 147, 69, .12); }
+.office-nav__placeholder { cursor: default; }
 .office-button-link { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .office-header__cta { border: 1px solid var(--office-gold); background: var(--office-gold); color: var(--office-navy) !important; font-weight: 800; }
 .office-header__cta:hover { background: var(--office-gold-light); border-color: var(--office-gold-light); }
