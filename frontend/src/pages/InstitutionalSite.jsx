@@ -113,6 +113,7 @@ const siteNavItems = [
   { key: 'diferenciais', label: 'Diferenciais', path: `${siteRoutes.home}#diferenciais` },
   { key: 'team', label: 'Nossa equipe', path: `${siteRoutes.home}#equipe` },
   { key: 'blog', label: 'Blog', path: `${siteRoutes.home}#blog` },
+  { key: 'partners', label: 'PARCEIROS', path: `${siteRoutes.home}#parceiros` },
   { key: 'contact', label: 'Contato', path: `${siteRoutes.home}#contato` },
 ];
 const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(content.whatsapp.message)}`;
@@ -454,22 +455,6 @@ export default function InstitutionalSite({ section = 'home' }) {
         </div>
       </section>}
 
-      {isHome && <section className="office-clients" aria-labelledby="office-clients-title">
-        <div className="office-shell office-clients__layout">
-          <div className="office-clients__heading">
-            <p className="office-kicker office-kicker--light">Clientes parceiros</p>
-            <h2 id="office-clients-title">Relações profissionais construídas com confiança.</h2>
-          </div>
-          <div className="office-clients__grid" aria-label="Clientes parceiros do escritório">
-            {CLIENT_LOGOS.map((client) => (
-              <figure className={`office-client-logo ${client.theme === 'dark' ? 'office-client-logo--dark' : ''}`} key={client.name}>
-                <img src={client.image} alt={client.name} loading="lazy" />
-              </figure>
-            ))}
-          </div>
-        </div>
-      </section>}
-
       {isHome && <section className="office-differentiators" id="diferenciais">
         <div className="office-shell office-differentiators__layout">
           <div className="office-differentiators__content">
@@ -543,6 +528,22 @@ export default function InstitutionalSite({ section = 'home' }) {
                 </article>
               );
             })}
+          </div>
+        </div>
+      </section>}
+
+      {isHome && <section className="office-clients" id="parceiros" aria-labelledby="office-clients-title">
+        <div className="office-shell office-clients__layout">
+          <div className="office-clients__heading">
+            <p className="office-kicker office-kicker--light">Clientes parceiros</p>
+            <h2 id="office-clients-title">Relações profissionais construídas com confiança.</h2>
+          </div>
+          <div className="office-clients__grid" aria-label="Clientes parceiros do escritório">
+            {CLIENT_LOGOS.map((client) => (
+              <figure className={`office-client-logo ${client.theme === 'dark' ? 'office-client-logo--dark' : ''}`} key={client.name}>
+                <img src={client.image} alt={client.name} loading="lazy" />
+              </figure>
+            ))}
           </div>
         </div>
       </section>}
