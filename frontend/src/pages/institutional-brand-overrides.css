@@ -71,7 +71,7 @@ html.office-page-is-leaving .office-page-transition {
 
 .office-differentiators__content > h2 {
   margin: 0 0 38px;
-  color: var(--office-gold-light);
+  color: #fff;
   font-size: clamp(42px, 4.8vw, 64px);
   line-height: 1.05;
   letter-spacing: 0;
