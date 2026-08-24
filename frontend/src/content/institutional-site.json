@@ -360,6 +360,48 @@
       }
     ]
   },
+  "blog": {
+    "title": "Blog",
+    "posts": [
+      {
+        "slug": "busca-e-apreensao-de-veiculo",
+        "category": "Direito bancário",
+        "imageKey": "vehicle",
+        "title": "O banco apreendeu seu carro: entenda cada etapa do processo",
+        "paragraphs": [
+          "A busca e apreensão não começa no momento em que o veículo é retirado. Antes disso, existe um procedimento previsto em lei, e compreender cada fase ajuda o consumidor a saber quais direitos ainda podem ser exercidos.",
+          "Tudo se inicia com o atraso no pagamento das parcelas. Em seguida, o banco deve constituir o devedor em mora por meio da notificação exigida pela lei. Essa etapa é essencial, pois demonstra que o consumidor foi formalmente comunicado antes do ajuizamento da ação.",
+          "Após esse procedimento, a instituição financeira pode ingressar com a ação de busca e apreensão. Se os requisitos legais forem preenchidos e houver decisão favorável, o veículo poderá ser localizado e apreendido.",
+          "A partir daí, surgem novas possibilidades. Dependendo da situação, o consumidor poderá quitar a dívida nas condições previstas em lei, apresentar defesa para discutir eventuais irregularidades ou, caso nenhuma medida seja adotada, o processo poderá seguir até a consolidação da propriedade e a posterior venda do automóvel.",
+          "Conhecer essa sequência permite identificar em que etapa o processo se encontra e quais alternativas ainda podem estar disponíveis.",
+          "Contar com assessoria jurídica ajuda a compreender o andamento da ação e a definir a estratégia mais adequada para o seu caso."
+        ]
+      },
+      {
+        "slug": "venda-de-bem-durante-inventario",
+        "category": "Família e sucessões",
+        "imageKey": "inheritance",
+        "title": "Herdeiro pode vender um bem antes do fim do inventário?",
+        "paragraphs": [
+          "Antes da conclusão do inventário e da partilha, os bens deixados pela pessoa falecida pertencem ao espólio. Por isso, um herdeiro normalmente não pode vender sozinho um imóvel, veículo ou outro bem específico como se já fosse seu único proprietário. Dependendo da situação, a venda pode acontecer durante o inventário, desde que sejam respeitados os direitos dos demais herdeiros e, quando necessário, obtida autorização judicial.",
+          "Também pode ocorrer a cessão de direitos hereditários. Nesse caso, o herdeiro transfere sua participação na herança, e não diretamente a propriedade exclusiva de um bem determinado. Essa negociação exige formalidades e pode envolver o direito de preferência dos demais herdeiros. Uma venda feita de forma irregular pode gerar conflitos e ser questionada judicialmente.",
+          "Busque auxílio jurídico especializado antes de assinar contratos ou receber valores."
+        ]
+      },
+      {
+        "slug": "penhora-de-imovel-de-alto-valor",
+        "category": "Direito civil",
+        "imageKey": "property",
+        "title": "Um imóvel de alto valor pode ser penhorado apenas por ser considerado de luxo?",
+        "paragraphs": [
+          "Em regra, não.",
+          "No AREsp 2.791.033/PR, a Terceira Turma do STJ decidiu que a impenhorabilidade do bem de família não pode ser afastada com base apenas no alto valor de mercado do imóvel.",
+          "A Lei nº 8.009/1990 não estabelece limite de valor para essa proteção, e as exceções à impenhorabilidade são aquelas expressamente previstas em lei.",
+          "Cada caso possui suas particularidades e deve ser analisado individualmente. Conhecer os limites da proteção legal é essencial para preservar direitos e evitar decisões equivocadas."
+        ]
+      }
+    ]
+  },
   "team": {
     "homeTitle": "Quem conduz cada atendimento.",
     "homeText": "Conheça os profissionais responsáveis pela análise e pelo acompanhamento das demandas.",
