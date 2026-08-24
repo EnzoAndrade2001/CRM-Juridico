@@ -182,11 +182,12 @@ export default function InstitutionalSite({ section = 'home' }) {
     if (!isHome || !window.location.hash) return undefined;
 
     const sectionId = decodeURIComponent(window.location.hash.slice(1));
-    const frameId = window.requestAnimationFrame(() => {
-      document.getElementById(sectionId)?.scrollIntoView({ block: 'start' });
-    });
+    const timeoutId = window.setTimeout(() => {
+      const target = document.getElementById(sectionId);
+      if (target) window.scrollTo({ top: target.offsetTop, behavior: 'auto' });
+    }, 700);
 
-    return () => window.cancelAnimationFrame(frameId);
+    return () => window.clearTimeout(timeoutId);
   }, [isHome]);
 
   const closeMenu = () => setMenuOpen(false);
@@ -208,6 +209,19 @@ export default function InstitutionalSite({ section = 'home' }) {
     lastModalTriggerRef.current = event.currentTarget;
     setActiveModal(modalContent);
   };
+  const handleNavItemClick = (event, item) => {
+    closeMenu();
+    const anchor = item.path.split('#')[1];
+
+    if (isHome && anchor) {
+      event.preventDefault();
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${anchor}`);
+      document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    navigateWithTransition(event, item.path);
+  };
 
   return (
     <main className="office-site">
@@ -222,7 +236,7 @@ export default function InstitutionalSite({ section = 'home' }) {
         </button>
         <nav className={`office-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegação principal">
           {siteNavItems.map((item) => (
-            <a key={item.key} href={item.path} onClick={(event) => { closeMenu(); navigateWithTransition(event, item.path); }}>{item.label}</a>
+            <a key={item.key} href={item.path} onClick={(event) => handleNavItemClick(event, item)}>{item.label}</a>
           ))}
           <WhatsAppLink className="office-header__cta" label="Falar com o escritório pelo WhatsApp" >
             <MessageCircle size={17} /> Falar no WhatsApp

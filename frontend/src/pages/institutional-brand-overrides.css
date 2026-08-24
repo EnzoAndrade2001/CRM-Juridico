@@ -2,7 +2,7 @@
 .office-site {
   --office-navy: #0d1b2a;
   --office-navy-soft: #152232;
-  animation: office-site-enter 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: office-site-enter 0.65s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .office-page-transition {
