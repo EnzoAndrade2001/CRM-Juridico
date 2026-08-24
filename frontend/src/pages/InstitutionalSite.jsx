@@ -272,10 +272,10 @@ export default function InstitutionalSite({ section = 'home' }) {
               : <a className={item.key === 'contact' ? 'office-header__cta' : undefined} key={item.key} href={item.path} onClick={(event) => handleNavItemClick(event, item)}>{item.label}</a>
           ))}
           <div className="office-social-links" aria-label="Redes sociais">
-            {content.social.map(({ label, href, icon }) => (
-              <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label} title={label}>
-                <SocialIcon name={icon} />
-              </a>
+            {content.social.map(({ label, href, icon }) => href ? (
+              <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label} title={label}><SocialIcon name={icon} /></a>
+            ) : (
+              <span key={label} aria-label={label} aria-disabled="true" title={label}><SocialIcon name={icon} /></span>
             ))}
           </div>
         </nav>

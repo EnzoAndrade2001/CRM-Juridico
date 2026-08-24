@@ -41,8 +41,9 @@
 .office-header__cta { border: 1px solid var(--office-gold); background: var(--office-gold); color: var(--office-navy) !important; font-weight: 800; }
 .office-header__cta:hover { background: var(--office-gold-light); border-color: var(--office-gold-light); }
 .office-social-links { display: flex; align-items: center; gap: 8px; }
-.office-social-links a { display: grid; width: 37px; height: 37px; place-items: center; border: 1px solid rgba(255, 255, 255, .25); color: #fff; transition: border-color .2s ease, color .2s ease; }
+.office-social-links a, .office-social-links > span { display: grid; width: 37px; height: 37px; place-items: center; border: 1px solid rgba(255, 255, 255, .25); color: #fff; transition: border-color .2s ease, color .2s ease; }
 .office-social-links a:hover { border-color: var(--office-gold); color: var(--office-gold-light); }
+.office-social-links > span { cursor: default; }
 .office-menu-toggle { display: none; border: 1px solid rgba(255, 255, 255, .3); padding: 9px; background: transparent; color: #fff; cursor: pointer; }
 
 /* Hero: frase em linha única à esquerda; retrato sangra até a borda direita da tela.
