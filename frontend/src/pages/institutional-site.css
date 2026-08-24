@@ -155,15 +155,15 @@
 
 /* Footer */
 .office-footer { background: #071321; color: rgba(255, 255, 255, .62); padding: 32px 0; }
-.office-footer__inner { display: flex; width: calc(100% - 48px); max-width: none; align-items: center; justify-content: space-between; gap: 18px; font-size: 10px; }
+.office-footer__inner { display: flex; width: calc(100% - 48px); max-width: none; align-items: center; justify-content: space-between; gap: 18px; font-size: 12px; }
 .office-footer__brand { display: flex; align-items: center; gap: 11px; }
 .office-footer__brand img { width: 34px; height: 34px; object-fit: contain; }
 .office-footer__brand span { display: flex; flex-direction: column; }
-.office-footer__brand strong { color: #fff; font-size: 13px; font-weight: 700; white-space: nowrap; }
-.office-footer__brand small { margin-top: 2px; color: var(--office-gold-light); font-size: 7px; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+.office-footer__brand strong { color: #fff; font-size: 15px; font-weight: 700; white-space: nowrap; }
+.office-footer__brand small { margin-top: 2px; color: var(--office-gold-light); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
 .office-footer__contact { display: flex; min-width: 0; align-items: center; gap: 18px; }
 .office-footer__contact > * { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
-.office-footer__contact strong { color: #fff; font-size: 10px; }
+.office-footer__contact strong { color: #fff; font-size: 12px; }
 .office-footer__inner > p { max-width: 250px; flex: 0 1 250px; margin: 0; line-height: 1.4; }
 .office-footer__inner > span { color: rgba(255, 255, 255, .5); white-space: nowrap; }
 .office-float { position: fixed; z-index: 20; right: 24px; bottom: 24px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 14px 18px; background: #1caa59; color: #fff !important; box-shadow: 0 14px 30px rgba(13, 93, 46, .24); font-size: 12px; font-weight: 800; transition: transform .2s ease; }
