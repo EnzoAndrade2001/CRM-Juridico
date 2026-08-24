@@ -79,23 +79,6 @@ collections:
                   - { label: "Pontos (lista)", name: "points", widget: "list" }
                   - { label: "Documentos necessários", name: "documents", widget: "text", required: false }
                   - { label: "Observação final", name: "note", widget: "text" }
-          - label: "Conteúdos/dúvidas jurídicas"
-            name: "guides"
-            widget: "list"
-            summary: "{{title}}"
-            fields:
-              - { label: "Categoria", name: "category", widget: "string" }
-              - { label: "Título", name: "title", widget: "string" }
-              - { label: "Resumo curto", name: "excerpt", widget: "string" }
-              - label: "Pop-up com o conteúdo completo"
-                name: "modal"
-                widget: "object"
-                fields:
-                  - { label: "Categoria", name: "kicker", widget: "string" }
-                  - { label: "Título do pop-up", name: "title", widget: "string" }
-                  - { label: "Texto introdutório", name: "intro", widget: "text" }
-                  - { label: "Pontos (lista)", name: "points", widget: "list" }
-                  - { label: "Observação final", name: "note", widget: "text" }
           - label: "Como funciona (etapas)"
             name: "process"
             widget: "object"

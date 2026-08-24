@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   Banknote,
@@ -25,10 +25,10 @@ import content from '../content/institutional-site.json';
 import './institutional-site.css';
 import './institutional-brand-overrides.css';
 
-// Nomes de ?cone (guardados como texto no content JSON, edit?vel pelo CMS)
+// Nomes de ícone (guardados como texto no content JSON, editável pelo CMS)
 // mapeados para os componentes reais do lucide-react.
 const ICONS = { Banknote, CarFront, FileText, Landmark, BriefcaseBusiness, Scale, Stamp };
-// Idem para as fotos da equipe ? o JSON s? guarda "pedro" ou "eduarda".
+// Idem para as fotos da equipe — o JSON só guarda "pedro" ou "eduarda".
 const PORTRAITS = { pedro: aboutPortrait, eduarda: eduardaPortrait };
 const DIFFERENTIATOR_ICONS = [Handshake, Search, MessageCircle];
 
@@ -38,21 +38,20 @@ const siteRoutes = {
   home: baseUrl,
   areas: `${baseUrl}atuacao/`,
   process: `${baseUrl}como-funciona/`,
-  guides: `${baseUrl}conteudos/`,
   team: `${baseUrl}equipe/`,
 };
-// Todos os destinos do menu vivem na pr?pria home: os bot?es rolam at? a
-// se??o em vez de trocar de p?gina. As rotas dedicadas seguem existindo para
+// Todos os destinos do menu vivem na própria home: os botões rolam até a
+// seção em vez de trocar de página. As rotas dedicadas seguem existindo para
 // quem chegar por link direto.
 const siteNavItems = [
   { key: 'sobre', label: 'Quem somos', path: `${siteRoutes.home}#quem-somos` },
-  { key: 'areas', label: '?reas de atua??o', path: `${siteRoutes.home}#atuacao` },
+  { key: 'areas', label: 'Áreas de atuação', path: `${siteRoutes.home}#atuacao` },
   { key: 'diferenciais', label: 'Diferenciais', path: `${siteRoutes.home}#diferenciais` },
   { key: 'team', label: 'Nossa equipe', path: `${siteRoutes.home}#equipe` },
 ];
 const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(content.whatsapp.message)}`;
 
-// content.areas[].href guarda s? o slug (ex: "revisional-bancario"); aqui
+// content.areas[].href guarda só o slug (ex: "revisional-bancario"); aqui
 // vira a URL completa considerando o BASE_URL do deploy (raiz ou subpasta
 // do GitHub Pages).
 const areas = content.areas.map((area) => ({
@@ -60,7 +59,6 @@ const areas = content.areas.map((area) => ({
   icon: ICONS[area.icon] || FileText,
   href: area.href ? `${baseUrl.replace(/\/$/, '')}/${area.href}/` : null,
 }));
-const guides = content.guides;
 
 function SocialIcon({ name }) {
   if (name === 'instagram') {
@@ -100,7 +98,7 @@ function ContentModal({ content: modalContent, closeButtonRef, onClose }) {
         aria-labelledby="office-modal-title"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <button ref={closeButtonRef} className="office-modal__close" type="button" onClick={onClose} aria-label="Fechar conte?do">
+        <button ref={closeButtonRef} className="office-modal__close" type="button" onClick={onClose} aria-label="Fechar conteúdo">
           <X size={19} />
         </button>
         <p className="office-kicker">{modalContent.kicker}</p>
@@ -122,7 +120,7 @@ function ContentModal({ content: modalContent, closeButtonRef, onClose }) {
         </div>
         <p className="office-modal__note"><ShieldCheck size={18} /> {modalContent.note}</p>
         <WhatsAppLink className="office-button office-button--gold" label="Falar sobre este assunto no WhatsApp">
-          Falar com o escrit?rio <ArrowRight size={17} />
+          Falar com o escritório <ArrowRight size={17} />
         </WhatsAppLink>
       </section>
     </div>
@@ -153,7 +151,7 @@ export default function InstitutionalSite({ section = 'home' }) {
     document.head.appendChild(fontLink);
     document.title = pageDetails
       ? `${pageDetails.title} | Pedro Bastos Lund`
-      : 'Pedro Bastos Lund | Advocacia e Consultoria Jur?dica';
+      : 'Pedro Bastos Lund | Advocacia e Consultoria Jurídica';
     description.setAttribute('content', content.meta.description);
     return () => {
       document.title = previousTitle;
@@ -231,18 +229,18 @@ export default function InstitutionalSite({ section = 'home' }) {
     <main className="office-site">
       <div className="office-page-transition" aria-hidden="true" />
       <header className="office-header">
-        <a className="office-brand" href={siteRoutes.home} onClick={(event) => { closeMenu(); navigateWithTransition(event, siteRoutes.home); }} aria-label="Pedro Bastos Lund Advocacia ? in?cio">
+        <a className="office-brand" href={siteRoutes.home} onClick={(event) => { closeMenu(); navigateWithTransition(event, siteRoutes.home); }} aria-label="Pedro Bastos Lund Advocacia — início">
           <span className="office-brand__mark"><img src={logo} alt="" /></span>
-          <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jur?dica</small></span>
+          <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span>
         </a>
         <button className="office-menu-toggle" type="button" aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
-        <nav className={`office-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navega??o principal">
+        <nav className={`office-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegação principal">
           {siteNavItems.map((item) => (
             <a key={item.key} href={item.path} onClick={(event) => handleNavItemClick(event, item)}>{item.label}</a>
           ))}
-          <WhatsAppLink className="office-header__cta" label="Falar com o escrit?rio pelo WhatsApp" >
+          <WhatsAppLink className="office-header__cta" label="Falar com o escritório pelo WhatsApp" >
             <MessageCircle size={17} /> Falar no WhatsApp
           </WhatsAppLink>
           <div className="office-social-links" aria-label="Redes sociais">
@@ -357,28 +355,6 @@ export default function InstitutionalSite({ section = 'home' }) {
         </div>
       </section>}
 
-      {(isHome || section === 'guides') && <section className="office-guides" id="conteudos">
-        <div className="office-shell">
-          <div className="office-section-heading">
-            <h2>Conte?dos jur?dicos.</h2>
-            <p>Informa??o pr?tica para consulta.</p>
-          </div>
-          <div className="office-guides__grid">
-            {guides.map((guide) => (
-              <article className="office-guide-card" key={guide.title}>
-                <p className="office-guide-card__category">{guide.category}</p>
-                <h3>{guide.title}</h3>
-                <p>{guide.excerpt}</p>
-                <button className="office-card-link" type="button" onClick={(event) => openModal(guide.modal, event)}>
-                  Ler conte?do <ArrowRight size={16} />
-                </button>
-              </article>
-            ))}
-          </div>
-          <p className="office-guides__source">Conte?do informativo. A an?lise depende de cada caso.</p>
-        </div>
-      </section>}
-
       {(isHome || section === 'process') && <section className="office-process" id="como-funciona">
         <div className="office-shell office-process__grid">
           <div className="office-process__heading">
@@ -397,7 +373,7 @@ export default function InstitutionalSite({ section = 'home' }) {
       {(isHome || section === 'team') && <section className="office-team" id="equipe">
         <div className="office-shell">
           <div className="office-section-heading office-section-heading--team">
-            <h2>Equipe jur?dica.</h2>
+            <h2>Equipe jurídica.</h2>
           </div>
           <div className="office-team__grid">
             {content.team.members.map((member) => (
@@ -414,15 +390,15 @@ export default function InstitutionalSite({ section = 'home' }) {
         <div className="office-shell office-footer__inner">
           <div className="office-footer__brand">
             <img src={logo} alt="" />
-            <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jur?dica</small></span>
+            <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span>
           </div>
-          <div className="office-footer__contact" aria-label="Informa??es de contato">
-            <span><strong>Endere?o</strong>{content.footer.addressLine}<br />{content.footer.addressCity}</span>
+          <div className="office-footer__contact" aria-label="Informações de contato">
+            <span><strong>Endereço</strong>{content.footer.addressLine}<br />{content.footer.addressCity}</span>
             <a href={`tel:${content.footer.phoneHref}`}><strong>Telefone</strong>{content.footer.phoneDisplay}</a>
             <a href={`mailto:${content.footer.email}`}><strong>E-mail</strong>{content.footer.email}</a>
           </div>
           <p>{content.footer.note}</p>
-          <span>? {new Date().getFullYear()} Pedro Bastos Lund</span>
+          <span>© {new Date().getFullYear()} Pedro Bastos Lund</span>
         </div>
       </footer>
       <WhatsAppLink className="office-float" label="Abrir conversa no WhatsApp"><MessageCircle size={20} /><span>Fale conosco</span></WhatsAppLink>
@@ -430,4 +406,3 @@ export default function InstitutionalSite({ section = 'home' }) {
     </main>
   );
 }
-
