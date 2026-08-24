@@ -172,6 +172,9 @@ export default function InstitutionalSite({ section = 'home' }) {
   const article = section === 'article'
     ? content.blog.posts.find((post) => post.slug === articleSlug)
     : null;
+  const navigationItems = article
+    ? [{ key: 'home', label: 'Início', path: siteRoutes.home }, ...siteNavItems]
+    : siteNavItems;
   const pageDetails = content.sectionDetails[section] || (section === 'article'
     ? { title: 'Conteúdo não encontrado', text: 'Esta matéria não está disponível.' }
     : null);
@@ -310,7 +313,7 @@ export default function InstitutionalSite({ section = 'home' }) {
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
         <nav className={`office-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegação principal">
-          {siteNavItems.map((item) => (
+          {navigationItems.map((item) => (
             item.disabled
               ? <span className="office-nav__placeholder" key={item.key} aria-disabled="true">{item.label}</span>
               : <a key={item.key} href={item.path} onClick={(event) => handleNavItemClick(event, item)}>{item.label}</a>
