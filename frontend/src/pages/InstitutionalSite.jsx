@@ -90,8 +90,8 @@ const AREA_IMAGES = {
 };
 const CLIENT_LOGOS = [
   { name: 'Boom Mania', image: clientBoomMania },
-  { name: 'DGI Log', image: clientDgiLog, theme: 'dark' },
-  { name: 'Hamorim', image: clientHamorim, theme: 'dark' },
+  { name: 'DGI Log', image: clientDgiLog },
+  { name: 'Hamorim', image: clientHamorim },
   { name: 'Rodrigues', image: clientRodrigues },
   { name: 'SIA', image: clientSia },
 ];
@@ -535,12 +535,11 @@ export default function InstitutionalSite({ section = 'home' }) {
       {isHome && <section className="office-clients" id="parceiros" aria-labelledby="office-clients-title">
         <div className="office-shell office-clients__layout">
           <div className="office-clients__heading">
-            <p className="office-kicker office-kicker--light">Clientes parceiros</p>
-            <h2 id="office-clients-title">Relações profissionais construídas com confiança.</h2>
+            <h2 id="office-clients-title">CLIENTES PARCEIROS</h2>
           </div>
           <div className="office-clients__grid" aria-label="Clientes parceiros do escritório">
             {CLIENT_LOGOS.map((client) => (
-              <figure className={`office-client-logo ${client.theme === 'dark' ? 'office-client-logo--dark' : ''}`} key={client.name}>
+              <figure className="office-client-logo" key={client.name}>
                 <img src={client.image} alt={client.name} loading="lazy" />
               </figure>
             ))}
