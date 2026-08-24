@@ -49,7 +49,7 @@ import areaBusiness from '../assets/services/direito-empresarial-v2.jpg';
 import partnerSia from '../assets/clients/partner-sia.png';
 import partnerWorkshop from '../assets/clients/partner-workshop.png';
 import partnerBarcelos from '../assets/clients/partner-barcelos.png';
-import partnerGabrielleAdames from '../assets/clients/partner-gabrielle-adames.png';
+import partnerOldGesso from '../assets/clients/partner-old-gesso.jpeg';
 import partnerRodrigues from '../assets/clients/partner-rodrigues.png';
 import partnerItalinea from '../assets/clients/partner-italinea.png';
 import partnerKwa from '../assets/clients/partner-kwa.png';
@@ -109,7 +109,7 @@ const CLIENT_LOGOS = [
   { name: 'SIA', image: partnerSia },
   { name: 'Workshop Móveis para Escritório', image: partnerWorkshop },
   { name: 'Barcelos', image: partnerBarcelos },
-  { name: 'Gabrielle Adames Clínica', image: partnerGabrielleAdames },
+  { name: 'Old Gesso', image: partnerOldGesso, compact: true },
   { name: 'Rodrigues Distribuidora', image: partnerRodrigues },
   { name: 'Italínea', image: partnerItalinea },
   { name: 'Grupo KWA Iluminação', image: partnerKwa },
@@ -573,7 +573,7 @@ export default function InstitutionalSite({ section = 'home' }) {
           </div>
           <div className="office-clients__grid" aria-label="Clientes parceiros do escritório">
             {CLIENT_LOGOS.map((client) => (
-              <figure className="office-client-logo" key={client.name}>
+              <figure className={`office-client-logo${client.compact ? ' office-client-logo--compact' : ''}`} key={client.name}>
                 <img src={client.image} alt={client.name} loading="lazy" />
               </figure>
             ))}

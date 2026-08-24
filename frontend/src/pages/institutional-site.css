@@ -48,10 +48,10 @@
 
 /* Hero editorial: frase em toda a largura e monograma como marca-d'água. */
 .office-hero { position: relative; background: var(--office-navy); color: #fff; border-top: 1px solid rgba(255, 255, 255, .08); overflow: hidden; }
-.office-hero__inner { position: relative; display: flex; width: 100%; max-width: none; min-height: 320px; align-items: center; justify-content: center; margin-inline: 0; padding-inline: max(48px, calc((100% - 1600px) / 2)); }
+.office-hero__inner { position: relative; display: flex; width: 100%; max-width: none; min-height: 240px; align-items: center; justify-content: center; margin-inline: 0; padding-inline: max(48px, calc((100% - 1600px) / 2)); }
 .office-hero__copy { position: relative; z-index: 2; width: 100%; max-width: none; padding: 34px 0; text-align: center; }
 .office-hero h1 { margin-bottom: 0; color: #fff; font-family: "Poppins", Inter, ui-sans-serif, system-ui, sans-serif; font-weight: 600; font-size: clamp(26px, 3vw, 48px); line-height: 1.08; white-space: nowrap; }
-.office-hero__watermark { position: absolute; z-index: 1; top: 50%; left: 50%; width: clamp(170px, 20vw, 300px); height: clamp(170px, 20vw, 300px); object-fit: contain; opacity: .16; transform: translate(-50%, -50%); pointer-events: none; user-select: none; }
+.office-hero__watermark { position: absolute; z-index: 1; top: 50%; left: 50%; width: clamp(150px, 15vw, 220px); height: clamp(150px, 15vw, 220px); object-fit: contain; opacity: .16; transform: translate(-50%, -50%); pointer-events: none; user-select: none; }
 
 /* Página interna (áreas/como funciona/dúvidas/equipe) */
 .office-page-hero { padding: 44px 0; background: var(--office-navy); color: #fff; }
@@ -106,6 +106,7 @@
 .office-clients__grid { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 16px 6px; align-items: center; }
 .office-client-logo { display: grid; min-width: 0; min-height: 122px; place-items: center; margin: 0; overflow: visible; }
 .office-client-logo img { display: block; width: min(100%, 165px); max-height: 106px; object-fit: contain; opacity: .96; transform: scale(1.1); transition: opacity .2s ease, transform .2s ease; }
+.office-client-logo.office-client-logo--compact img { width: auto; max-width: 100%; max-height: 56px; }
 .office-client-logo:hover img { opacity: 1; transform: scale(1.14); }
 
 
@@ -221,7 +222,7 @@
   /* Sem o menu no fluxo, marca e botão hambúrguer ficam nas pontas */
   .office-header { justify-content: space-between; }
   .office-menu-toggle { display: grid; place-items: center; }
-  .office-hero__inner { min-height: 280px; padding-inline: 24px; }
+  .office-hero__inner { min-height: 230px; padding-inline: 24px; }
   .office-hero h1 { font-size: clamp(27px, 4.1vw, 42px); }
   .office-about__layout, .office-differentiators__grid, .office-home-services, .office-areas__grid,   .office-differentiators__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .office-about__layout { grid-template-columns: 1fr; min-height: 0; }
@@ -327,10 +328,10 @@
 @media (max-width: 640px) {
   .office-scroll-top { left: 15px; bottom: 15px; width: 42px; height: 42px; }
   .office-header { padding-block: 9px; }
-  .office-hero__inner { min-height: 230px; padding-inline: 20px; }
+  .office-hero__inner { min-height: 200px; padding-inline: 20px; }
   .office-hero__copy { width: 100%; max-width: none; padding: 24px 0; }
   .office-hero h1 { font-size: clamp(24px, 6.5vw, 28px); line-height: 1.08; white-space: normal; }
-  .office-hero__watermark { width: 180px; height: 180px; opacity: .14; }
+  .office-hero__watermark { width: 150px; height: 150px; opacity: .14; }
   .office-about, .office-home-services, .office-areas, .office-team, .office-contact { padding: 36px 0; }
   .office-clients { padding: 34px 0; }
   .office-about { padding: 24px 0; }
