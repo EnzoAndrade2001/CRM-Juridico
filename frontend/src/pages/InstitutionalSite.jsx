@@ -403,7 +403,7 @@ export default function InstitutionalSite({ section = 'home' }) {
             <img src={contactEditorial} alt="Pedro Bastos Lund analisando documentos no escritório" loading="lazy" />
           </div>
           <div className="office-contact__content">
-            <p className="office-kicker office-kicker--light">Fale com o escritório</p>
+            <p className="office-kicker office-kicker--light">FALE CONOSCO</p>
             <h2>Contatos</h2>
             <div className="office-contact__details" aria-label="Canais de contato do escritório">
               <div className="office-contact__row">
