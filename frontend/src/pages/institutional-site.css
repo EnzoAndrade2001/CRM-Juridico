@@ -106,7 +106,7 @@
 .office-clients__heading h2 { margin: 0; color: #fff; font-size: clamp(28px, 2.7vw, 42px); line-height: 1.08; text-transform: uppercase; }
 .office-clients__carousel { display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px; gap: 14px; align-items: center; }
 .office-clients__viewport { min-width: 0; overflow: hidden; }
-.office-clients__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: center; animation-duration: .42s; animation-timing-function: cubic-bezier(.22, 1, .36, 1); animation-fill-mode: both; }
+.office-clients__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: center; animation-duration: .95s; animation-timing-function: cubic-bezier(.22, 1, .36, 1); animation-fill-mode: both; }
 .office-clients__grid--next { animation-name: office-clients-in-next; }
 .office-clients__grid--previous { animation-name: office-clients-in-previous; }
 .office-clients__arrow { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid rgba(214, 182, 110, .55); background: transparent; color: #fff; cursor: pointer; transition: background .2s ease, color .2s ease, opacity .2s ease; }
