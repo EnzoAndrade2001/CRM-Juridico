@@ -129,6 +129,7 @@ const CLIENT_LOGOS = [
   { name: 'Bersaglio Alimentos', image: partnerBersaglio },
   { name: 'Cimento Guaíba', image: partnerCimentoGuaiba },
 ];
+const CLIENTS_PER_SLIDE = 3;
 const DIFFERENTIATOR_ICONS = [Handshake, Search, MessageCircle];
 
 const whatsappNumber = '555193665581';
@@ -276,26 +277,12 @@ export default function InstitutionalSite({ section = 'home' }) {
   const [activeModal, setActiveModal] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [clientOffset, setClientOffset] = useState(0);
-  const [clientVisibleCount, setClientVisibleCount] = useState(3);
   const [clientDragDelta, setClientDragDelta] = useState(0);
   const [clientDragActive, setClientDragActive] = useState(false);
   const modalCloseButtonRef = useRef(null);
   const lastModalTriggerRef = useRef(null);
   const clientDragStartRef = useRef(0);
   const clientDragDeltaRef = useRef(0);
-
-  useEffect(() => {
-    const syncVisibleCount = () => {
-      setClientVisibleCount(window.innerWidth <= 640 ? 1 : window.innerWidth <= 980 ? 2 : 3);
-    };
-    syncVisibleCount();
-    window.addEventListener('resize', syncVisibleCount);
-    return () => window.removeEventListener('resize', syncVisibleCount);
-  }, []);
-
-  useEffect(() => {
-    setClientOffset((current) => Math.min(current, Math.max(0, CLIENT_LOGOS.length - clientVisibleCount)));
-  }, [clientVisibleCount]);
 
   useEffect(() => {
     document.documentElement.classList.remove('office-page-is-leaving');
@@ -413,10 +400,10 @@ export default function InstitutionalSite({ section = 'home' }) {
 
     navigateWithTransition(event, item.path);
   };
-  const maxClientOffset = Math.max(0, CLIENT_LOGOS.length - clientVisibleCount);
-  const clientSlides = Array.from({ length: maxClientOffset + 1 }, (_, index) => (
-    CLIENT_LOGOS.slice(index, index + clientVisibleCount)
+  const clientSlides = Array.from({ length: Math.ceil(CLIENT_LOGOS.length / CLIENTS_PER_SLIDE) }, (_, index) => (
+    CLIENT_LOGOS.slice(index * CLIENTS_PER_SLIDE, (index + 1) * CLIENTS_PER_SLIDE)
   ));
+  const maxClientOffset = clientSlides.length - 1;
   const moveClients = (direction) => {
     const nextOffset = direction === 'next'
       ? Math.min(maxClientOffset, clientOffset + 1)
@@ -696,6 +683,10 @@ export default function InstitutionalSite({ section = 'home' }) {
               <div className="office-contact__row">
                 <SocialIcon name="instagram" />
                 <div><span>Instagram</span><a href={content.social[0].href} target="_blank" rel="noreferrer">@pbl.adv</a></div>
+              </div>
+              <div className="office-contact__row">
+                <SocialIcon name="facebook" />
+                <div><span>Facebook</span><a href={content.social.find(({ icon }) => icon === 'facebook')?.href} target="_blank" rel="noreferrer">Pedro Bastos Lund Advocacia</a></div>
               </div>
               <div className="office-contact__row">
                 <MapPin aria-hidden="true" />
