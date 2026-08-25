@@ -277,9 +277,12 @@ export default function InstitutionalSite({ section = 'home' }) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [clientOffset, setClientOffset] = useState(0);
   const [clientVisibleCount, setClientVisibleCount] = useState(3);
-  const [clientDirection, setClientDirection] = useState('next');
+  const [clientDragDelta, setClientDragDelta] = useState(0);
+  const [clientDragActive, setClientDragActive] = useState(false);
   const modalCloseButtonRef = useRef(null);
   const lastModalTriggerRef = useRef(null);
+  const clientDragStartRef = useRef(0);
+  const clientDragDeltaRef = useRef(0);
 
   useEffect(() => {
     const syncVisibleCount = () => {
@@ -410,16 +413,41 @@ export default function InstitutionalSite({ section = 'home' }) {
 
     navigateWithTransition(event, item.path);
   };
-  const visibleClientLogos = CLIENT_LOGOS.slice(clientOffset, clientOffset + clientVisibleCount);
   const maxClientOffset = Math.max(0, CLIENT_LOGOS.length - clientVisibleCount);
+  const clientSlides = Array.from({ length: maxClientOffset + 1 }, (_, index) => (
+    CLIENT_LOGOS.slice(index, index + clientVisibleCount)
+  ));
   const moveClients = (direction) => {
     const nextOffset = direction === 'next'
       ? Math.min(maxClientOffset, clientOffset + 1)
       : Math.max(0, clientOffset - 1);
 
     if (nextOffset === clientOffset) return;
-    setClientDirection(direction);
     setClientOffset(nextOffset);
+  };
+  const handleClientPointerDown = (event) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    clientDragStartRef.current = event.clientX;
+    clientDragDeltaRef.current = 0;
+    setClientDragDelta(0);
+    setClientDragActive(true);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const handleClientPointerMove = (event) => {
+    if (!clientDragActive) return;
+    const delta = event.clientX - clientDragStartRef.current;
+    clientDragDeltaRef.current = delta;
+    setClientDragDelta(delta);
+  };
+  const finishClientPointer = (event) => {
+    if (!clientDragActive) return;
+    const delta = clientDragDeltaRef.current;
+    setClientDragActive(false);
+    setClientDragDelta(0);
+    clientDragDeltaRef.current = 0;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+
+    if (Math.abs(delta) > 48) moveClients(delta < 0 ? 'next' : 'previous');
   };
 
   return (
@@ -608,12 +636,30 @@ export default function InstitutionalSite({ section = 'home' }) {
             >
               <ChevronLeft size={25} aria-hidden="true" />
             </button>
-            <div className="office-clients__viewport">
-              <div className={`office-clients__grid office-clients__grid--${clientDirection}`} key={`${clientOffset}-${clientVisibleCount}-${clientDirection}`} aria-live="polite">
-                {visibleClientLogos.map((client) => (
-                  <figure className={`office-client-logo${client.compact ? ' office-client-logo--compact' : ''}`} key={client.name}>
-                    <img src={client.image} alt={client.name} loading="lazy" />
-                  </figure>
+            <div
+              className="office-clients__viewport"
+              onPointerDown={handleClientPointerDown}
+              onPointerMove={handleClientPointerMove}
+              onPointerUp={finishClientPointer}
+              onPointerCancel={finishClientPointer}
+              role="region"
+              aria-label="Arraste para ver outros clientes parceiros"
+            >
+              <div
+                className={`office-clients__track${clientDragActive ? ' is-dragging' : ''}`}
+                style={{ transform: `translate3d(calc(-${clientOffset * 100}% + ${clientDragDelta}px), 0, 0)` }}
+                aria-live="polite"
+              >
+                {clientSlides.map((clients, slideIndex) => (
+                  <div className="office-clients__slide" key={slideIndex} aria-hidden={slideIndex !== clientOffset}>
+                    <div className="office-clients__grid">
+                      {clients.map((client) => (
+                        <figure className={`office-client-logo${client.compact ? ' office-client-logo--compact' : ''}`} key={client.name}>
+                          <img src={client.image} alt={client.name} loading="lazy" />
+                        </figure>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

@@ -105,15 +105,15 @@
 .office-clients__heading { text-align: center; }
 .office-clients__heading h2 { margin: 0; color: #fff; font-size: clamp(28px, 2.7vw, 42px); line-height: 1.08; text-transform: uppercase; }
 .office-clients__carousel { display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px; gap: 14px; align-items: center; }
-.office-clients__viewport { min-width: 0; overflow: hidden; }
-.office-clients__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: center; animation-duration: .95s; animation-timing-function: cubic-bezier(.22, 1, .36, 1); animation-fill-mode: both; }
-.office-clients__grid--next { animation-name: office-clients-in-next; }
-.office-clients__grid--previous { animation-name: office-clients-in-previous; }
+.office-clients__viewport { min-width: 0; overflow: hidden; cursor: grab; touch-action: pan-y; user-select: none; }
+.office-clients__viewport:active, .office-clients__track.is-dragging { cursor: grabbing; }
+.office-clients__track { display: flex; width: 100%; transition: transform .95s cubic-bezier(.22, 1, .36, 1); will-change: transform; }
+.office-clients__track.is-dragging { transition: none; }
+.office-clients__slide { min-width: 100%; flex: 0 0 100%; }
+.office-clients__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: center; }
 .office-clients__arrow { display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid rgba(214, 182, 110, .55); background: transparent; color: #fff; cursor: pointer; transition: background .2s ease, color .2s ease, opacity .2s ease; }
 .office-clients__arrow:hover:not(:disabled) { background: var(--office-gold); color: var(--office-navy); }
 .office-clients__arrow:disabled { cursor: default; opacity: .28; }
-@keyframes office-clients-in-next { from { opacity: .2; transform: translateX(54px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes office-clients-in-previous { from { opacity: .2; transform: translateX(-54px); } to { opacity: 1; transform: translateX(0); } }
 .office-client-logo { display: grid; min-width: 0; min-height: 122px; place-items: center; margin: 0; overflow: visible; }
 .office-client-logo img { display: block; width: min(100%, 165px); max-height: 106px; object-fit: contain; opacity: .96; transform: scale(1.1); transition: opacity .2s ease, transform .2s ease; }
 .office-client-logo.office-client-logo--compact img { width: auto; max-width: 100%; max-height: 56px; }
