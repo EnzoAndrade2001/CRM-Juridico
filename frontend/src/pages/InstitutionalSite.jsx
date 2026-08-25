@@ -277,6 +277,7 @@ export default function InstitutionalSite({ section = 'home' }) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [clientOffset, setClientOffset] = useState(0);
   const [clientVisibleCount, setClientVisibleCount] = useState(3);
+  const [clientDirection, setClientDirection] = useState('next');
   const modalCloseButtonRef = useRef(null);
   const lastModalTriggerRef = useRef(null);
 
@@ -411,6 +412,15 @@ export default function InstitutionalSite({ section = 'home' }) {
   };
   const visibleClientLogos = CLIENT_LOGOS.slice(clientOffset, clientOffset + clientVisibleCount);
   const maxClientOffset = Math.max(0, CLIENT_LOGOS.length - clientVisibleCount);
+  const moveClients = (direction) => {
+    const nextOffset = direction === 'next'
+      ? Math.min(maxClientOffset, clientOffset + 1)
+      : Math.max(0, clientOffset - 1);
+
+    if (nextOffset === clientOffset) return;
+    setClientDirection(direction);
+    setClientOffset(nextOffset);
+  };
 
   return (
     <main className="office-site">
@@ -592,14 +602,14 @@ export default function InstitutionalSite({ section = 'home' }) {
             <button
               className="office-clients__arrow"
               type="button"
-              onClick={() => setClientOffset((current) => Math.max(0, current - 1))}
+              onClick={() => moveClients('previous')}
               disabled={clientOffset === 0}
               aria-label="Ver clientes parceiros anteriores"
             >
               <ChevronLeft size={25} aria-hidden="true" />
             </button>
             <div className="office-clients__viewport">
-              <div className="office-clients__grid" key={`${clientOffset}-${clientVisibleCount}`} aria-live="polite">
+              <div className={`office-clients__grid office-clients__grid--${clientDirection}`} key={`${clientOffset}-${clientVisibleCount}-${clientDirection}`} aria-live="polite">
                 {visibleClientLogos.map((client) => (
                   <figure className={`office-client-logo${client.compact ? ' office-client-logo--compact' : ''}`} key={client.name}>
                     <img src={client.image} alt={client.name} loading="lazy" />
@@ -610,7 +620,7 @@ export default function InstitutionalSite({ section = 'home' }) {
             <button
               className="office-clients__arrow"
               type="button"
-              onClick={() => setClientOffset((current) => Math.min(maxClientOffset, current + 1))}
+              onClick={() => moveClients('next')}
               disabled={clientOffset >= maxClientOffset}
               aria-label="Ver próximos clientes parceiros"
             >
