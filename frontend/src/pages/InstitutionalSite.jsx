@@ -23,6 +23,8 @@ import {
   ShieldCheck,
   Stamp,
   X,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
 } from 'lucide-react';
 import aboutPortrait from '../assets/pedro-bastos-lund-about.jpg';
@@ -59,7 +61,6 @@ import partnerBoomMania from '../assets/clients/partner-boom-mania.png';
 import partnerHarmony from '../assets/clients/partner-harmony.png';
 import partnerAtenas from '../assets/clients/partner-atenas.png';
 import partnerViaVerde from '../assets/clients/partner-via-verde.png';
-import partnerMega from '../assets/clients/partner-mega.png';
 import partnerHamorim from '../assets/clients/partner-hamorim.png';
 import partnerVilaFinamor from '../assets/clients/partner-vila-finamor.png';
 import partnerMagnani from '../assets/clients/partner-magnani.png';
@@ -119,7 +120,6 @@ const CLIENT_LOGOS = [
   { name: 'Harmony Serralheria', image: partnerHarmony },
   { name: 'Atenas Contabilidade', image: partnerAtenas },
   { name: 'Via Verde Restaurante', image: partnerViaVerde },
-  { name: 'Mega Supermercado', image: partnerMega },
   { name: 'Hamorim', image: partnerHamorim },
   { name: 'Vila Finamor Terra & Mar', image: partnerVilaFinamor },
   { name: 'Magnani Mármores', image: partnerMagnani },
@@ -275,8 +275,23 @@ export default function InstitutionalSite({ section = 'home' }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [clientOffset, setClientOffset] = useState(0);
+  const [clientVisibleCount, setClientVisibleCount] = useState(3);
   const modalCloseButtonRef = useRef(null);
   const lastModalTriggerRef = useRef(null);
+
+  useEffect(() => {
+    const syncVisibleCount = () => {
+      setClientVisibleCount(window.innerWidth <= 640 ? 1 : window.innerWidth <= 980 ? 2 : 3);
+    };
+    syncVisibleCount();
+    window.addEventListener('resize', syncVisibleCount);
+    return () => window.removeEventListener('resize', syncVisibleCount);
+  }, []);
+
+  useEffect(() => {
+    setClientOffset((current) => Math.min(current, Math.max(0, CLIENT_LOGOS.length - clientVisibleCount)));
+  }, [clientVisibleCount]);
 
   useEffect(() => {
     document.documentElement.classList.remove('office-page-is-leaving');
@@ -394,6 +409,8 @@ export default function InstitutionalSite({ section = 'home' }) {
 
     navigateWithTransition(event, item.path);
   };
+  const visibleClientLogos = CLIENT_LOGOS.slice(clientOffset, clientOffset + clientVisibleCount);
+  const maxClientOffset = Math.max(0, CLIENT_LOGOS.length - clientVisibleCount);
 
   return (
     <main className="office-site">
@@ -571,12 +588,34 @@ export default function InstitutionalSite({ section = 'home' }) {
           <div className="office-clients__heading">
             <h2 id="office-clients-title">CLIENTES PARCEIROS</h2>
           </div>
-          <div className="office-clients__grid" aria-label="Clientes parceiros do escritório">
-            {CLIENT_LOGOS.map((client) => (
-              <figure className={`office-client-logo${client.compact ? ' office-client-logo--compact' : ''}`} key={client.name}>
-                <img src={client.image} alt={client.name} loading="lazy" />
-              </figure>
-            ))}
+          <div className="office-clients__carousel" aria-label="Clientes parceiros do escritório">
+            <button
+              className="office-clients__arrow"
+              type="button"
+              onClick={() => setClientOffset((current) => Math.max(0, current - 1))}
+              disabled={clientOffset === 0}
+              aria-label="Ver clientes parceiros anteriores"
+            >
+              <ChevronLeft size={25} aria-hidden="true" />
+            </button>
+            <div className="office-clients__viewport">
+              <div className="office-clients__grid" key={`${clientOffset}-${clientVisibleCount}`} aria-live="polite">
+                {visibleClientLogos.map((client) => (
+                  <figure className={`office-client-logo${client.compact ? ' office-client-logo--compact' : ''}`} key={client.name}>
+                    <img src={client.image} alt={client.name} loading="lazy" />
+                  </figure>
+                ))}
+              </div>
+            </div>
+            <button
+              className="office-clients__arrow"
+              type="button"
+              onClick={() => setClientOffset((current) => Math.min(maxClientOffset, current + 1))}
+              disabled={clientOffset >= maxClientOffset}
+              aria-label="Ver próximos clientes parceiros"
+            >
+              <ChevronRight size={25} aria-hidden="true" />
+            </button>
           </div>
         </div>
       </section>}
