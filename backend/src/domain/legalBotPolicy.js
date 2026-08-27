@@ -331,6 +331,26 @@ function formatOptionMarker(index) {
   return String(number).split('').map((digit) => `${digit}\uFE0F\u20E3`).join('');
 }
 
+// Reconhece a resposta a pergunta de perfil da etapa 1. Depende de a pergunta
+// ter sido a ultima coisa que a IA disse, porque "1" isolado so significa
+// "sou cliente" naquele contexto.
+const PROFILE_QUESTION_PATTERN = /voc[eê]\s+j[aá]\s+[eé]\s+nosso|j[aá]\s+[eé]\s+nosso\(a\)\s+cliente|j[aá]\s+[eé]\s+nosso\s+cliente/i;
+
+function askedClientProfile(message = '') {
+  return PROFILE_QUESTION_PATTERN.test(String(message || ''));
+}
+
+function detectProfileAnswer(history = [], currentUserTurn = '') {
+  const lastAssistantMessage = [...history].reverse().find((message) => message.fromMe || message.fromBot);
+  if (!askedClientProfile(lastAssistantMessage?.body)) return null;
+
+  const answer = String(currentUserTurn || '').trim().toLowerCase();
+  if (/^1\b|^1[️⃣]*$|\bsim\b.*\bcliente\b|^ja sou cliente|^já sou cliente/.test(answer)) return 'cliente';
+  if (/^2\b|^2[️⃣]*$|\bn[aã]o\b.*\bcliente\b|ainda n[aã]o sou/.test(answer)) return 'nao_cliente';
+  if (/^3\b|^3[️⃣]*$|informa[cç][aã]o r[aá]pida|s[oó] (?:uma |preciso )?informa/.test(answer)) return 'informacao';
+  return null;
+}
+
 function buildOptionList(options = []) {
   return options.map((option, index) => `${formatOptionMarker(index)} ${option}`).join('\n');
 }
@@ -399,9 +419,13 @@ function buildLegalBotInstructions({
   const urgent = isUrgentMessage(currentUserTurn);
   const clarificationStreak = countTrailingClarifications(history);
   const fallbackReached = clarificationStreak >= 2;
-  const clientStatus = isKnownClient === true
+  const profileAnswer = detectProfileAnswer(history, currentUserTurn);
+  const knownClient = isKnownClient === null && profileAnswer
+    ? profileAnswer === 'cliente'
+    : isKnownClient;
+  const clientStatus = knownClient === true
     ? 'CLIENTE (siga o FLUXO A)'
-    : isKnownClient === false
+    : knownClient === false
       ? 'NAO CLIENTE (siga o FLUXO B)'
       : 'NAO IDENTIFICADO (pergunte conforme a etapa 1)';
 
@@ -449,9 +473,10 @@ ${buildOptionList(CLIENT_STATUS_OPTIONS)}
 22. A etapa 1 e OBRIGATORIA na abertura, mesmo que o contato ja tenha dito o assunto na primeira mensagem. Nesse caso, reconheca o assunto em UMA frase afirmativa e em seguida faca a pergunta de perfil com as tres opcoes. A unica excecao e a urgencia da regra 41, que pula a etapa 1.
 
 FLUXO A — JA E CLIENTE:
-23. Peca o nome completo OU o numero do processo/caso para identificacao. Uma coisa por mensagem.
-24. Depois de identificado, ofereca:
+23. Assim que o contato se identificar como cliente (opcao 1), apresente IMEDIATAMENTE o menu de setores abaixo. Nao peca nome nem numero do processo nesse turno.
+24. Menu de setores do escritorio:
 ${buildOptionList(CLIENT_MENU_OPTIONS)}
+24.1. A identificacao (nome completo ou numero do processo/caso) e coletada mais tarde, ja dentro do setor escolhido e antes do encaminhamento. Peca apenas o que ainda faltar: se o nome ja estiver no CRM ou na conversa, nao pergunte de novo.
 25. A.1 Processo em andamento: pergunte a area do caso entre ${CLIENT_CASE_AREAS.join(', ')}; depois colete o numero do processo (se houver) e o resumo da duvida em texto livre; encaminhe ao time juridico com [[HANDOFF]] e [[ROUTE: ATENDIMENTO]].
 26. A.2 Financeiro: pergunte do que se trata entre as opcoes:
 ${buildOptionList(FINANCIAL_OPTIONS)}
@@ -497,6 +522,7 @@ ESTADO DESTE TURNO:
 - Nome disponivel/confirmado: ${nameConfirmed ? 'SIM' : 'NAO'}
 - Menu geral ja apresentado: ${generalMenuShown ? 'SIM' : 'NAO'}
 - Perfil do contato: ${clientStatus}
+- Resposta de perfil neste turno: ${profileAnswer || 'nenhuma'}
 - Turno de abertura da conversa: ${isOpeningTurn ? 'SIM' : 'NAO'}
 - Urgencia detectada nesta mensagem: ${urgent ? 'SIM' : 'NAO'}
 - Incompreensoes seguidas ate agora: ${clarificationStreak}
@@ -506,7 +532,13 @@ ${urgent
     ? '- Caso urgente. Ignore o restante da triagem e aplique a regra 41 de escalonamento imediato.'
     : fallbackReached
       ? '- Voce ja nao entendeu duas vezes seguidas. Aplique a regra 42 e encaminhe para o atendimento humano.'
-      : isOpeningTurn
+      : profileAnswer === 'cliente'
+        ? `- O contato acabou de se identificar como CLIENTE. Apresente agora o menu de setores, exatamente com estas opcoes:\n${buildOptionList(CLIENT_MENU_OPTIONS)}\n- Nao peca nome nem numero do processo neste turno.`
+        : profileAnswer === 'nao_cliente'
+          ? `- O contato NAO e cliente. Aplique a regra 30: pergunte a area do direito relacionada a necessidade, com estas opcoes:\n${buildOptionList(PROSPECT_AREAS)}`
+          : profileAnswer === 'informacao'
+            ? `- O contato quer apenas uma informacao rapida. Aplique a regra 36, com estas opcoes:\n${buildOptionList(QUICK_INFO_OPTIONS)}`
+            : isOpeningTurn
         ? `- Turno de abertura. Aplique a regra 20: apresente-se e pergunte SOMENTE se o contato ja e cliente, exatamente com estas opcoes:\n${buildOptionList(CLIENT_STATUS_OPTIONS)}\n- Nao mostre o menu de areas e nao peca o nome ainda.${subjectProvided ? '\n- O contato ja adiantou o assunto: reconheca em UMA frase antes da pergunta de perfil, e nao pergunte nada sobre o tema ainda.' : ''}`
         : subjectProvided && !nameConfirmed
     ? '- Reconheca o assunto informado e faca somente a pergunta do nome. Nao mostre o menu geral.'
@@ -592,6 +624,7 @@ module.exports = {
   buildInitialGreetingReply,
   buildOptionList,
   countTrailingClarifications,
+  detectProfileAnswer,
   hasReachedFallbackLimit,
   isLegalMemoryRelevant,
   isUrgentMessage,

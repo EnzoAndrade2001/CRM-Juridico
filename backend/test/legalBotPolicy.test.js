@@ -274,3 +274,38 @@ test('memoria so e extraida quando a mensagem traz dado util a triagem', () => {
   assert.equal(isLegalMemoryRelevant('Bora jogar'), false);
   assert.equal(isLegalMemoryRelevant(''), false);
 });
+
+test('resposta 1 na pergunta de perfil leva direto ao menu de setores', () => {
+  const { detectProfileAnswer } = require('../src/domain/legalBotPolicy');
+  const history = [{ fromMe: true, fromBot: true, body: 'Para começar, você já é nosso(a) cliente? 1️⃣ Sim, já sou cliente' }];
+
+  assert.equal(detectProfileAnswer(history, '1'), 'cliente');
+  assert.equal(detectProfileAnswer(history, '2'), 'nao_cliente');
+  assert.equal(detectProfileAnswer(history, '3'), 'informacao');
+  assert.equal(detectProfileAnswer(history, 'quero revisar meu contrato'), null);
+  // Fora do contexto da pergunta, "1" nao significa perfil.
+  assert.equal(detectProfileAnswer([{ fromMe: true, fromBot: true, body: 'Qual área do seu caso?' }], '1'), null);
+
+  const prompt = buildLegalBotInstructions({ currentUserTurn: '1', history });
+  const conduct = prompt.split('CONDUTA PARA ESTE TURNO:')[1];
+
+  assert.match(prompt, /Perfil do contato: CLIENTE \(siga o FLUXO A\)/);
+  assert.match(conduct, /menu de setores/i);
+  assert.match(conduct, /2️⃣ Assuntos financeiros \(boletos, pagamentos, honorários\)/);
+  assert.match(conduct, /Nao peca nome nem numero do processo neste turno/);
+  assert.match(prompt, /24\.1\. A identificacao/);
+});
+
+test('resposta 2 e 3 abrem os fluxos B e C', () => {
+  const history = [{ fromMe: true, fromBot: true, body: 'você já é nosso(a) cliente?' }];
+
+  const naoCliente = buildLegalBotInstructions({ currentUserTurn: '2', history })
+    .split('CONDUTA PARA ESTE TURNO:')[1];
+  assert.match(naoCliente, /regra 30/);
+  assert.match(naoCliente, /Família \(divórcio, pensão, guarda\)/);
+
+  const informacao = buildLegalBotInstructions({ currentUserTurn: '3', history })
+    .split('CONDUTA PARA ESTE TURNO:')[1];
+  assert.match(informacao, /regra 36/);
+  assert.match(informacao, /Endereço\/horário de funcionamento/);
+});
