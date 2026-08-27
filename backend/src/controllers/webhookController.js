@@ -6,11 +6,13 @@ const evolutionService = require('../services/evolutionService');
 const aiService = require('../services/aiService');
 const businessHourService = require('../services/businessHourService');
 const {
+  buildInitialGreetingReply,
   buildInitialSubjectReply,
   buildLegalBotInstructions,
-  buildWelcomeServicesReply,
   hasConfirmedName,
+  hasReachedFallbackLimit,
   isHumanHandoffRequest,
+  isUrgentMessage,
   isVagueMessage,
   limitReplyToOneQuestion,
   replaceFarewellWithSpecialistHandoff,
@@ -966,8 +968,12 @@ async function handoffAfterBotFailure(tenant, waInstance, ticket, contact) {
   });
 }
 
-async function handoffAtCustomerRequest(tenant, waInstance, ticket, contact) {
-  const reply = 'Claro! Vou encaminhar você para nossa equipe.';
+async function handoffAtCustomerRequest(tenant, waInstance, ticket, contact, options = {}) {
+  const {
+    reply = 'Claro! Vou encaminhar você para nossa equipe.',
+    priority = null,
+    eventType = 'customer_requested_handoff',
+  } = options;
   const teams = await getTeamsCached(tenant.id);
   const targetTeam = teams.find((team) => team.name.toLowerCase().includes('atendimento'));
   const sent = await evolutionService.sendText(
@@ -983,6 +989,7 @@ async function handoffAtCustomerRequest(tenant, waInstance, ticket, contact) {
     data: {
       status: 'pending',
       teamId: targetTeam?.id,
+      ...(priority ? { priority } : {}),
       updatedAt: new Date(),
       lastMessageAt: new Date(),
     },
@@ -1003,8 +1010,8 @@ async function handoffAtCustomerRequest(tenant, waInstance, ticket, contact) {
     data: {
       ticketId: ticket.id,
       tenantId: tenant.id,
-      type: 'customer_requested_handoff',
-      payload: JSON.stringify({ teamId: targetTeam?.id || null }),
+      type: eventType,
+      payload: JSON.stringify({ teamId: targetTeam?.id || null, priority }),
     },
   });
 
@@ -1047,6 +1054,18 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
     return;
   }
 
+  // Gatilho de escalonamento imediato do roteiro: urgência, prisão, audiência
+  // marcada ou prazo vencendo pulam a triagem inteira.
+  if (isUrgentMessage(currentUserTurn)) {
+    console.log(`[bot] Urgencia detectada no ticket ${ticket.id}; escalando sem triagem.`);
+    await handoffAtCustomerRequest(tenant, waInstance, ticket, contact, {
+      reply: 'Entendi que o seu caso é urgente. Vou encaminhar você agora para o nosso atendimento prioritário.',
+      priority: 'high',
+      eventType: 'bot_urgent_escalation',
+    });
+    return;
+  }
+
   // 1. FILTRO DE PALAVRAS-CHAVE (ATALHO RÁPIDO)
   let autoCategory = null;
   const msgLower = currentUserTurn.toLowerCase();
@@ -1072,17 +1091,30 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
   // 3. SYSTEM PROMPT (Prioridade absoluta para o que o usuário escreveu no painel)
   const userPrompt = settings.botSystemPrompt || 'Você é um Assistente de Atendimento cordial.';
 
+  // Fallback do roteiro: duas incompreensões seguidas encerram a triagem
+  // automática e entregam a conversa ao time humano.
+  if (hasReachedFallbackLimit(reversedHistory)) {
+    console.log(`[bot] Limite de incompreensoes atingido no ticket ${ticket.id}; transferindo para humano.`);
+    await handoffAtCustomerRequest(tenant, waInstance, ticket, contact, {
+      reply: 'Para não tomar mais o seu tempo, vou encaminhar você para um de nossos atendentes.',
+      eventType: 'bot_fallback_handoff',
+    });
+    return;
+  }
+
+  const nameConfirmedNow = hasConfirmedName(reversedHistory, currentUserTurn, contact.name);
+  const mustAskNameNow = shouldAskNameForSubject(reversedHistory, currentUserTurn, contact.name);
+  const currentTicketHasHistory = reversedHistory.some((historyMessage) => historyMessage.ticketId === ticket.id);
+  const mustWelcomeNow = isVagueMessage(currentUserTurn) && !currentTicketHasHistory;
+
   const legalInstructions = buildLegalBotInstructions({
     currentUserTurn,
     history: reversedHistory,
     profileName: contact.name,
     source: contact.externalSource,
     tags: contact.tags,
+    isOpeningTurn: !currentTicketHasHistory,
   });
-  const nameConfirmedNow = hasConfirmedName(reversedHistory, currentUserTurn, contact.name);
-  const mustAskNameNow = shouldAskNameForSubject(reversedHistory, currentUserTurn, contact.name);
-  const currentTicketHasHistory = reversedHistory.some((historyMessage) => historyMessage.ticketId === ticket.id);
-  const mustWelcomeNow = isVagueMessage(currentUserTurn) && !currentTicketHasHistory;
 
   // Busca semântica de conhecimento
   let knowledgeContext = "";
@@ -1134,15 +1166,24 @@ ${legalInstructions}`;
 
   console.log(`[bot] Ticket ${ticket.id} | Turno atual normalizado:\n${currentUserTurn}`);
 
+  // A IA conduz TODOS os turnos, inclusive a saudacao inicial. As respostas
+  // determinísticas do roteiro ficam apenas como rede de segurança para quando
+  // o provedor de IA estiver fora do ar ou sem credito — assim o contato nunca
+  // fica sem resposta no WhatsApp.
   let botReply;
-  if (mustWelcomeNow) {
-    botReply = buildWelcomeServicesReply();
-    console.log(`[bot] Apresentacao inicial imediata para ticket ${ticket.id}: menu geral exibido; solicitando nome.`);
-  } else if (mustAskNameNow) {
-    botReply = buildInitialSubjectReply(currentUserTurn);
-    console.log(`[bot] Triagem inicial imediata para ticket ${ticket.id}: assunto reconhecido; solicitando nome.`);
-  } else {
+  try {
     botReply = await aiService.chat(settings, finalPrompt, reversedHistory, currentUserTurn);
+  } catch (error) {
+    const fallbackReply = mustWelcomeNow
+      ? buildInitialGreetingReply()
+      : mustAskNameNow
+        ? buildInitialSubjectReply(currentUserTurn)
+        : null;
+
+    if (!fallbackReply) throw error;
+
+    botReply = fallbackReply;
+    console.error(`[bot] IA indisponivel no ticket ${ticket.id} (${error.message}); usando resposta do roteiro como fallback.`);
   }
 
   // EXTRAÇÃO DE MEMÓRIA DE LONGO PRAZO (Background Task)

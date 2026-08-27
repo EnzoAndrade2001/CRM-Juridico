@@ -138,3 +138,90 @@ test('preserva somente emojis numericos usados em menus de opcoes', () => {
 
   assert.equal(reply, '1️⃣ Parcelas muito altas\n2️⃣ Juros muito altos');
 });
+
+test('saudacao inicial do roteiro pergunta somente o perfil do contato', () => {
+  const { buildInitialGreetingReply } = require('../src/domain/legalBotPolicy');
+  const reply = buildInitialGreetingReply();
+
+  assert.match(reply, /1️⃣ Sim, já sou cliente/);
+  assert.match(reply, /2️⃣ Não, ainda não sou cliente/);
+  assert.match(reply, /3️⃣ Só preciso de uma informação rápida/);
+  assert.equal((reply.match(/\?/g) || []).length, 1);
+});
+
+test('gatilhos de urgencia disparam escalonamento e casos comuns nao', () => {
+  const { isUrgentMessage } = require('../src/domain/legalBotPolicy');
+
+  assert.equal(isUrgentMessage('tenho audiência amanhã e preciso de ajuda'), true);
+  assert.equal(isUrgentMessage('meu prazo está vencendo'), true);
+  assert.equal(isUrgentMessage('meu filho foi preso em flagrante'), true);
+  assert.equal(isUrgentMessage('é urgente'), true);
+  assert.equal(isUrgentMessage('quero revisar meu financiamento'), false);
+  assert.equal(isUrgentMessage('preciso falar sobre pensão'), false);
+});
+
+test('duas incompreensoes seguidas atingem o limite de fallback', () => {
+  const { hasReachedFallbackLimit } = require('../src/domain/legalBotPolicy');
+  const history = [
+    { fromMe: false, fromBot: false, body: 'aaa' },
+    { fromMe: true, fromBot: true, body: 'Desculpe, não entendi. Pode reformular?' },
+    { fromMe: false, fromBot: false, body: 'bbb' },
+    { fromMe: true, fromBot: true, body: 'Desculpe, não entendi novamente.' },
+  ];
+
+  assert.equal(hasReachedFallbackLimit(history), true);
+  assert.equal(hasReachedFallbackLimit(history.slice(0, 2)), false);
+});
+
+test('prompt mestre traz os tres fluxos, escalonamento e dados de handoff', () => {
+  const prompt = buildLegalBotInstructions({
+    currentUserTurn: 'quero saber o horário de funcionamento',
+    history: [],
+  });
+
+  assert.match(prompt, /FLUXO A — JA E CLIENTE/);
+  assert.match(prompt, /FLUXO B — AINDA NAO E CLIENTE/);
+  assert.match(prompt, /FLUXO C — INFORMACAO RAPIDA/);
+  assert.match(prompt, /ESCALONAMENTO IMEDIATO/);
+  assert.match(prompt, /FALLBACK/);
+  assert.match(prompt, /DADOS OBRIGATORIOS PARA O HANDOFF/);
+  assert.match(prompt, /Nome completo/);
+  assert.match(prompt, /Urgência \(sim\/não\)/);
+  assert.match(prompt, /Nunca dê orientacao juridica/);
+});
+
+test('prompt sinaliza urgencia e perfil do contato no estado do turno', () => {
+  const prompt = buildLegalBotInstructions({
+    currentUserTurn: 'tenho audiência amanhã',
+    history: [],
+    isKnownClient: true,
+  });
+
+  assert.match(prompt, /Urgencia detectada nesta mensagem: SIM/);
+  assert.match(prompt, /Perfil do contato: CLIENTE \(siga o FLUXO A\)/);
+  assert.match(prompt, /aplique a regra 41 de escalonamento imediato/);
+});
+
+test('turno de abertura orienta a IA a aplicar a etapa 1 do roteiro', () => {
+  const prompt = buildLegalBotInstructions({
+    currentUserTurn: 'Boa tarde',
+    history: [],
+    isOpeningTurn: true,
+  });
+
+  assert.match(prompt, /Turno de abertura da conversa: SIM/);
+  assert.match(prompt, /Aplique a regra 20/);
+  assert.match(prompt, /1️⃣ Sim, já sou cliente/);
+  assert.match(prompt, /Nao mostre o menu de areas e nao peca o nome ainda/);
+});
+
+test('turno seguinte da mesma conversa nao repete a etapa 1', () => {
+  const prompt = buildLegalBotInstructions({
+    currentUserTurn: 'Boa tarde',
+    history: [{ fromMe: true, fromBot: true, body: 'Você já é nosso(a) cliente?' }],
+    isOpeningTurn: false,
+  });
+
+  assert.match(prompt, /Turno de abertura da conversa: NAO/);
+  assert.doesNotMatch(prompt.split('CONDUTA PARA ESTE TURNO:')[1], /Aplique a regra 20/);
+});

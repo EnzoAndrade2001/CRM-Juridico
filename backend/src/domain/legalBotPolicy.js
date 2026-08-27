@@ -102,6 +102,98 @@ const LEGAL_SPECIFIC_OPTIONS = {
   ],
 };
 
+// ---------------------------------------------------------------------------
+// ROTEIRO DE ATENDIMENTO — menus fixos de cada etapa (WhatsApp)
+// ---------------------------------------------------------------------------
+
+// Etapa 1 — triagem de perfil do contato.
+const CLIENT_STATUS_OPTIONS = [
+  'Sim, já sou cliente',
+  'Não, ainda não sou cliente',
+  'Só preciso de uma informação rápida',
+];
+
+// Fluxo A (cliente) — etapa 2.
+const CLIENT_MENU_OPTIONS = [
+  'Falar sobre um processo/caso em andamento',
+  'Assuntos financeiros (boletos, pagamentos, honorários)',
+  'Falar diretamente com meu advogado(a) responsável',
+  'Agendar uma reunião',
+  'Outro assunto',
+];
+
+// Fluxo A — 2.1 área do caso em andamento.
+const CLIENT_CASE_AREAS = [
+  'Cível',
+  'Trabalhista',
+  'Família',
+  'Criminal',
+  'Tributário',
+  'Outra',
+];
+
+// Fluxo A — 2.2 financeiro.
+const FINANCIAL_OPTIONS = [
+  '2ª via de boleto',
+  'Dúvida sobre cobrança',
+  'Negociação de valores',
+  'Outro',
+];
+
+// Fluxo A/B — formato de reunião ou consulta.
+const MEETING_FORMAT_OPTIONS = [
+  'Presencial',
+  'Videochamada',
+  'Ligação telefônica',
+];
+
+// Fluxo B (não cliente) — etapa 3.
+const PROSPECT_AREAS = [
+  'Cível (contratos, indenizações, dívidas)',
+  'Trabalhista',
+  'Família (divórcio, pensão, guarda)',
+  'Criminal',
+  'Tributário/Empresarial',
+  'Não sei / preciso de orientação',
+];
+
+// Fluxo B — após o relato do caso.
+const PROSPECT_NEXT_STEP_OPTIONS = [
+  'Sim, quero agendar',
+  'Antes, quero saber sobre valores/honorários',
+  'Só quero mais informações por enquanto',
+];
+
+// Fluxo C — informação rápida (FAQ institucional).
+const QUICK_INFO_OPTIONS = [
+  'Endereço/horário de funcionamento',
+  'Áreas de atuação do escritório',
+  'Formas de contato/pagamento',
+  'Outra dúvida',
+];
+
+// Campos obrigatórios no handoff para o time humano.
+const HANDOFF_REQUIRED_FIELDS = [
+  'Nome completo',
+  'Cliente ou não-cliente',
+  'Área do direito',
+  'Resumo da demanda',
+  'Telefone/WhatsApp (capturado automaticamente)',
+  'Preferência de contato (financeiro/advogado/agenda)',
+  'Urgência (sim/não)',
+  'Nº do processo (quando o contato for cliente e o caso já tiver processo)',
+];
+
+// Gatilhos de escalonamento imediato: pulam a triagem e vão direto ao humano.
+// Sem \b no fim: em JS a fronteira de palavra nao reconhece letras acentuadas
+// como "amanhã" ou "prisão", o que anularia metade dos gatilhos.
+const URGENCY_TERMS = /(?:^|[^\wÀ-ÿ])(urgente|urg[eê]ncia|emerg[eê]ncia|pris[aã]o|preso|prend(?:eram|eu|ido)|flagrante|delegacia|audi[eê]ncia\s+(?:hoje|amanh[aã]|agora|de\s+manh[aã])|prazo\s+(?:(?:est[aá]|t[aá])\s+)?(?:vencendo|vencido|vence\s+hoje|vence\s+amanh[aã]|final|fatal|acabando|estourando|terminando)|[uú]ltimo\s+dia\s+do\s+prazo|liminar\s+urgente|mandado\s+de\s+pris[aã]o)/i;
+
+// Frases usadas pela IA quando não compreende a resposta do contato.
+const CLARIFICATION_PATTERN = /\b(n[aã]o (?:consegui )?entend[ie]|n[aã]o compreendi|pode(?:ria)? (?:repetir|reformular)|n[aã]o ficou claro|poderia explicar melhor)\b/i;
+
+const ENCERRAMENTO_PADRAO = 'Muito obrigado pelo contato! Se precisar de mais alguma coisa, é só chamar por aqui. PBL Advocacia e Consultoria Jurídica.';
+
 function isGreetingOnly(message = '') {
   return GREETING_ONLY.test(String(message).trim());
 }
@@ -197,11 +289,39 @@ function formatOptionMarker(index) {
   return String(number).split('').map((digit) => `${digit}\uFE0F\u20E3`).join('');
 }
 
+function buildOptionList(options = []) {
+  return options.map((option, index) => `${formatOptionMarker(index)} ${option}`).join('\n');
+}
+
 function buildWelcomeServicesReply() {
-  const services = LEGAL_SERVICES.map((service, index) => {
-    return `${formatOptionMarker(index)} ${service}`;
-  }).join('\n');
+  const services = buildOptionList(LEGAL_SERVICES);
   return `Olá! Seja bem-vindo(a) à PBL Advocacia e Consultoria Jurídica.\n\nÁreas de atendimento:\n${services}\n\nQual é o seu nome?`;
+}
+
+// Etapa 1 do roteiro: saudação e identificação do perfil do contato.
+function buildInitialGreetingReply() {
+  return `Olá! Seja bem-vindo(a) à PBL Advocacia e Consultoria Jurídica. Sou a assistente virtual do escritório e vou ajudar a direcionar o seu atendimento.\n\nPara começar, você já é nosso(a) cliente?\n${buildOptionList(CLIENT_STATUS_OPTIONS)}`;
+}
+
+// Gatilho transversal: urgência real pula a triagem e vai direto ao humano.
+function isUrgentMessage(message = '') {
+  return URGENCY_TERMS.test(String(message || ''));
+}
+
+// Fallback do roteiro: duas incompreensões seguidas encerram a triagem automática.
+function countTrailingClarifications(history = []) {
+  let count = 0;
+  for (let index = history.length - 1; index >= 0; index -= 1) {
+    const message = history[index];
+    if (!message.fromMe && !message.fromBot) continue;
+    if (!CLARIFICATION_PATTERN.test(message.body || '')) break;
+    count += 1;
+  }
+  return count;
+}
+
+function hasReachedFallbackLimit(history = [], limit = 2) {
+  return countTrailingClarifications(history) >= limit;
 }
 
 function hasSubjectInConversation(history = [], currentUserTurn = '') {
@@ -218,7 +338,15 @@ function formatSpecificOptionsForPrompt() {
     .join('\n\n');
 }
 
-function buildLegalBotInstructions({ currentUserTurn = '', history = [], profileName = '', source = '', tags = '' } = {}) {
+function buildLegalBotInstructions({
+  currentUserTurn = '',
+  history = [],
+  profileName = '',
+  source = '',
+  tags = '',
+  isKnownClient = null,
+  isOpeningTurn = false,
+} = {}) {
   const subjectProvided = !isVagueMessage(currentUserTurn) && !looksLikePersonName(currentUserTurn);
   const subjectKnown = hasSubjectInConversation(history, currentUserTurn);
   const nameConfirmed = hasConfirmedName(history, currentUserTurn, profileName);
@@ -226,6 +354,14 @@ function buildLegalBotInstructions({ currentUserTurn = '', history = [], profile
     (message.fromMe || message.fromBot) && /[aá]reas de atendimento|bancos e financiamentos/i.test(message.body || '')
   );
   const specificOptions = formatSpecificOptionsForPrompt();
+  const urgent = isUrgentMessage(currentUserTurn);
+  const clarificationStreak = countTrailingClarifications(history);
+  const fallbackReached = clarificationStreak >= 2;
+  const clientStatus = isKnownClient === true
+    ? 'CLIENTE (siga o FLUXO A)'
+    : isKnownClient === false
+      ? 'NAO CLIENTE (siga o FLUXO B)'
+      : 'NAO IDENTIFICADO (pergunte conforme a etapa 1)';
 
   return `
 ---
@@ -260,9 +396,55 @@ FLUXO OBRIGATORIO:
 19. Use texto simples de WhatsApp. Quando apresentar opcoes, use os marcadores numericos 1️⃣, 2️⃣, 3️⃣ e assim por diante, um por linha. Fora das opcoes, evite listas e nunca use marcacao com dois asteriscos.
 
 ROTAS INTERNAS INVISIVEIS:
-- Use [[ROUTE: FINANCEIRO]] para bancos, financiamentos, juros, revisional, cobrancas e dividas.
-- Use [[ROUTE: ATENDIMENTO]] para os demais assuntos.
+- Use [[ROUTE: FINANCEIRO]] para bancos, financiamentos, juros, revisional, cobrancas, dividas, boletos, honorarios e pagamentos.
+- Use [[ROUTE: ATENDIMENTO]] para os demais assuntos, incluindo agendamentos, duvidas institucionais e falar com o advogado responsavel.
 - As tags [[ROUTE: ...]] e [[HANDOFF]] nunca devem aparecer no texto visivel ao cliente.
+
+ROTEIRO DE ATENDIMENTO — ETAPA 1 (SAUDACAO E PERFIL):
+20. Na primeira mensagem de uma conversa nova, apresente-se e pergunte SOMENTE se o contato ja e cliente, com estas opcoes:
+${buildOptionList(CLIENT_STATUS_OPTIONS)}
+21. A resposta define o fluxo: 1 = FLUXO A (cliente), 2 = FLUXO B (nao cliente), 3 = FLUXO C (informacao rapida). Nunca pergunte isso duas vezes.
+22. Se o contato ja abriu a conversa dizendo o assunto, deduza o fluxo pelo conteudo e apenas confirme em uma frase, sem repetir o menu da etapa 1.
+
+FLUXO A — JA E CLIENTE:
+23. Peca o nome completo OU o numero do processo/caso para identificacao. Uma coisa por mensagem.
+24. Depois de identificado, ofereca:
+${buildOptionList(CLIENT_MENU_OPTIONS)}
+25. A.1 Processo em andamento: pergunte a area do caso entre ${CLIENT_CASE_AREAS.join(', ')}; depois colete o numero do processo (se houver) e o resumo da duvida em texto livre; encaminhe ao time juridico com [[HANDOFF]] e [[ROUTE: ATENDIMENTO]].
+26. A.2 Financeiro: pergunte do que se trata entre as opcoes:
+${buildOptionList(FINANCIAL_OPTIONS)}
+   Colete nome e CPF/CNPJ quando necessario e encaminhe com [[HANDOFF]] e [[ROUTE: FINANCEIRO]].
+27. A.3 Falar com o advogado responsavel: informe que vai verificar a disponibilidade, peca um resumo breve do assunto e encaminhe com [[HANDOFF]] e [[ROUTE: ATENDIMENTO]]. Nao afirme que o advogado esta disponivel nem prometa horario de retorno.
+28. A.4 Agendar reuniao: pergunte o formato entre ${MEETING_FORMAT_OPTIONS.join(', ')} e depois a disponibilidade de dia e horario; encaminhe a secretaria com [[HANDOFF]] e [[ROUTE: ATENDIMENTO]]. Nunca confirme um horario por conta propria.
+29. A.5 Outro assunto: peca o detalhamento em texto livre e encaminhe a triagem humana com o resumo.
+
+FLUXO B — AINDA NAO E CLIENTE:
+30. Pergunte a area relacionada a necessidade:
+${buildOptionList(PROSPECT_AREAS)}
+31. Depois da escolha, peca uma descricao breve da situacao em texto livre. Nao avalie o caso nem antecipe chances de exito.
+32. Com o relato em maos, ofereca o proximo passo:
+${buildOptionList(PROSPECT_NEXT_STEP_OPTIONS)}
+33. B.1 Agendar consulta: colete nome completo, melhor dia e horario e a preferencia entre ${MEETING_FORMAT_OPTIONS.join(', ')}; encaminhe a secretaria com [[HANDOFF]].
+34. B.2 Valores/honorarios: responda EXATAMENTE "Nossos valores variam conforme a complexidade do caso. Um de nossos advogados pode passar uma estimativa depois de entender melhor a situacao." e ofereca a conversa inicial sem compromisso. Nunca cite valores, tabelas ou percentuais.
+35. B.3 Mais informacoes: registre o interesse, informe que o escritorio pode enviar material sobre a area e oferecer um contato posterior, e encaminhe com [[HANDOFF]].
+
+FLUXO C — INFORMACAO RAPIDA:
+36. Pergunte sobre o que o contato quer saber:
+${buildOptionList(QUICK_INFO_OPTIONS)}
+37. Responda apenas com informacao institucional ja cadastrada na base de conhecimento. Se a informacao nao estiver na base, nao invente: encaminhe com [[HANDOFF]] e [[ROUTE: ATENDIMENTO]].
+38. Ao final da resposta institucional, ofereca ajuda adicional ou a conexao com um advogado, em uma unica pergunta.
+39. Somente no FLUXO C, quando o contato disser que nao precisa de mais nada, e permitido encerrar com: "${ENCERRAMENTO_PADRAO}" Nos fluxos A e B a regra 18 continua valendo e nao ha despedida.
+
+REGRAS TRANSVERSAIS DE CONDUCAO:
+40. Antes de avancar de etapa, confirme o entendimento em uma frase afirmativa, no formato "Entendi que voce precisa de X." Isso nao consome a pergunta do turno.
+41. ESCALONAMENTO IMEDIATO: se a mensagem indicar urgencia, prisao, flagrante, audiencia hoje ou amanha, prazo vencendo ou mandado, pule TODAS as etapas de triagem e responda EXATAMENTE: "Entendi que o seu caso e urgente. Vou encaminhar voce agora para o nosso atendimento prioritario." Acrescente [[HANDOFF]] e [[ROUTE: ATENDIMENTO]].
+42. FALLBACK: se voce nao entender a resposta do contato duas vezes seguidas, pare de tentar e encaminhe para o humano com [[HANDOFF]].
+43. A opcao de falar com um atendente humano permanece valida em qualquer etapa, mesmo que nao esteja escrita no menu daquele momento.
+44. Nunca dê orientacao juridica, parecer, prazo legal, estrategia processual ou interpretacao de lei. Sua funcao e triagem, coleta de dados e encaminhamento.
+
+DADOS OBRIGATORIOS PARA O HANDOFF:
+${HANDOFF_REQUIRED_FIELDS.map((field) => `- ${field}`).join('\n')}
+45. Colete esses campos ao longo da conversa, um por mensagem, na ordem natural do fluxo. Nao repita a coleta de um campo ja preenchido pelo CRM ou pela conversa. Nunca segure o encaminhamento de um caso urgente para completar campos.
 
 OPCOES ESPECIFICAS POR AREA:
 ${specificOptions}
@@ -272,9 +454,19 @@ ESTADO DESTE TURNO:
 - Assunto ja conhecido na conversa: ${subjectKnown ? 'SIM' : 'NAO'}
 - Nome disponivel/confirmado: ${nameConfirmed ? 'SIM' : 'NAO'}
 - Menu geral ja apresentado: ${generalMenuShown ? 'SIM' : 'NAO'}
+- Perfil do contato: ${clientStatus}
+- Turno de abertura da conversa: ${isOpeningTurn ? 'SIM' : 'NAO'}
+- Urgencia detectada nesta mensagem: ${urgent ? 'SIM' : 'NAO'}
+- Incompreensoes seguidas ate agora: ${clarificationStreak}
 
 CONDUTA PARA ESTE TURNO:
-${subjectProvided && !nameConfirmed
+${urgent
+    ? '- Caso urgente. Ignore o restante da triagem e aplique a regra 41 de escalonamento imediato.'
+    : fallbackReached
+      ? '- Voce ja nao entendeu duas vezes seguidas. Aplique a regra 42 e encaminhe para o atendimento humano.'
+      : isOpeningTurn && !subjectProvided
+        ? `- Turno de abertura sem assunto definido. Aplique a regra 20: apresente-se e pergunte SOMENTE se o contato ja e cliente, exatamente com estas opcoes:\n${buildOptionList(CLIENT_STATUS_OPTIONS)}\n- Nao mostre o menu de areas e nao peca o nome ainda.`
+        : subjectProvided && !nameConfirmed
     ? '- Reconheca o assunto informado e faca somente a pergunta do nome. Nao mostre o menu geral.'
     : nameConfirmed && subjectKnown
       ? '- Continue exatamente do ponto atual da triagem. Mostre somente as opcoes da area quando ainda faltarem; se a situacao especifica ja foi escolhida, faca uma unica pergunta complementar; se ela ja foi respondida, encaminhe.'
@@ -341,8 +533,23 @@ function sanitizeBotReply(reply = '') {
 }
 
 module.exports = {
+  CLIENT_CASE_AREAS,
+  CLIENT_MENU_OPTIONS,
+  CLIENT_STATUS_OPTIONS,
+  ENCERRAMENTO_PADRAO,
+  FINANCIAL_OPTIONS,
+  HANDOFF_REQUIRED_FIELDS,
   LEGAL_SERVICES,
   LEGAL_SPECIFIC_OPTIONS,
+  MEETING_FORMAT_OPTIONS,
+  PROSPECT_AREAS,
+  PROSPECT_NEXT_STEP_OPTIONS,
+  QUICK_INFO_OPTIONS,
+  buildInitialGreetingReply,
+  buildOptionList,
+  countTrailingClarifications,
+  hasReachedFallbackLimit,
+  isUrgentMessage,
   buildInitialSubjectReply,
   buildLegalBotInstructions,
   buildWelcomeServicesReply,
