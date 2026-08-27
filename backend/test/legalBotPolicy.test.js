@@ -309,3 +309,21 @@ test('resposta 2 e 3 abrem os fluxos B e C', () => {
   assert.match(informacao, /regra 36/);
   assert.match(informacao, /Endereço\/horário de funcionamento/);
 });
+
+test('menu mantem cada opcao em sua propria linha depois da pergunta', () => {
+  const { buildInitialGreetingReply } = require('../src/domain/legalBotPolicy');
+  const saida = limitReplyToOneQuestion(sanitizeBotReply(buildInitialGreetingReply()));
+  const linhas = saida.split('\n');
+
+  assert.match(linhas.find((linha) => linha.includes('cliente?')), /cliente\?$/);
+  assert.ok(linhas.includes('1️⃣ Sim, já sou cliente'));
+  assert.ok(linhas.includes('2️⃣ Não, ainda não sou cliente'));
+  assert.ok(linhas.includes('3️⃣ Só preciso de uma informação rápida'));
+  assert.equal((saida.match(/\?/g) || []).length, 1);
+});
+
+test('descarte de perguntas extras nao deixa espaco sobrando no fim', () => {
+  const saida = limitReplyToOneQuestion('Entendi o seu caso. Qual é o seu nome? Você mora onde? Possui documentos?');
+
+  assert.equal(saida, 'Entendi o seu caso. Qual é o seu nome?');
+});

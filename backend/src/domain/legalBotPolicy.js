@@ -565,23 +565,28 @@ function replaceFarewellWithSpecialistHandoff(reply = '') {
 }
 
 function limitReplyToOneQuestion(reply = '') {
+  // O separador entra na divisao para ser preservado: juntar as frases com um
+  // espaco fixo colaria a primeira opcao do menu na linha da pergunta.
+  const parts = String(reply).split(/((?<=[.!?])\s+)/);
   let questionSeen = false;
-  const filtered = String(reply)
-    .split(/(?<=[.!?])\s+/)
-    .filter((sentence) => {
-      if (!sentence.includes('?')) return true;
-      if (questionSeen) return false;
+  let filtered = '';
+
+  for (let index = 0; index < parts.length; index += 2) {
+    const sentence = parts[index];
+    const separator = parts[index + 1] || '';
+    if (sentence.includes('?')) {
+      if (questionSeen) continue;
       questionSeen = true;
-      return true;
-    })
-    .join(' ');
+    }
+    filtered += sentence + separator;
+  }
 
   let emittedQuestion = false;
   return filtered.replace(/\?/g, () => {
     if (emittedQuestion) return '.';
     emittedQuestion = true;
     return '?';
-  });
+  }).trimEnd();
 }
 
 function sanitizeBotReply(reply = '') {
