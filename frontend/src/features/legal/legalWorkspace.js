@@ -53,7 +53,9 @@ export const TASK_STATUSES = [
 
 export const labelFor = (options, value) => options.find(([key]) => key === value)?.[1] || value;
 
-export const initialsFor = (name = '') => name
+// Contact.name e nullable no banco, e o valor padrao do parametro so cobre
+// undefined — um contato sem nome chegava aqui como null e derrubava a tela.
+export const initialsFor = (name) => String(name ?? '')
   .trim()
   .split(/\s+/)
   .slice(0, 2)
