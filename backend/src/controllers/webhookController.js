@@ -27,6 +27,10 @@ function setIo(socketIo) { io = socketIo; }
 
 const pendingConnectionChecks = new Map();
 const DISCONNECT_CONFIRMATION_MS = Number(process.env.EVOLUTION_DISCONNECT_CONFIRMATION_MS || 45000);
+// Quantas verificacoes fazemos antes de desistir de uma instancia presa em
+// 'connecting'. Reconexoes legitimas costumam abrir em uma ou duas janelas;
+// alem disso a conexao esta efetivamente fora do ar.
+const DISCONNECT_CONFIRMATION_ATTEMPTS = Math.max(1, Number(process.env.EVOLUTION_DISCONNECT_CONFIRMATION_ATTEMPTS) || 4);
 // Pequena janela para agrupar mensagens enviadas em sequencia (ex.: "oi" +
 // "quero revisar meu contrato"). O valor anterior de 12s fazia toda resposta
 // parecer lenta mesmo quando a OpenAI respondia rapidamente.
@@ -45,7 +49,7 @@ function getConnectionStateValue(payload) {
   return payload?.instance?.state || payload?.state || null;
 }
 
-async function confirmDisconnected(instanceName, waInstanceId) {
+async function confirmDisconnected(instanceName, waInstanceId, attempt = 1) {
   const waInstance = await prisma.waInstance.findUnique({
     where: { id: waInstanceId },
     include: { tenant: { include: { settings: true } } },
@@ -92,15 +96,39 @@ async function confirmDisconnected(instanceName, waInstanceId) {
     return;
   }
 
-  console.log(`[webhook] Desconexao de ${instanceName} nao confirmada. Estado atual: ${state || 'desconhecido'}.`);
+  // Estado indeterminado (tipicamente 'connecting'): a instancia nao voltou a
+  // abrir nem confirmou queda. Antes isso encerrava a verificacao e o status no
+  // banco permanecia 'connected', fazendo o painel exibir a conexao como ativa
+  // enquanto o WhatsApp nao entregava nada — o bot gerava a resposta, a
+  // Evolution aceitava o sendText e a mensagem morria no caminho.
+  // Agora insistimos algumas vezes e, se nunca abrir, marcamos como desconectada.
+  if (attempt < DISCONNECT_CONFIRMATION_ATTEMPTS) {
+    console.log(`[webhook] Desconexao de ${instanceName} nao confirmada (tentativa ${attempt}/${DISCONNECT_CONFIRMATION_ATTEMPTS}). Estado atual: ${state || 'desconhecido'}. Nova verificacao em ${DISCONNECT_CONFIRMATION_MS}ms.`);
+    scheduleDisconnectConfirmation(instanceName, waInstanceId, attempt + 1);
+    return;
+  }
+
+  console.warn(`[webhook] ${instanceName} permaneceu em '${state || 'desconhecido'}' apos ${attempt} verificacoes; marcando como desconectada.`);
+  const updated = await prisma.waInstance.update({
+    where: { id: waInstance.id },
+    data: { status: 'disconnected' },
+  });
+  if (io) io.to(updated.tenantId).emit('connection_update', {
+    instance: instanceName,
+    event: 'connection.update',
+    data: { state: state || 'unknown', confirmed: true },
+  });
+
+  const { sendSystemAlert } = require('../services/alertService');
+  sendSystemAlert(updated.tenantId, `A conexao *${instanceName.split('_')[1] || instanceName}* nao concluiu a reconexao e esta fora do ar. Verifique o painel para reconectar.`);
 }
 
-function scheduleDisconnectConfirmation(instanceName, waInstanceId) {
+function scheduleDisconnectConfirmation(instanceName, waInstanceId, attempt = 1) {
   clearPendingConnectionCheck(instanceName);
   const timer = setTimeout(async () => {
     pendingConnectionChecks.delete(instanceName);
     try {
-      await confirmDisconnected(instanceName, waInstanceId);
+      await confirmDisconnected(instanceName, waInstanceId, attempt);
     } catch (err) {
       console.warn(`[webhook] Falha ao confirmar desconexao de ${instanceName}:`, err.response?.data || err.message);
     }
@@ -1206,6 +1234,17 @@ ${legalInstructions}`;
   botReply = shouldHandoff
     ? 'Perfeito! Vou encaminhar você ao setor especializado.'
     : enforceOptionLineBreaks(limitReplyToOneQuestion(replaceFarewellWithSpecialistHandoff(cleanBotReply)));
+
+  // A sanitizacao pode zerar a resposta quando o modelo devolve apenas emojis,
+  // marcadores de controle ou espacos em branco. Sem esta guarda o cliente
+  // recebia uma mensagem contendo somente o nome do robo, sem conteudo algum —
+  // exatamente o sintoma de "o robo escreve mas a IA nao responde".
+  // Nesse caso tratamos como falha da IA e passamos para atendimento humano.
+  if (!shouldHandoff && !botReply.trim()) {
+    console.warn(`[bot] Resposta vazia apos sanitizacao no ticket ${ticket.id}; encaminhando para atendimento humano.`);
+    await handoffAfterBotFailure(tenant, waInstance, ticket, contact);
+    return;
+  }
 
   // Durante a triagem, identifica o robô. No encaminhamento, envia somente a frase oficial.
   const botName = settings.botName || 'ROBÔ';
