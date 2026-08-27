@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { LEGAL_CLIENT_NOTES_INSTRUCTION } = require('../domain/legalBotPolicy');
 
 // Separamos por perfil porque o backend usa IA para chat principal,
 // resumo/rascunho estruturado e tarefas auxiliares mais baratas.
@@ -223,7 +224,7 @@ async function extractClientInfo(apiKey, history, currentNotes) {
   const historyText = history.map((m) => `${m.fromMe ? 'Agente' : 'Cliente'}: ${m.body}`).join('\n');
   const prompt = `Analise a conversa abaixo e retorne um objeto JSON contendo exatamente as chaves "name" e "notes":
 1. "name": O nome pessoal do cliente se ele se identificou ou disse como se chama nesta conversa (se não informado, retorne null).
-2. "notes": A ficha técnica consolidada e atualizada do cliente. Capture modelo de equipamento, marca, série, serial, setor, ramal, endereço e observações. Atualize a ficha atual com as novas informações fornecidas na conversa.
+2. "notes": ${LEGAL_CLIENT_NOTES_INSTRUCTION}
 
 Se não houver NENHUMA informação nova na conversa para atualizar as notas nem o nome, responda exatamente com a palavra: IGNORAR.
 

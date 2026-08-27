@@ -252,3 +252,25 @@ test('prompt de analise de imagem e juridico e nao interpreta o documento', () =
   assert.match(LEGAL_IMAGE_ANALYSIS_PROMPT, /senhas/i);
   assert.doesNotMatch(LEGAL_IMAGE_ANALYSIS_PROMPT, /impressora|desalinhamento|falha de cor/i);
 });
+
+test('ficha do contato coleta dados juridicos, nao dados de equipamento', () => {
+  const { LEGAL_CLIENT_NOTES_INSTRUCTION } = require('../src/domain/legalBotPolicy');
+
+  assert.match(LEGAL_CLIENT_NOTES_INSTRUCTION, /escritório de advocacia/i);
+  assert.match(LEGAL_CLIENT_NOTES_INSTRUCTION, /área do direito/i);
+  assert.match(LEGAL_CLIENT_NOTES_INSTRUCTION, /número do processo/i);
+  assert.match(LEGAL_CLIENT_NOTES_INSTRUCTION, /parte contrária/i);
+  assert.match(LEGAL_CLIENT_NOTES_INSTRUCTION, /urgente/i);
+  assert.doesNotMatch(LEGAL_CLIENT_NOTES_INSTRUCTION, /serial|ramal|equipamento|marca/i);
+});
+
+test('memoria so e extraida quando a mensagem traz dado util a triagem', () => {
+  const { isLegalMemoryRelevant } = require('../src/domain/legalBotPolicy');
+
+  assert.equal(isLegalMemoryRelevant('meu processo é 0001234-55.2024.8.21.0001'), true);
+  assert.equal(isLegalMemoryRelevant('meu CPF é 000.000.000-00'), true);
+  assert.equal(isLegalMemoryRelevant('a audiência é semana que vem'), true);
+  assert.equal(isLegalMemoryRelevant('quero agendar uma reunião'), true);
+  assert.equal(isLegalMemoryRelevant('Bora jogar'), false);
+  assert.equal(isLegalMemoryRelevant(''), false);
+});

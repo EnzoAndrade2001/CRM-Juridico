@@ -206,6 +206,34 @@ const LEGAL_IMAGE_ANALYSIS_PROMPT = [
   'Responda em português, de forma objetiva, em até 4 frases.',
 ].join(' ');
 
+// Ficha do contato (memoria de longo prazo). O que interessa a um escritorio e
+// o que alimenta o handoff do roteiro, nao dado de equipamento.
+const LEGAL_CLIENT_NOTES_INSTRUCTION = [
+  'A ficha consolidada do contato para o escritório de advocacia.',
+  'Capture somente: se é cliente ou ainda não é cliente, área do direito, resumo objetivo da demanda,',
+  'número do processo, parte contrária (banco, empresa ou pessoa), prazos e datas citados,',
+  'preferência de contato (financeiro, advogado responsável ou agenda) e se o caso é urgente.',
+  'Registre CPF, CNPJ ou endereço apenas se o contato os informar espontaneamente.',
+  'Não registre opinião jurídica, avaliação de chances nem dado irrelevante para a triagem.',
+  'Atualize a ficha atual com as informações novas da conversa.',
+].join(' ');
+
+// Termos que indicam que a mensagem traz dado digno de entrar na ficha.
+const LEGAL_MEMORY_TERMS = /nome|cpf|cnpj|\brg\b|\boab\b|processo|protocolo|contrato|boleto|banco|financiamento|presta[cç][aã]o|audi[eê]ncia|prazo|intima[cç][aã]o|cita[cç][aã]o|advogad|endere[cç]o|e-?mail|whatsapp|urgente|reuni[aã]o|agendar|honor[aá]rio/i;
+
+// Numero de processo no padrao CNJ tem 20 digitos; aceitamos 15+ para tolerar
+// o contato que digita so um trecho ou omite separadores.
+function looksLikeCaseNumber(message = '') {
+  const digits = String(message).replace(/\D/g, '');
+  return digits.length >= 15;
+}
+
+function isLegalMemoryRelevant(message = '') {
+  const normalized = String(message || '').trim();
+  if (!normalized) return false;
+  return LEGAL_MEMORY_TERMS.test(normalized) || looksLikeCaseNumber(normalized);
+}
+
 const ENCERRAMENTO_PADRAO ='Muito obrigado pelo contato! Se precisar de mais alguma coisa, é só chamar por aqui. PBL Advocacia e Consultoria Jurídica.';
 
 function isGreetingOnly(message = '') {
@@ -553,6 +581,7 @@ module.exports = {
   ENCERRAMENTO_PADRAO,
   FINANCIAL_OPTIONS,
   HANDOFF_REQUIRED_FIELDS,
+  LEGAL_CLIENT_NOTES_INSTRUCTION,
   LEGAL_IMAGE_ANALYSIS_PROMPT,
   LEGAL_SERVICES,
   LEGAL_SPECIFIC_OPTIONS,
@@ -564,6 +593,7 @@ module.exports = {
   buildOptionList,
   countTrailingClarifications,
   hasReachedFallbackLimit,
+  isLegalMemoryRelevant,
   isUrgentMessage,
   buildInitialSubjectReply,
   buildLegalBotInstructions,

@@ -2,6 +2,7 @@ const https = require('https');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { LEGAL_CLIENT_NOTES_INSTRUCTION } = require('../domain/legalBotPolicy');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Modelos padrão (podem ser sobrescritos por variáveis de ambiente)
@@ -349,7 +350,7 @@ async function extractClientInfo(apiKey, history, currentNotes) {
 
     const prompt = `Analise a conversa abaixo e retorne um objeto JSON com exatamente as chaves "name" e "notes":
 1. "name": O nome pessoal do cliente se ele se identificou (null se não informado).
-2. "notes": A ficha técnica consolidada do cliente. Capture modelo, marca, série, serial, setor, ramal, endereço. Atualize a ficha atual com as novas informações da conversa.
+2. "notes": ${LEGAL_CLIENT_NOTES_INSTRUCTION}
 
 Se não houver NENHUMA informação nova, responda exatamente: IGNORAR
 

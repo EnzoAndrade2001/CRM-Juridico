@@ -12,6 +12,7 @@ const {
   hasConfirmedName,
   hasReachedFallbackLimit,
   isHumanHandoffRequest,
+  isLegalMemoryRelevant,
   isUrgentMessage,
   LEGAL_IMAGE_ANALYSIS_PROMPT,
   limitReplyToOneQuestion,
@@ -174,30 +175,10 @@ function shouldUseBotForInstance(instanceName, tenantSettings) {
   return Boolean(tenantSettings?.botEnabled) && !isHumanOnlyInstance(instanceName) && aiService.hasAiConfigured(tenantSettings);
 }
 
-function isLikelyEquipmentModel(message) {
-  const normalized = (message || '').trim();
-  if (normalized.length < 4 || normalized.length > 40) return false;
-
-  if (/\b(?:xerox|ricoh|kyocera|canon|hp|epson|brother|lexmark|sharp|konica|minolta|samsung)\b[\s\-]*[a-z0-9-]{2,}/i.test(normalized)) {
-    return true;
-  }
-
-  return /\b[a-z]{1,6}[\s-]?[a-z]?\d{3,6}\b/i.test(normalized);
-}
-
+// A relevancia do que entra na ficha do contato e definida pela politica do
+// escritorio, em legalBotPolicy.
 function shouldExtractClientMemory(message) {
-  const normalized = (message || '').trim();
-  if (!normalized) return false;
-
-  if (/nome|modelo|serie|serial|setor|endereco|ramal|equipamento|impressora|copiadora|maquina|whatsapp|email/i.test(normalized)) {
-    return true;
-  }
-
-  if (isLikelyEquipmentModel(normalized)) {
-    return true;
-  }
-
-  return false;
+  return isLegalMemoryRelevant(message);
 }
 
 // Contact.notes is a text column, while the AI may return the extracted
