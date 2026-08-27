@@ -9,6 +9,7 @@ const {
   buildInitialGreetingReply,
   buildInitialSubjectReply,
   buildLegalBotInstructions,
+  enforceOptionLineBreaks,
   hasConfirmedName,
   hasReachedFallbackLimit,
   isHumanHandoffRequest,
@@ -1204,7 +1205,7 @@ ${legalInstructions}`;
   const cleanBotReply = sanitizeBotReply(botReply);
   botReply = shouldHandoff
     ? 'Perfeito! Vou encaminhar você ao setor especializado.'
-    : limitReplyToOneQuestion(replaceFarewellWithSpecialistHandoff(cleanBotReply));
+    : enforceOptionLineBreaks(limitReplyToOneQuestion(replaceFarewellWithSpecialistHandoff(cleanBotReply)));
 
   // Durante a triagem, identifica o robô. No encaminhamento, envia somente a frase oficial.
   const botName = settings.botName || 'ROBÔ';

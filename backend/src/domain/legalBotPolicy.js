@@ -589,6 +589,19 @@ function limitReplyToOneQuestion(reply = '') {
   }).trimEnd();
 }
 
+// O modelo as vezes escreve o menu inteiro em uma linha so. Como os marcadores
+// numericos existem apenas para listar opcoes, cada um deles comeca uma linha
+// nova — independente do que a IA gerou.
+function enforceOptionLineBreaks(reply = '') {
+  const marker = /[ \t]*(?:\r?\n)?[ \t]*((?:[0-9]️?⃣)+|\u{1F51F})/gu;
+
+  return String(reply)
+    .replace(marker, '\n$1')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
+}
+
 function sanitizeBotReply(reply = '') {
   const numericMarkers = [];
   const protectedReply = String(reply).replace(/(?:[0-9]\uFE0F?\u20E3|\u{1F51F})/gu, (marker) => {
@@ -637,6 +650,7 @@ module.exports = {
   buildLegalBotInstructions,
   buildWelcomeServicesReply,
   describeLegalSubject,
+  enforceOptionLineBreaks,
   formatSpecificOptionsForPrompt,
   formatOptionMarker,
   hasConfirmedName,

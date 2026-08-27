@@ -327,3 +327,23 @@ test('descarte de perguntas extras nao deixa espaco sobrando no fim', () => {
 
   assert.equal(saida, 'Entendi o seu caso. Qual é o seu nome?');
 });
+
+test('menu escrito em uma linha so pela IA e realinhado antes do envio', () => {
+  const { enforceOptionLineBreaks } = require('../src/domain/legalBotPolicy');
+  const bagunçado = 'Para continuar, você já é nosso(a) cliente? 1️⃣ Sim, já sou cliente 2️⃣ Não, ainda não sou cliente 3️⃣ Só preciso de uma informação rápida';
+
+  assert.equal(enforceOptionLineBreaks(bagunçado), [
+    'Para continuar, você já é nosso(a) cliente?',
+    '1️⃣ Sim, já sou cliente',
+    '2️⃣ Não, ainda não sou cliente',
+    '3️⃣ Só preciso de uma informação rápida',
+  ].join('\n'));
+});
+
+test('realinhamento nao altera mensagem que ja veio correta', () => {
+  const { buildInitialGreetingReply, enforceOptionLineBreaks } = require('../src/domain/legalBotPolicy');
+  const correta = buildInitialGreetingReply();
+
+  assert.equal(enforceOptionLineBreaks(correta), correta);
+  assert.equal(enforceOptionLineBreaks('Perfeito! Vou encaminhar você ao setor especializado.'), 'Perfeito! Vou encaminhar você ao setor especializado.');
+});
