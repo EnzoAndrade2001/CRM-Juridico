@@ -95,11 +95,11 @@ async function hardReloadApplication() {
 class AppErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, detail: '' };
   }
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error) {
+    return { hasError: true, detail: String(error?.message || error || 'erro desconhecido') };
   }
 
   componentDidCatch(error) {
@@ -127,6 +127,23 @@ class AppErrorBoundary extends React.Component {
           <p style={{ margin: 0, color: 'var(--text-muted)', maxWidth: '28rem' }}>
             Atualize a pagina para carregar a versao mais recente do sistema.
           </p>
+          {this.state.detail ? (
+            <code
+              style={{
+                maxWidth: '38rem',
+                padding: '0.75rem 1rem',
+                borderRadius: '10px',
+                background: 'var(--bg-subtle, rgba(255,255,255,0.06))',
+                color: 'var(--text-muted)',
+                fontSize: '0.8rem',
+                lineHeight: 1.5,
+                wordBreak: 'break-word',
+                textAlign: 'left',
+              }}
+            >
+              {this.state.detail}
+            </code>
+          ) : null}
           <button
             type="button"
             onClick={hardReloadApplication}
