@@ -6,6 +6,7 @@ import {
   Mail,
   MapPin,
   MessageCircleMore,
+  Eraser,
   Pencil,
   Phone,
   Plus,
@@ -16,6 +17,27 @@ import {
 import { initialsFor, labelFor, LEGAL_AREAS, LEAD_STAGES, MATTER_STATUSES } from './legalWorkspace';
 import LegalDocuments from './LegalDocuments';
 import LegalModal from './LegalModal';
+import { clearContactHistory } from '../../services/api';
+import { toast } from '../../utils/toast';
+
+// Apaga as mensagens trocadas com o contato, mantendo cadastro e atendimentos.
+// Um atendimento sem mensagens volta a ser tratado como conversa nova pela
+// triagem, entao a IA reapresenta a saudacao no proximo contato.
+function clearHistory(client, onCleared) {
+  const nome = client.name || 'este contato';
+  toast.confirm(
+    `Apagar todas as mensagens trocadas com ${nome}? O cadastro e os atendimentos sao mantidos, mas a conversa nao pode ser recuperada.`,
+    async () => {
+      try {
+        const { data } = await clearContactHistory(client.id);
+        onCleared?.();
+        toast.success(data?.deleted ? `Conversa limpa (${data.deleted} mensagens)` : 'Nao havia mensagens para apagar');
+      } catch (error) {
+        toast.error(error.response?.data?.error || 'Erro ao limpar conversa');
+      }
+    }
+  );
+}
 
 const EMPTY_CLIENT = { name: '', phone: '', email: '', cpfCnpj: '', city: '', state: '', notes: '' };
 
@@ -67,7 +89,7 @@ function ClientForm({ workspace, client, onClose }) {
   );
 }
 
-function ClientDetail({ workspace, client, onClose, onEdit, onOpenCrm }) {
+function ClientDetail({ workspace, client, onClose, onEdit, onOpenCrm, onHistoryCleared }) {
   const leads = client.leads || workspace.leads.filter((lead) => lead.contactId === client.id);
   const matters = client.matters || workspace.matters.filter((matter) => matter.contactId === client.id);
   const matterIds = new Set(matters.map((matter) => matter.id));
@@ -80,6 +102,7 @@ function ClientDetail({ workspace, client, onClose, onEdit, onOpenCrm }) {
           <Avatar name={client.name} large />
           <div><h4>{client.name}</h4><p>{client.cpfCnpj || 'Documento não informado'}</p><span>{client.instanceId ? 'WhatsApp vinculado' : 'Cadastro interno'}</span></div>
           <button type="button" className="jd-secondary" onClick={onEdit}><Pencil size={15} /> Editar</button>
+          <button type="button" className="jd-secondary" onClick={() => clearHistory(client, onHistoryCleared)}><Eraser size={15} /> Limpar conversa</button>
         </section>
         <section className="jd-client-contact-grid">
           <div><Phone size={16} /><span><small>Telefone</small><strong>{client.phone || 'Não informado'}</strong></span></div>
@@ -158,7 +181,7 @@ export default function LegalClients({ workspace, onNavigate, initialSearch = ''
       </section>
       {creating && <ClientForm workspace={workspace} onClose={() => setCreating(false)} />}
       {editing && <ClientForm workspace={workspace} client={editing} onClose={() => { setEditing(null); setSelected(null); }} />}
-      {selected && !editing && <ClientDetail workspace={workspace} client={selected} onClose={() => setSelected(null)} onEdit={() => setEditing(selected)} onOpenCrm={() => { const url = new URL(window.location.href); url.searchParams.set('contactId', selected.id); window.history.replaceState({}, '', url); setSelected(null); onNavigate('crm'); }} />}
+      {selected && !editing && <ClientDetail workspace={workspace} client={selected} onClose={() => setSelected(null)} onEdit={() => setEditing(selected)} onHistoryCleared={workspace.refresh} onOpenCrm={() => { const url = new URL(window.location.href); url.searchParams.set('contactId', selected.id); window.history.replaceState({}, '', url); setSelected(null); onNavigate('crm'); }} />}
     </div>
   );
 }
