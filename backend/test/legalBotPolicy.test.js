@@ -239,3 +239,16 @@ test('abertura com assunto ainda aplica a pergunta de perfil da etapa 1', () => 
   assert.match(conduct, /reconheca em UMA frase antes da pergunta de perfil/);
   assert.match(prompt, /A etapa 1 e OBRIGATORIA na abertura/);
 });
+
+test('prompt de analise de imagem e juridico e nao interpreta o documento', () => {
+  const { LEGAL_IMAGE_ANALYSIS_PROMPT } = require('../src/domain/legalBotPolicy');
+
+  assert.match(LEGAL_IMAGE_ANALYSIS_PROMPT, /escritório de advocacia/i);
+  assert.match(LEGAL_IMAGE_ANALYSIS_PROMPT, /boleto/i);
+  assert.match(LEGAL_IMAGE_ANALYSIS_PROMPT, /citação ou intimação/i);
+  assert.match(LEGAL_IMAGE_ANALYSIS_PROMPT, /número de processo/i);
+  assert.match(LEGAL_IMAGE_ANALYSIS_PROMPT, /Nunca interprete juridicamente/i);
+  assert.match(LEGAL_IMAGE_ANALYSIS_PROMPT, /não invente dado/i);
+  assert.match(LEGAL_IMAGE_ANALYSIS_PROMPT, /senhas/i);
+  assert.doesNotMatch(LEGAL_IMAGE_ANALYSIS_PROMPT, /impressora|desalinhamento|falha de cor/i);
+});

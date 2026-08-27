@@ -192,7 +192,21 @@ const URGENCY_TERMS = /(?:^|[^\wÀ-ÿ])(urgente|urg[eê]ncia|emerg[eê]ncia|pris
 // Frases usadas pela IA quando não compreende a resposta do contato.
 const CLARIFICATION_PATTERN = /\b(n[aã]o (?:consegui )?entend[ie]|n[aã]o compreendi|pode(?:ria)? (?:repetir|reformular)|n[aã]o ficou claro|poderia explicar melhor)\b/i;
 
-const ENCERRAMENTO_PADRAO = 'Muito obrigado pelo contato! Se precisar de mais alguma coisa, é só chamar por aqui. PBL Advocacia e Consultoria Jurídica.';
+// Analise de imagens recebidas no WhatsApp. O texto gerado aqui vira a
+// "Análise visual automática" que o atendente le no CRM e que a IA recebe como
+// contexto do turno, entao ele descreve o que esta visivel e nunca interpreta
+// juridicamente o documento.
+const LEGAL_IMAGE_ANALYSIS_PROMPT = [
+  'Você analisa imagens enviadas por clientes ao WhatsApp de um escritório de advocacia.',
+  'Diga primeiro o que é o documento ou a foto (por exemplo: contrato, boleto, notificação extrajudicial, citação ou intimação, petição, decisão judicial, comprovante de pagamento, extrato bancário, holerite, carteira de trabalho, documento pessoal, laudo ou receituário médico, print de conversa, foto de veículo, foto de local ou de dano).',
+  'Depois destaque apenas os dados visíveis que ajudam a triagem: nomes das partes, empresa ou banco envolvido, número de processo, contrato ou boleto, valores, datas e prazos.',
+  'Nunca interprete juridicamente, não avalie chances de êxito, não indique providências e não invente dado que não esteja legível.',
+  'Se a imagem estiver ilegível, cortada ou não tiver relação com um caso jurídico, diga isso em uma frase.',
+  'Não transcreva senhas, códigos de segurança nem números completos de cartão.',
+  'Responda em português, de forma objetiva, em até 4 frases.',
+].join(' ');
+
+const ENCERRAMENTO_PADRAO ='Muito obrigado pelo contato! Se precisar de mais alguma coisa, é só chamar por aqui. PBL Advocacia e Consultoria Jurídica.';
 
 function isGreetingOnly(message = '') {
   return GREETING_ONLY.test(String(message).trim());
@@ -539,6 +553,7 @@ module.exports = {
   ENCERRAMENTO_PADRAO,
   FINANCIAL_OPTIONS,
   HANDOFF_REQUIRED_FIELDS,
+  LEGAL_IMAGE_ANALYSIS_PROMPT,
   LEGAL_SERVICES,
   LEGAL_SPECIFIC_OPTIONS,
   MEETING_FORMAT_OPTIONS,

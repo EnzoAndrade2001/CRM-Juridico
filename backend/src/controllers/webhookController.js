@@ -13,6 +13,7 @@ const {
   hasReachedFallbackLimit,
   isHumanHandoffRequest,
   isUrgentMessage,
+  LEGAL_IMAGE_ANALYSIS_PROMPT,
   limitReplyToOneQuestion,
   replaceFarewellWithSpecialistHandoff,
   sanitizeBotReply,
@@ -688,7 +689,7 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
               tenant.settings,
               imgBase64,
               mimeType,
-              'Você está analisando uma foto enviada em um atendimento técnico de impressora. Descreva apenas o que é visível na impressão e destaque defeitos como sombra, repetição, manchas, desalinhamento, falha de cor, faixa, borrado ou marcas. Responda em português, de forma objetiva, em até 3 frases.'
+              LEGAL_IMAGE_ANALYSIS_PROMPT
             );
             console.log('[vision] resultado:', transcription?.substring(0, 50));
           }
