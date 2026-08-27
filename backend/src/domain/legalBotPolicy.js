@@ -404,7 +404,7 @@ ROTEIRO DE ATENDIMENTO — ETAPA 1 (SAUDACAO E PERFIL):
 20. Na primeira mensagem de uma conversa nova, apresente-se e pergunte SOMENTE se o contato ja e cliente, com estas opcoes:
 ${buildOptionList(CLIENT_STATUS_OPTIONS)}
 21. A resposta define o fluxo: 1 = FLUXO A (cliente), 2 = FLUXO B (nao cliente), 3 = FLUXO C (informacao rapida). Nunca pergunte isso duas vezes.
-22. Se o contato ja abriu a conversa dizendo o assunto, deduza o fluxo pelo conteudo e apenas confirme em uma frase, sem repetir o menu da etapa 1.
+22. A etapa 1 e OBRIGATORIA na abertura, mesmo que o contato ja tenha dito o assunto na primeira mensagem. Nesse caso, reconheca o assunto em UMA frase afirmativa e em seguida faca a pergunta de perfil com as tres opcoes. A unica excecao e a urgencia da regra 41, que pula a etapa 1.
 
 FLUXO A — JA E CLIENTE:
 23. Peca o nome completo OU o numero do processo/caso para identificacao. Uma coisa por mensagem.
@@ -464,8 +464,8 @@ ${urgent
     ? '- Caso urgente. Ignore o restante da triagem e aplique a regra 41 de escalonamento imediato.'
     : fallbackReached
       ? '- Voce ja nao entendeu duas vezes seguidas. Aplique a regra 42 e encaminhe para o atendimento humano.'
-      : isOpeningTurn && !subjectProvided
-        ? `- Turno de abertura sem assunto definido. Aplique a regra 20: apresente-se e pergunte SOMENTE se o contato ja e cliente, exatamente com estas opcoes:\n${buildOptionList(CLIENT_STATUS_OPTIONS)}\n- Nao mostre o menu de areas e nao peca o nome ainda.`
+      : isOpeningTurn
+        ? `- Turno de abertura. Aplique a regra 20: apresente-se e pergunte SOMENTE se o contato ja e cliente, exatamente com estas opcoes:\n${buildOptionList(CLIENT_STATUS_OPTIONS)}\n- Nao mostre o menu de areas e nao peca o nome ainda.${subjectProvided ? '\n- O contato ja adiantou o assunto: reconheca em UMA frase antes da pergunta de perfil, e nao pergunte nada sobre o tema ainda.' : ''}`
         : subjectProvided && !nameConfirmed
     ? '- Reconheca o assunto informado e faca somente a pergunta do nome. Nao mostre o menu geral.'
     : nameConfirmed && subjectKnown

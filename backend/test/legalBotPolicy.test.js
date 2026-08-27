@@ -225,3 +225,17 @@ test('turno seguinte da mesma conversa nao repete a etapa 1', () => {
   assert.match(prompt, /Turno de abertura da conversa: NAO/);
   assert.doesNotMatch(prompt.split('CONDUTA PARA ESTE TURNO:')[1], /Aplique a regra 20/);
 });
+
+test('abertura com assunto ainda aplica a pergunta de perfil da etapa 1', () => {
+  const prompt = buildLegalBotInstructions({
+    currentUserTurn: 'quero revisar meu financiamento',
+    history: [],
+    isOpeningTurn: true,
+  });
+  const conduct = prompt.split('CONDUTA PARA ESTE TURNO:')[1];
+
+  assert.match(conduct, /Aplique a regra 20/);
+  assert.match(conduct, /1️⃣ Sim, já sou cliente/);
+  assert.match(conduct, /reconheca em UMA frase antes da pergunta de perfil/);
+  assert.match(prompt, /A etapa 1 e OBRIGATORIA na abertura/);
+});

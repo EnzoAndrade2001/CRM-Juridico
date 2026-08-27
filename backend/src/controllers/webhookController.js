@@ -13,7 +13,6 @@ const {
   hasReachedFallbackLimit,
   isHumanHandoffRequest,
   isUrgentMessage,
-  isVagueMessage,
   limitReplyToOneQuestion,
   replaceFarewellWithSpecialistHandoff,
   sanitizeBotReply,
@@ -1105,7 +1104,6 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
   const nameConfirmedNow = hasConfirmedName(reversedHistory, currentUserTurn, contact.name);
   const mustAskNameNow = shouldAskNameForSubject(reversedHistory, currentUserTurn, contact.name);
   const currentTicketHasHistory = reversedHistory.some((historyMessage) => historyMessage.ticketId === ticket.id);
-  const mustWelcomeNow = isVagueMessage(currentUserTurn) && !currentTicketHasHistory;
 
   const legalInstructions = buildLegalBotInstructions({
     currentUserTurn,
@@ -1122,7 +1120,9 @@ async function handleBotReply(tenant, waInstance, ticket, contact, userMessage, 
   let topContent = null;
   let found = false;
 
-  if (!mustWelcomeNow && !mustAskNameNow && aiService.hasAiConfigured(settings) && shouldUseKnowledgeSearch(currentUserTurn)) {
+  // Na abertura a IA so faz a pergunta de perfil, entao consultar a base de
+  // conhecimento seria gasto sem uso.
+  if (currentTicketHasHistory && !mustAskNameNow && aiService.hasAiConfigured(settings) && shouldUseKnowledgeSearch(currentUserTurn)) {
     try {
       const userEmbedding = await aiService.getEmbedding(settings, currentUserTurn);
       if (userEmbedding) {
@@ -1174,7 +1174,7 @@ ${legalInstructions}`;
   try {
     botReply = await aiService.chat(settings, finalPrompt, reversedHistory, currentUserTurn);
   } catch (error) {
-    const fallbackReply = mustWelcomeNow
+    const fallbackReply = !currentTicketHasHistory
       ? buildInitialGreetingReply()
       : mustAskNameNow
         ? buildInitialSubjectReply(currentUserTurn)
