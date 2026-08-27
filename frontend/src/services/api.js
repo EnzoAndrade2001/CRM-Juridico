@@ -170,6 +170,7 @@ export const deleteAllLeads = () => api.delete('/leads/all');
 export const sendToLeads = (data) => api.post('/leads/send', data);
 
 export const deleteContact = (id) => api.delete(`/contacts/${id}`);
+export const clearContactHistory = (id) => api.delete(`/contacts/${id}/history`);
 
 // CRM Firebird
 export const getCrmSummary = () => api.get('/crm/summary');

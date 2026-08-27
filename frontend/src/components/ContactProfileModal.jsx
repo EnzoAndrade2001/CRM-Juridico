@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import api, { updateContact, deleteContact, getEquipments, updateEquipment, deleteEquipment } from '../services/api';
+import api, { updateContact, deleteContact, clearContactHistory, getEquipments, updateEquipment, deleteEquipment } from '../services/api';
 import { toast } from '../utils/toast';
-import { Printer, FileText, User, Trash2, Edit3 } from 'lucide-react';
+import { Printer, FileText, User, Trash2, Edit3, Eraser } from 'lucide-react';
 import ActionButton from './ui/ActionButton';
 import ModalShell from './ui/ModalShell';
 
@@ -103,6 +103,21 @@ export default function ContactProfileModal({ contact, onClose, onUpdated, initi
     });
   }
 
+  async function handleClearHistory() {
+    toast.confirm(
+      'Apagar todas as mensagens trocadas com este contato? O cadastro e os atendimentos sao mantidos, mas a conversa nao pode ser recuperada.',
+      async () => {
+        try {
+          const { data } = await clearContactHistory(contact.id);
+          onUpdated();
+          toast.success(data?.deleted ? `Conversa limpa (${data.deleted} mensagens)` : 'Nao havia mensagens para apagar');
+        } catch (e) {
+          toast.error(e.response?.data?.error || 'Erro ao limpar conversa');
+        }
+      }
+    );
+  }
+
   async function handleAddOrUpdateEquip() {
     if (!newEquip.model) return toast.error('Modelo e obrigatorio');
     try {
@@ -146,6 +161,9 @@ export default function ContactProfileModal({ contact, onClose, onUpdated, initi
         <>
           <ActionButton variant="danger" style={s.footerBtn} onClick={handleDeleteContact}>
             <Trash2 size={16} /> Excluir perfil
+          </ActionButton>
+          <ActionButton variant="secondary" style={s.footerBtn} onClick={handleClearHistory}>
+            <Eraser size={16} /> Limpar conversa
           </ActionButton>
           <ActionButton variant="secondary" style={s.footerBtn} onClick={onClose}>
             Fechar

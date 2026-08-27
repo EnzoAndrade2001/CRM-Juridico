@@ -23,6 +23,7 @@ const scheduleProcessor = require('./services/scheduleProcessor');
 const { setIo: setIoSchedule } = scheduleProcessor;
 const { setIo: setIoWebhook } = require('./controllers/webhookController');
 const { setIo: setIoTicket } = require('./controllers/ticketController');
+const { setIo: setIoContact } = require('./controllers/contactController');
 const { setIo: setIoInternal } = require('./controllers/internalMessageController');
 const campaignRoutes = require('./routes/campaignRoutes');
 const { setIo: setIoCampaign } = require('./controllers/campaignController');
@@ -107,6 +108,7 @@ const io = new Server(server, {
 
 setIoWebhook(io);
 setIoTicket(io);
+setIoContact(io);
 setIoInternal(io);
 setIoCampaign(io);
 setIoBilling(io);

@@ -2,6 +2,9 @@ const prisma = require('../lib/prisma');
 const xlsx = require('xlsx');
 const evolutionService = require('../services/evolutionService');
 
+let io;
+function setIo(socketIo) { io = socketIo; }
+
 async function list(req, res) {
   const q = req.query.q || req.query.search;
   const withoutDocument = ['1', 'true', 'yes'].includes(String(req.query.withoutDocument || '').toLowerCase());
@@ -371,4 +374,53 @@ async function deleteContact(req, res) {
   }
 }
 
-module.exports = { list, getHistory, updateContact, getMedia, create, getTags, importExcel, deleteContact };
+/**
+ * Apaga as mensagens de todos os atendimentos de um contato, mantendo o
+ * contato, os atendimentos e o vinculo com o CRM.
+ *
+ * O atendimento sem mensagens volta a ser tratado como conversa nova pela
+ * triagem, entao o bot reapresenta a saudacao e a pergunta de perfil na
+ * proxima mensagem — e o historico antigo para de influenciar a IA.
+ */
+async function clearHistory(req, res) {
+  const { id } = req.params;
+  const { tenantId } = req.user;
+
+  try {
+    const contact = await prisma.contact.findFirst({
+      where: { id, tenantId },
+      select: { id: true, name: true, phone: true },
+    });
+    if (!contact) return res.status(404).json({ error: 'Contato não encontrado' });
+
+    const tickets = await prisma.ticket.findMany({
+      where: { contactId: contact.id, tenantId },
+      select: { id: true },
+    });
+    const ticketIds = tickets.map((ticket) => ticket.id);
+
+    if (ticketIds.length === 0) {
+      return res.json({ deleted: 0, tickets: 0 });
+    }
+
+    const { count } = await prisma.message.deleteMany({ where: { ticketId: { in: ticketIds } } });
+    await prisma.ticket.updateMany({
+      where: { id: { in: ticketIds } },
+      data: { unreadCount: 0, updatedAt: new Date() },
+    });
+
+    console.log(`[contacts] historico limpo de ${contact.name || contact.phone}: ${count} mensagem(ns) em ${ticketIds.length} atendimento(s) por ${req.user.userId}.`);
+
+    if (io) {
+      ticketIds.forEach((ticketId) => io.to(tenantId).emit('ticket_updated', { ticketId }));
+      io.to(tenantId).emit('contact_updated', { contactId: contact.id });
+    }
+
+    res.json({ deleted: count, tickets: ticketIds.length });
+  } catch (err) {
+    console.error('[contacts] erro ao limpar historico:', err.message);
+    res.status(500).json({ error: 'Erro ao limpar histórico do contato' });
+  }
+}
+
+module.exports = { list, getHistory, updateContact, getMedia, create, getTags, importExcel, deleteContact, clearHistory, setIo };
