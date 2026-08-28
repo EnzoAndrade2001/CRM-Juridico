@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "title": "Revisional Bancário | Pedro Bastos Lund Advocacia",
+    "description": "Análise jurídica de contratos bancários, empréstimos e financiamentos. Atendimento direto com Pedro Bastos Lund Advocacia."
+  },
+  "hero": {
+    "eyebrow": "Desconfia de juros abusivos?",
+    "titleStart": "Juros bancários altos demais?",
+    "titleEmphasis": "Seu contrato pode ser revisado.",
+    "lead": "Você pode ter valores a recuperar junto ao banco. Uma análise jurídica do contrato pode identificar juros e cobranças indevidas, além de verificar a possibilidade de restituição das quantias pagas a maior.",
+    "ctaLabel": "REVISAR MEU CONTRATO",
+    "assurances": [
+      "Atendimento individual",
+      "Análise responsável",
+      "Orientação clara"
+    ]
+  },
+  "intro": {
+    "kicker": "Não pague sem entender",
+    "title": "Parcelas pesando no bolso? Descubra o que está por trás dos valores cobrados.",
+    "text": "Juros muito acima do esperado, tarifas, seguros e serviços agregados podem aumentar consideravelmente uma dívida. A análise revisional verifica as condições contratadas e aponta quais cobranças merecem atenção.",
+    "note": "Cada contrato é analisado individualmente. A viabilidade depende dos documentos e das circunstâncias de cada caso."
+  },
+  "review": {
+    "kicker": "O que pode ser analisado",
+    "title": "Encontre respostas antes de continuar pagando no escuro.",
+    "items": [
+      {
+        "icon": "Banknote",
+        "title": "Empréstimos e consignados",
+        "text": "Avaliação das condições contratadas, encargos e evolução do saldo devedor."
+      },
+      {
+        "icon": "Landmark",
+        "title": "Financiamentos",
+        "text": "Análise técnica de contratos de veículos, imóveis e outras operações bancárias."
+      },
+      {
+        "icon": "FileSearch",
+        "title": "Cobranças e contratos",
+        "text": "Verificação de tarifas, seguros, serviços agregados e cláusulas contratuais."
+      },
+      {
+        "icon": "CarFront",
+        "title": "Busca e apreensão de veículos",
+        "text": "Orientação jurídica para quem recebeu uma ordem de busca e apreensão ou enfrenta risco de perder o veículo."
+      }
+    ]
+  },
+  "process": {
+    "kicker": "Como funciona",
+    "title": "Um atendimento simples, direto e transparente.",
+    "text": "O atendimento inicial é realizado pelo WhatsApp. Após a compreensão preliminar da demanda, orientamos sobre os documentos necessários para a análise jurídica do caso.",
+    "ctaLabel": "Iniciar atendimento",
+    "steps": [
+      {
+        "number": "01",
+        "title": "Envie seu contrato",
+        "text": "Fale conosco pelo WhatsApp e conte brevemente a sua situação."
+      },
+      {
+        "number": "02",
+        "title": "Receba uma análise",
+        "text": "A documentação é avaliada de forma técnica e individualizada."
+      },
+      {
+        "number": "03",
+        "title": "Conheça os caminhos",
+        "text": "Você recebe uma orientação clara sobre as medidas juridicamente possíveis."
+      }
+    ]
+  },
+  "about": {
+    "kicker": "Atendimento jurídico",
+    "role": "Advocacia e Consultoria Jurídica",
+    "text": "Atuação dedicada a quem precisa entender e enfrentar cobranças bancárias, com análise responsável, comunicação acessível e acompanhamento próximo em cada etapa.",
+    "quote": "Uma defesa jurídica eficaz começa pela análise criteriosa do contrato e das cobranças que comprometem o seu patrimônio.",
+    "ctaLabel": "Conversar com o escritório"
+  },
+  "finalCta": {
+    "kicker": "Fale com o escritório",
+    "title": "Não continue pagando sem entender cada cobrança.",
+    "text": "Envie seu contrato e solicite uma avaliação inicial da sua situação.",
+    "ctaLabel": "Quero uma análise"
+  },
+  "footer": {
+    "note": "Conteúdo informativo. A análise jurídica e os resultados possíveis dependem das particularidades de cada caso."
+  },
+  "whatsapp": {
+    "message": "Olá, vim pela página de Revisional Bancário e gostaria de solicitar uma análise do meu contrato."
+  }
+}

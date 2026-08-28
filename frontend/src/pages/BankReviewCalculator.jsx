@@ -151,24 +151,24 @@ export default function BankReviewCalculator({ whatsappUrl }) {
   }
 
   return (
-    <section className="bank-calculator" id="calculadora">
-      <div className="bank-shell bank-calculator__grid">
-        <div className="bank-calculator__copy">
-          <p className="bank-kicker"><span /> Simulação inicial</p>
+    <section className="office-calculator" id="calculadora">
+      <div className="office-shell office-calculator__inner">
+        <div className="office-calculator__copy">
+          <p className="office-kicker"><span /> Simulação inicial</p>
           <h2>Veja uma estimativa do que pode ser revisto no seu contrato.</h2>
           <p>
             Informe os dados básicos da sua operação e visualize uma estimativa de parcela após a revisão. O resultado serve como orientação inicial e não substitui a análise jurídica individual do contrato.
           </p>
-          <div className="bank-calculator__benefits">
+          <div className="office-calculator__benefits">
             <span><Check size={16} /> Resultado imediato na tela</span>
             <span><Check size={16} /> Sem compromisso</span>
             <span><Check size={16} /> Análise responsável do contrato</span>
           </div>
         </div>
 
-        <div className="bank-calculator__card">
-          <div className="bank-calculator__card-heading">
-            <span className="bank-calculator__icon"><Calculator size={22} /></span>
+        <div className="office-calculator__card">
+          <div className="office-calculator__card-heading">
+            <span className="office-calculator__icon"><Calculator size={22} /></span>
             <div>
               <h3>Calculadora revisional</h3>
               <p>Preencha os campos para simular uma possível redução.</p>
@@ -176,7 +176,7 @@ export default function BankReviewCalculator({ whatsappUrl }) {
           </div>
 
           <form onSubmit={calculate} noValidate>
-            <div className="bank-calculator__fields bank-calculator__fields--two">
+            <div className="office-calculator__fields office-calculator__fields--two">
               <label>
                 <span>Valor financiado</span>
                 <input inputMode="decimal" value={form.financing} onChange={(event) => updateField('financing', event.target.value)} placeholder="R$ 0,00" />
@@ -187,7 +187,7 @@ export default function BankReviewCalculator({ whatsappUrl }) {
               </label>
             </div>
 
-            <div className="bank-calculator__fields bank-calculator__fields--two">
+            <div className="office-calculator__fields office-calculator__fields--two">
               <label>
                 <span>Total de parcelas</span>
                 <input required inputMode="numeric" value={form.totalInstallments} onChange={(event) => updateField('totalInstallments', event.target.value)} placeholder="Ex.: 48" />
@@ -198,12 +198,12 @@ export default function BankReviewCalculator({ whatsappUrl }) {
               </label>
             </div>
 
-            <label className="bank-calculator__field">
+            <label className="office-calculator__field">
               <span>Banco ou instituição financeira</span>
               <input value={form.bank} onChange={(event) => updateField('bank', event.target.value)} placeholder="Ex.: Banco do Brasil" />
             </label>
 
-            <div className="bank-calculator__fields bank-calculator__fields--two bank-calculator__contact-fields">
+            <div className="office-calculator__fields office-calculator__fields--two office-calculator__contact-fields">
               <label>
                 <span>Seu nome</span>
                 <input required value={form.name} onChange={(event) => updateField('name', event.target.value)} placeholder="Nome completo" />
@@ -214,45 +214,45 @@ export default function BankReviewCalculator({ whatsappUrl }) {
               </label>
             </div>
 
-            <label className="bank-calculator__field">
+            <label className="office-calculator__field">
               <span>E-mail</span>
               <input type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} placeholder="voce@email.com" />
             </label>
 
-            <fieldset className="bank-calculator__type">
+            <fieldset className="office-calculator__type">
               <legend>Qual o tipo do seu contrato?</legend>
-              <div className="bank-calculator__contract-options">
+              <div className="office-calculator__contract-options">
                 {contractTypes.map((type) => (
                   <button key={type} type="button" className={form.contractType === type ? 'is-selected' : ''} onClick={() => updateField('contractType', form.contractType === type ? '' : type)}>{type}</button>
                 ))}
               </div>
             </fieldset>
 
-            <label className="bank-calculator__consent">
+            <label className="office-calculator__consent">
               <input type="checkbox" checked={form.consent} onChange={(event) => updateField('consent', event.target.checked)} />
               <span>Autorizo o escritório a usar estes dados para enviar o resultado da simulação e entrar em contato sobre a análise do contrato.</span>
             </label>
 
-            {error && <p className="bank-calculator__error" role="alert"><CircleAlert size={16} /> {error}</p>}
+            {error && <p className="office-calculator__error" role="alert"><CircleAlert size={16} /> {error}</p>}
 
-            <button type="submit" className="bank-button bank-button--gold bank-calculator__submit" disabled={submissionState === 'sending'}>
+            <button type="submit" className="office-button office-button--gold office-calculator__submit" disabled={submissionState === 'sending'}>
               {submissionState === 'sending' ? 'Enviando dados...' : 'Calcular e receber retorno'} <ArrowRight size={18} />
             </button>
           </form>
 
           {result && (
-            <div className="bank-calculator__result" aria-live="polite">
-              <p className="bank-calculator__result-kicker">Estimativa de nova parcela</p>
+            <div className="office-calculator__result" aria-live="polite">
+              <p className="office-calculator__result-kicker">Estimativa de nova parcela</p>
               <strong>{formatResult(result.estimatedInstallment)}</strong>
-              <div className="bank-calculator__result-grid">
+              <div className="office-calculator__result-grid">
                 <span>Economia mensal estimada <b>{formatResult(result.monthlySavings)}</b></span>
                 <span>Possível economia restante <b>{formatResult(result.totalSavings)}</b></span>
               </div>
               <p>Simulação de até {result.reductionPercent.toFixed(0)}% de redução sobre a parcela informada, considerando {result.remainingInstallments} parcela(s) restante(s).</p>
               <small>O resultado é apenas informativo. A existência de valores revisáveis depende da análise do contrato e dos documentos do caso.</small>
-              {submissionState === 'received' && <p className="bank-calculator__submission bank-calculator__submission--success">Recebemos seus dados. O retorno será enviado pelo WhatsApp ou e-mail informado.</p>}
-              {submissionState === 'unavailable' && <p className="bank-calculator__submission">A simulação foi concluída. O envio automático será ativado assim que o canal de contato do escritório estiver configurado.</p>}
-              <a className="bank-button bank-button--navy" href={whatsappUrl} target="_blank" rel="noreferrer">Solicitar análise do contrato <ArrowRight size={17} /></a>
+              {submissionState === 'received' && <p className="office-calculator__submission office-calculator__submission--success">Recebemos seus dados. O retorno será enviado pelo WhatsApp ou e-mail informado.</p>}
+              {submissionState === 'unavailable' && <p className="office-calculator__submission">A simulação foi concluída. O envio automático será ativado assim que o canal de contato do escritório estiver configurado.</p>}
+              <a className="office-button" href={whatsappUrl} target="_blank" rel="noreferrer">Solicitar análise do contrato <ArrowRight size={17} /></a>
             </div>
           )}
         </div>

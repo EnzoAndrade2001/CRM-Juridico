@@ -1,0 +1,142 @@
+/* Seções que só existem nas landings de campanha.
+   Tokens, tipografia, header, rodapé, .office-shell, .office-kicker,
+   .office-section-heading, .office-button e .office-float vêm de
+   institutional-site.css — aqui não se redefine nada disso, para que o padrão
+   visual continue saindo de um lugar só. */
+
+.office-landing__header-cta { min-height: 40px; padding: 0 16px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.office-landing .office-button:not(.office-button--gold) { background: var(--office-navy); color: #fff !important; }
+.office-landing .office-button:not(.office-button--gold):hover { background: var(--office-navy-soft); }
+
+/* Hero */
+.office-landing__hero { position: relative; background: var(--office-navy); color: #fff; overflow: hidden; }
+.office-landing__hero::after {
+  position: absolute; z-index: 1; top: 0; right: 0; bottom: 0; width: min(46%, 620px);
+  background-image: var(--office-hero-image); background-position: top center; background-size: cover;
+  mask-image: linear-gradient(to right, transparent, #000 38%);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 38%);
+  opacity: .85; content: "";
+}
+.office-landing__hero-inner { position: relative; z-index: 2; display: flex; min-height: clamp(520px, 62vh, 640px); flex-direction: column; justify-content: center; padding: 72px 0 34px; }
+.office-landing__hero-copy { max-width: 620px; }
+/* Um <span> vazio dentro do kicker vira o traço que antecede o texto. */
+.office-landing__kicker-rule,
+.office-landing .office-kicker > span:empty { display: inline-block; width: 28px; height: 1px; background: currentColor; }
+.office-landing__hero h1 { margin-bottom: 16px; color: #fff; font-size: clamp(32px, 4.2vw, 54px); font-weight: 600; line-height: 1.08; text-transform: uppercase; }
+.office-landing__hero h1 em { display: block; color: var(--office-gold-light); font-style: normal; }
+.office-landing__lead { max-width: 540px; margin-bottom: 26px; color: rgba(255, 255, 255, .78); font-size: 15px; line-height: 1.6; }
+.office-landing__assurances { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 24px; }
+.office-landing__assurances span { display: inline-flex; align-items: center; gap: 7px; color: rgba(255, 255, 255, .72); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.office-landing__assurances svg { color: var(--office-gold); }
+.office-landing__hero-name { position: relative; z-index: 2; margin: 40px 0 0; color: rgba(255, 255, 255, .5); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; }
+.office-landing__hero-name span { color: var(--office-gold-light); font-weight: 700; }
+
+/* Introdução */
+.office-landing__intro { padding: 56px 0; background: var(--office-cream); }
+.office-landing__intro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+.office-landing__intro-grid .office-section-heading { margin-bottom: 0; }
+.office-landing__intro-text p { margin: 0 0 16px; color: var(--office-copy); font-size: 15px; line-height: 1.62; }
+.office-landing__note { display: flex; gap: 12px; align-items: flex-start; margin: 0; padding: 16px 18px; border-left: 3px solid var(--office-gold); background: #fff; color: var(--office-ink) !important; font-size: 13.5px !important; line-height: 1.5 !important; }
+.office-landing__note svg { flex: 0 0 auto; color: var(--office-gold); }
+
+/* Cartões do que é analisado */
+.office-landing__review { padding: 60px 0; background: #fff; }
+.office-landing__cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: 16px; }
+.office-landing__card { position: relative; padding: 26px 22px; border: 1px solid rgba(21, 34, 54, .12); background: #fff; transition: border-color .2s ease, transform .2s ease; }
+.office-landing__card:hover { border-color: var(--office-gold); transform: translateY(-3px); }
+.office-landing__card-number { position: absolute; top: 18px; right: 20px; color: rgba(21, 34, 54, .14); font-size: 26px; font-weight: 800; }
+.office-landing__card-icon { display: grid; width: 48px; height: 48px; margin-bottom: 16px; place-items: center; background: var(--office-cream); color: var(--office-gold); }
+.office-landing__card h3 { margin: 0 0 8px; font-size: 16px; font-weight: 700; line-height: 1.25; }
+.office-landing__card p { margin: 0; color: var(--office-copy); font-size: 13.5px; line-height: 1.55; }
+
+/* Como funciona */
+.office-landing__process { padding: 60px 0; background: #0f0f0f; color: #fff; }
+.office-landing__process-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: start; }
+.office-landing__process-grid .office-section-heading p:not(.office-kicker) { color: rgba(255, 255, 255, .7); }
+.office-landing__text-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; color: var(--office-gold-light) !important; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.office-landing__text-link:hover { color: #fff !important; }
+.office-landing__steps { display: grid; gap: 14px; }
+.office-landing__step { display: flex; gap: 18px; padding: 20px 22px; background: #1c1c1c; }
+.office-landing__step > span { color: var(--office-gold); font-size: 20px; font-weight: 800; line-height: 1; }
+.office-landing__step h3 { margin: 0 0 6px; color: #fff; font-size: 15px; font-weight: 700; }
+.office-landing__step p { margin: 0; color: rgba(255, 255, 255, .66); font-size: 13.5px; line-height: 1.5; }
+
+/* Sobre o advogado */
+.office-landing__about { padding: 60px 0; background: var(--office-cream); }
+.office-landing__about-grid { display: grid; grid-template-columns: minmax(0, 420px) 1fr; gap: 44px; align-items: center; }
+.office-landing__portrait { position: relative; }
+.office-landing__portrait img { display: block; width: 100%; height: clamp(360px, 42vw, 470px); object-fit: cover; filter: grayscale(1); }
+.office-landing__identity { position: absolute; bottom: 0; left: 0; display: flex; flex-direction: column; padding: 14px 20px; background: var(--office-navy); color: #fff; }
+.office-landing__identity strong { font-size: 15px; }
+.office-landing__identity span { color: var(--office-gold-light); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
+.office-landing__about-copy h2 { margin-bottom: 4px; font-size: clamp(26px, 2.6vw, 34px); text-transform: uppercase; }
+.office-landing__role { margin-bottom: 16px; color: var(--office-gold); font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.office-landing__about-copy p { color: var(--office-copy); font-size: 15px; line-height: 1.6; }
+.office-landing__about-copy blockquote { margin: 20px 0 24px; padding-left: 18px; border-left: 3px solid var(--office-gold); color: var(--office-ink); font-size: 15.5px; font-style: italic; line-height: 1.55; }
+
+/* Chamada final */
+.office-landing__final-cta { padding: 50px 0; background: var(--office-navy); color: #fff; }
+.office-landing__final-cta-inner { display: flex; gap: 28px; align-items: center; }
+.office-landing__final-icon { display: grid; width: 66px; height: 66px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(214, 182, 110, .4); color: var(--office-gold); }
+.office-landing__final-cta h2 { margin-bottom: 6px; color: #fff; font-size: clamp(22px, 2.4vw, 30px); text-transform: uppercase; }
+.office-landing__final-cta p { margin: 0; color: rgba(255, 255, 255, .7); font-size: 14px; }
+.office-landing__final-cta .office-button { flex: 0 0 auto; margin-left: auto; }
+
+/* Calculadora (usada apenas na landing do revisional) */
+.office-calculator { padding: 60px 0; background: #fff; }
+.office-calculator__inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 44px; align-items: start; }
+.office-calculator__copy h2 { margin-bottom: 10px; font-size: clamp(26px, 2.6vw, 34px); text-transform: uppercase; }
+.office-calculator__copy > p { color: var(--office-copy); font-size: 15px; line-height: 1.6; }
+.office-calculator__icon { display: grid; width: 52px; height: 52px; margin-bottom: 18px; place-items: center; background: var(--office-cream); color: var(--office-gold); }
+.office-calculator__benefits { display: grid; gap: 10px; margin-top: 22px; padding: 0; list-style: none; }
+.office-calculator__benefits li { display: flex; gap: 10px; align-items: flex-start; color: var(--office-copy); font-size: 13.5px; line-height: 1.5; }
+.office-calculator__benefits svg { flex: 0 0 auto; color: var(--office-gold); }
+.office-calculator__card { padding: 28px 26px; border: 1px solid rgba(21, 34, 54, .12); background: var(--office-cream); }
+.office-calculator__card-heading { margin-bottom: 18px; }
+.office-calculator__card-heading h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
+.office-calculator__card-heading p { margin: 0; color: var(--office-copy); font-size: 13px; line-height: 1.5; }
+.office-calculator__fields { display: grid; gap: 14px; margin-bottom: 14px; }
+.office-calculator__fields--two { grid-template-columns: 1fr 1fr; }
+.office-calculator__field { display: flex; flex-direction: column; gap: 6px; }
+.office-calculator__field span { color: var(--office-ink); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.office-calculator__field input, .office-calculator__field select { min-height: 46px; padding: 0 14px; border: 1px solid rgba(21, 34, 54, .18); background: #fff; color: var(--office-ink); font-family: inherit; font-size: 14px; }
+.office-calculator__field input:focus, .office-calculator__field select:focus { border-color: var(--office-gold); outline: none; }
+.office-calculator__contract-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.office-calculator__contract-options button { padding: 9px 14px; border: 1px solid rgba(21, 34, 54, .18); background: #fff; color: var(--office-ink); font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color .2s ease, background .2s ease; }
+.office-calculator__contract-options button:hover { border-color: var(--office-gold); }
+.office-calculator__contract-options button.is-active { border-color: var(--office-gold); background: var(--office-gold); color: #09172a; }
+.office-calculator__consent { display: flex; gap: 10px; align-items: flex-start; margin: 16px 0; color: var(--office-copy); font-size: 12px; line-height: 1.45; }
+.office-calculator__consent input { margin-top: 2px; accent-color: var(--office-gold); }
+.office-calculator__submit { width: 100%; border: none; cursor: pointer; font-family: inherit; }
+.office-calculator__error { margin: 12px 0 0; color: #b3261e; font-size: 12.5px; }
+.office-calculator__result { margin-top: 18px; padding: 20px; border-left: 3px solid var(--office-gold); background: #fff; }
+.office-calculator__result h4 { margin: 0 0 8px; font-size: 15px; font-weight: 700; }
+.office-calculator__result p { margin: 0 0 12px; color: var(--office-copy); font-size: 13.5px; line-height: 1.5; }
+
+.office-calculator__type { margin: 0 0 14px; padding: 0; border: none; }
+.office-calculator__type legend { margin-bottom: 8px; padding: 0; color: var(--office-ink); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.office-calculator__contact-fields { margin-top: 4px; }
+.office-calculator__result-kicker { margin: 0 0 4px !important; color: var(--office-gold) !important; font-size: 11px !important; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.office-calculator__result strong { display: block; margin-bottom: 14px; font-size: clamp(26px, 3vw, 34px); font-weight: 800; line-height: 1; }
+.office-calculator__result-grid { display: grid; gap: 8px; margin-bottom: 14px; }
+.office-calculator__result-grid span { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(21, 34, 54, .1); color: var(--office-copy); font-size: 13px; }
+.office-calculator__result-grid b { color: var(--office-ink); }
+.office-calculator__submission { margin: 0 0 12px !important; padding: 10px 12px; background: var(--office-cream); color: var(--office-copy) !important; font-size: 12.5px !important; }
+.office-calculator__submission--success { border-left: 3px solid #1caa59; }
+
+@media (max-width: 980px) {
+  .office-landing__hero::after { width: 100%; opacity: .18; mask-image: none; -webkit-mask-image: none; }
+  .office-landing__intro-grid,
+  .office-landing__process-grid,
+  .office-landing__about-grid,
+  .office-calculator__inner { grid-template-columns: 1fr; }
+  .office-landing__final-cta-inner { flex-direction: column; align-items: flex-start; }
+  .office-landing__final-cta .office-button { margin-left: 0; }
+  .office-landing__header-cta { display: none; }
+}
+
+@media (max-width: 620px) {
+  .office-landing__hero-inner { min-height: 0; padding: 56px 0 30px; }
+  .office-calculator__fields--two { grid-template-columns: 1fr; }
+  .office-landing__card-number { display: none; }
+}
