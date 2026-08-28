@@ -126,8 +126,11 @@
 .office-calculator__card input:not([type="checkbox"])::placeholder { color: rgba(85, 96, 111, .7); }
 .office-calculator__card input:not([type="checkbox"]):focus,
 .office-calculator__card select:focus { border-color: var(--office-gold); box-shadow: 0 0 0 3px rgba(189, 147, 69, .18); outline: none; }
-.office-calculator__contract-options { display: flex; flex-wrap: wrap; gap: 8px; }
-.office-calculator__contract-options button { padding: 9px 14px; border: 1px solid rgba(21, 34, 54, .18); background: #fff; color: var(--office-ink); font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: border-color .2s ease, background .2s ease; }
+/* Três colunas iguais ocupando a largura do card: as opções ficam
+   centralizadas e do mesmo tamanho, em vez de alinhadas à esquerda com
+   larguras diferentes conforme o texto. */
+.office-calculator__contract-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.office-calculator__contract-options button { display: flex; min-height: 46px; align-items: center; justify-content: center; padding: 9px 10px; border: 1px solid rgba(21, 34, 54, .18); background: #fff; color: var(--office-ink); font-family: inherit; font-size: 12.5px; font-weight: 600; line-height: 1.2; text-align: center; cursor: pointer; transition: border-color .2s ease, background .2s ease; }
 .office-calculator__contract-options button:hover { border-color: var(--office-gold); }
 .office-calculator__contract-options button.is-active { border-color: var(--office-gold); background: var(--office-gold); color: #09172a; }
 .office-calculator__consent { display: flex; gap: 10px; align-items: flex-start; margin: 16px 0; color: var(--office-copy); font-size: 12px; line-height: 1.45; }
@@ -163,5 +166,6 @@
 @media (max-width: 620px) {
   .office-landing__hero-inner { min-height: 0; padding: 56px 0 30px; }
   .office-calculator__fields--two { grid-template-columns: 1fr; }
+  .office-calculator__contract-options { grid-template-columns: 1fr 1fr; }
   .office-landing__card-number { display: none; }
 }
