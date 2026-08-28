@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { ArrowRight, Check, MessageCircle, Scale, ShieldCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowRight, Check, Menu, MessageCircle, Scale, ShieldCheck, X } from 'lucide-react';
 import portrait from '../../assets/pedro-bastos-lund-hero-hq.png';
 import aboutPortrait from '../../assets/pedro-bastos-lund-about.jpg';
 import logo from '../../assets/pedro-bastos-lund-monogram.png';
@@ -30,7 +30,29 @@ function WhatsAppIcon({ size = 25 }) {
  * `children` entra logo abaixo da introdução — é onde a landing do revisional
  * encaixa a calculadora.
  */
+// Rola ate a secao respeitando a altura do header fixo. Quem pediu para
+// reduzir animacoes no sistema recebe o salto direto, sem transicao.
+function scrollToSection(id) {
+  const target = document.getElementById(id);
+  if (!target) return false;
+
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  return true;
+}
+
 export default function OfficeLanding({ content, icons = {}, navItems = [], ariaLabel, children }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Link compartilhado com ancora (#calculadora, por exemplo) precisa rolar
+  // depois que a pagina montou, senao a secao ainda nao existe no documento.
+  useEffect(() => {
+    if (!window.location.hash) return undefined;
+    const sectionId = decodeURIComponent(window.location.hash.slice(1));
+    const timeoutId = window.setTimeout(() => scrollToSection(sectionId), 120);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   useEffect(() => {
     const previousTitle = document.title;
     let description = document.querySelector('meta[name="description"]');
@@ -54,6 +76,21 @@ export default function OfficeLanding({ content, icons = {}, navItems = [], aria
 
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(content.whatsapp.message)}`;
 
+  function handleNavClick(event, href) {
+    setMenuOpen(false);
+    if (!href.startsWith('#')) return;
+    // Deixa o navegador cuidar de abrir em nova aba ou salvar o link.
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    const sectionId = href.slice(1);
+    if (!scrollToSection(sectionId)) return;
+
+    event.preventDefault();
+    // Mantem a ancora na URL para o link continuar compartilhavel, sem que o
+    // navegador desfaca a rolagem suave com um salto.
+    window.history.replaceState(null, '', href);
+  }
+
   function WhatsAppLink({ children: label, className = '', ariaLabel: linkLabel }) {
     return (
       <a className={className} href={whatsappUrl} target="_blank" rel="noreferrer" aria-label={linkLabel || ariaLabel}>
@@ -69,8 +106,21 @@ export default function OfficeLanding({ content, icons = {}, navItems = [], aria
           <span className="office-brand__mark"><img src={logo} alt="" /></span>
           <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span>
         </a>
-        <nav className="office-nav" aria-label="Navegação principal">
-          {navItems.map((item) => <a key={item.href} href={item.href}>{item.label}</a>)}
+        <button
+          className="office-menu-toggle"
+          type="button"
+          aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+        <nav className={`office-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Navegação principal">
+          {navItems.map((item) => (
+            <a key={item.href} href={item.href} onClick={(event) => handleNavClick(event, item.href)}>
+              {item.label}
+            </a>
+          ))}
         </nav>
         <WhatsAppLink className="office-button office-button--gold office-landing__header-cta">
           <MessageCircle size={17} /> Falar no WhatsApp

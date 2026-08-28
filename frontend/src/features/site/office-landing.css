@@ -4,6 +4,15 @@
    institutional-site.css — aqui não se redefine nada disso, para que o padrão
    visual continue saindo de um lugar só. */
 
+/* O header é fixo: sem essa margem, a rolagem por âncora para com o título
+   escondido atrás dele. Mesmo valor usado no site institucional. */
+.office-landing__intro,
+.office-landing__review,
+.office-landing__process,
+.office-landing__about,
+.office-landing__final-cta,
+.office-calculator { scroll-margin-top: 74px; }
+
 .office-landing__header-cta { min-height: 40px; padding: 0 16px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 .office-landing .office-button:not(.office-button--gold) { background: var(--office-navy); color: #fff !important; }
 .office-landing .office-button:not(.office-button--gold):hover { background: var(--office-navy-soft); }
