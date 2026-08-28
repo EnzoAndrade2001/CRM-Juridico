@@ -167,12 +167,35 @@ class AppErrorBoundary extends React.Component {
   }
 }
 
+// O mesmo app atende varios dominios. Nos dominios de campanha, a raiz abre a
+// landing correspondente em vez do site institucional; o restante das rotas
+// continua igual em todos eles. A lista e sobrescrivel por VITE_LANDING_HOSTS,
+// no formato "host=rota,host=rota".
+const LANDING_HOSTS = Object.fromEntries(
+  String(import.meta.env.VITE_LANDING_HOSTS || 'pblrevisional.com.br=revisional,www.pblrevisional.com.br=revisional')
+    .split(',')
+    .map((entry) => entry.split('=').map((part) => part.trim().toLowerCase()))
+    .filter(([host, route]) => host && route)
+);
+
+const LANDING_BY_ROUTE = {
+  revisional: <BankReviewLanding />,
+  marca: <TrademarkLanding />,
+  autismo: <AutismLanding />,
+};
+
+function resolveHomeElement() {
+  if (typeof window === 'undefined') return <InstitutionalSite />;
+  const landingRoute = LANDING_HOSTS[window.location.hostname.toLowerCase()];
+  return LANDING_BY_ROUTE[landingRoute] || <InstitutionalSite />;
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <BrowserRouter basename={import.meta.env.BASE_URL}>
     <AppErrorBoundary>
       <Suspense fallback={<RouteFallback />}>
         <Routes>
-          <Route path="/" element={<InstitutionalSite />} />
+          <Route path="/" element={resolveHomeElement()} />
           <Route path="/atuacao" element={<InstitutionalSite section="areas" />} />
           <Route path="/como-funciona" element={<Navigate to="/" replace />} />
           <Route path="/equipe" element={<InstitutionalSite section="team" />} />
