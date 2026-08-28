@@ -11,6 +11,10 @@ import './office-landing.css';
 // triagem da IA no WhatsApp.
 const WHATSAPP_NUMBER = '555193665581';
 
+// No GitHub Pages o site é servido em /CRM-Juridico/, não na raiz do domínio.
+// Um href="/" fixo levaria o visitante para fora do site e devolveria 404.
+const HOME_URL = import.meta.env.BASE_URL || '/';
+
 function WhatsAppIcon({ size = 25 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -102,7 +106,7 @@ export default function OfficeLanding({ content, icons = {}, navItems = [], aria
   return (
     <main className="office-site office-landing">
       <header className="office-header">
-        <a className="office-brand" href="/" aria-label="Pedro Bastos Lund Advocacia — início">
+        <a className="office-brand" href={HOME_URL} aria-label="Pedro Bastos Lund Advocacia — início">
           <span className="office-brand__mark"><img src={logo} alt="" /></span>
           <span><strong>Pedro Bastos Lund</strong><small>Advocacia e Consultoria Jurídica</small></span>
         </a>
