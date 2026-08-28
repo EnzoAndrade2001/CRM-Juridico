@@ -51,7 +51,7 @@
 /* Cartões do que é analisado */
 .office-landing__review { padding: 60px 0; background: #fff; }
 .office-landing__cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: 16px; }
-.office-landing__card { position: relative; padding: 26px 22px; border: 1px solid rgba(21, 34, 54, .12); background: #fff; transition: border-color .2s ease, transform .2s ease; }
+.office-landing__card { position: relative; padding: 26px 22px; border: 1px solid var(--office-ink); background: #fff; transition: border-color .2s ease, transform .2s ease; }
 .office-landing__card:hover { border-color: var(--office-gold); transform: translateY(-3px); }
 .office-landing__card-number { position: absolute; top: 18px; right: 20px; color: rgba(21, 34, 54, .14); font-size: 26px; font-weight: 800; }
 .office-landing__card-icon { display: grid; width: 48px; height: 48px; margin-bottom: 16px; place-items: center; background: var(--office-cream); color: var(--office-gold); }
@@ -92,7 +92,10 @@
 .office-landing__final-cta .office-button { flex: 0 0 auto; margin-left: auto; }
 
 /* Calculadora (usada apenas na landing do revisional) */
-.office-calculator { padding: 60px 0; background: #fff; }
+/* A linha superior separa a calculadora da seção anterior, no mesmo padrão
+   de divisão usado entre as demais seções claras. */
+.office-calculator { padding: 60px 0; border-top: 1px solid rgba(21, 34, 54, .16); background: #fff; }
+.office-calculator + .office-landing__review { border-top: 1px solid rgba(21, 34, 54, .16); }
 .office-calculator__inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 44px; align-items: start; }
 .office-calculator__copy h2 { margin-bottom: 10px; font-size: clamp(26px, 2.6vw, 34px); text-transform: uppercase; }
 .office-calculator__copy > p { color: var(--office-copy); font-size: 15px; line-height: 1.6; }
@@ -100,10 +103,13 @@
 .office-calculator__benefits { display: grid; gap: 10px; margin-top: 22px; padding: 0; list-style: none; }
 .office-calculator__benefits li { display: flex; gap: 10px; align-items: flex-start; color: var(--office-copy); font-size: 13.5px; line-height: 1.5; }
 .office-calculator__benefits svg { flex: 0 0 auto; color: var(--office-gold); }
-.office-calculator__card { padding: 28px 26px; border: 1px solid rgba(21, 34, 54, .12); background: var(--office-cream); }
-.office-calculator__card-heading { margin-bottom: 18px; }
-.office-calculator__card-heading h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; }
+.office-calculator__card { padding: 28px 26px; border: 1px solid var(--office-ink); background: var(--office-cream); }
+.office-calculator__card-heading { display: flex; gap: 16px; align-items: center; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid rgba(21, 34, 54, .18); }
+.office-calculator__card-heading h3 { margin: 0 0 4px; font-size: clamp(19px, 1.9vw, 23px); font-weight: 800; letter-spacing: .04em; line-height: 1.1; text-transform: uppercase; }
 .office-calculator__card-heading p { margin: 0; color: var(--office-copy); font-size: 13px; line-height: 1.5; }
+/* Dentro do card o fundo já é creme, então o ícone precisa de contraste
+   próprio para não desaparecer. */
+.office-calculator__card-heading .office-calculator__icon { flex: 0 0 auto; margin-bottom: 0; background: var(--office-navy); color: var(--office-gold-light); }
 .office-calculator__fields { display: grid; gap: 14px; margin-bottom: 14px; }
 .office-calculator__fields--two { grid-template-columns: 1fr 1fr; }
 .office-calculator__field { display: flex; flex-direction: column; gap: 6px; }

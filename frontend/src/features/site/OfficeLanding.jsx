@@ -41,7 +41,7 @@ function scrollToSection(id) {
   return true;
 }
 
-export default function OfficeLanding({ content, icons = {}, navItems = [], ariaLabel, children }) {
+export default function OfficeLanding({ content, icons = {}, navItems = [], ariaLabel, heroExtras = true, children }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Link compartilhado com ancora (#calculadora, por exemplo) precisa rolar
@@ -136,11 +136,13 @@ export default function OfficeLanding({ content, icons = {}, navItems = [], aria
             <WhatsAppLink className="office-button office-button--gold">
               {content.hero.ctaLabel} <ArrowRight size={18} />
             </WhatsAppLink>
-            <div className="office-landing__assurances" aria-label="Características do atendimento">
-              {content.hero.assurances.map((item) => <span key={item}><Check size={15} /> {item}</span>)}
-            </div>
+            {heroExtras ? (
+              <div className="office-landing__assurances" aria-label="Características do atendimento">
+                {content.hero.assurances.map((item) => <span key={item}><Check size={15} /> {item}</span>)}
+              </div>
+            ) : null}
           </div>
-          <p className="office-landing__hero-name"><span>Pedro Bastos Lund</span> Advogado</p>
+          {heroExtras ? <p className="office-landing__hero-name"><span>Pedro Bastos Lund</span> Advogado</p> : null}
         </div>
       </section>
 

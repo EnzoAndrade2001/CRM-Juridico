@@ -23,6 +23,7 @@ export default function BankReviewLanding() {
       icons={ICONS}
       navItems={NAV_ITEMS}
       ariaLabel="Conversar sobre revisional bancário pelo WhatsApp"
+      heroExtras={false}
     >
       <BankReviewCalculator whatsappUrl={whatsappUrl} />
     </OfficeLanding>
