@@ -100,8 +100,11 @@
 .office-calculator__copy h2 { margin-bottom: 10px; font-size: clamp(26px, 2.6vw, 34px); text-transform: uppercase; }
 .office-calculator__copy > p { color: var(--office-copy); font-size: 15px; line-height: 1.6; }
 .office-calculator__icon { display: grid; width: 52px; height: 52px; margin-bottom: 18px; place-items: center; background: var(--office-cream); color: var(--office-gold); }
+/* Os itens são <span>, não <li>. E o reset do Tailwind deixa svg como
+   display:block, então sem o flex o ícone cai numa linha acima do texto. */
 .office-calculator__benefits { display: grid; gap: 10px; margin-top: 22px; padding: 0; list-style: none; }
-.office-calculator__benefits li { display: flex; gap: 10px; align-items: flex-start; color: var(--office-copy); font-size: 13.5px; line-height: 1.5; }
+.office-calculator__benefits > span,
+.office-calculator__benefits li { display: flex; gap: 10px; align-items: center; color: var(--office-copy); font-size: 13.5px; line-height: 1.5; }
 .office-calculator__benefits svg { flex: 0 0 auto; color: var(--office-gold); }
 .office-calculator__card { padding: 28px 26px; border: 1px solid var(--office-ink); background: var(--office-cream); }
 .office-calculator__card-heading { display: flex; gap: 16px; align-items: center; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid rgba(21, 34, 54, .18); }

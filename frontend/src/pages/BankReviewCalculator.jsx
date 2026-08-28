@@ -11,7 +11,6 @@ const contractTypes = [
   'Financiamento veicular',
   'Cartão de crédito',
   'Empréstimo',
-  'Busca e apreensão',
 ];
 
 const emptyForm = {
