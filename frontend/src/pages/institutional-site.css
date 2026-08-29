@@ -240,6 +240,9 @@
   .office-about__media { height: clamp(360px, 82vw, 520px); min-height: 0; }
   .office-about__media img { min-height: 0; object-position: center top; }
   .office-team__grid { grid-template-columns: 1fr; }
+  .office-person { grid-template-columns: 1fr; }
+  .office-person > img { height: auto; min-height: 0; aspect-ratio: auto; object-fit: contain; object-position: center top; }
+  .office-person__body { min-width: 0; padding: 20px 22px; background: #fff; }
   .office-clients__layout { grid-template-columns: 1fr; gap: 24px; }
   .office-clients__heading h2 { max-width: 640px; }
   .office-clients__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
