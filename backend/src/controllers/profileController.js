@@ -1,5 +1,6 @@
 const prisma = require('../lib/prisma');
 const bcrypt = require('bcryptjs');
+const { BCRYPT_ROUNDS, checkPassword } = require('../domain/passwordPolicy');
 
 async function updateProfile(req, res) {
   const { name, email, password } = req.body;
@@ -11,7 +12,9 @@ async function updateProfile(req, res) {
   };
 
   if (password) {
-    data.password = await bcrypt.hash(password, 10);
+    const passwordProblems = checkPassword(password, { email, name });
+    if (passwordProblems.length) return res.status(400).json({ error: passwordProblems.join(' ') });
+    data.password = await bcrypt.hash(password, BCRYPT_ROUNDS);
   }
 
   const user = await prisma.user.update({

@@ -16,6 +16,7 @@
  */
 const bcrypt = require('bcryptjs');
 const prisma = require('../src/lib/prisma');
+const { BCRYPT_ROUNDS, checkPassword } = require('../src/domain/passwordPolicy');
 
 async function listEnvironment() {
   const tenants = await prisma.tenant.findMany({
@@ -59,12 +60,13 @@ async function main() {
   }
 
   const password = String(process.env.ADMIN_PASSWORD || '').trim();
-  if (password.length < 10) {
-    throw new Error('Defina ADMIN_PASSWORD com pelo menos 10 caracteres.');
-  }
-
   const normalizedEmail = String(email).trim().toLowerCase();
   const userName = String(name || '').trim() || normalizedEmail.split('@')[0];
+
+  // Mesma politica dos cadastros feitos pela interface: uma conta criada por
+  // script nao pode ser o elo fraco.
+  const passwordProblems = checkPassword(password, { email: normalizedEmail, name: userName });
+  if (passwordProblems.length) throw new Error(passwordProblems.join(' '));
 
   // Resolve o tenant: pelo slug informado ou, se houver apenas um, por ele
   // mesmo. Com vários tenants e nenhum slug, o script se recusa a adivinhar.
@@ -88,7 +90,7 @@ async function main() {
     select: { id: true, role: true },
   });
 
-  const hashedPassword = await bcrypt.hash(password, 12);
+  const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
   const user = await prisma.user.upsert({
     where: { tenantId_email: { tenantId: tenant.id, email: normalizedEmail } },
     update: { name: userName, password: hashedPassword, role: 'admin', active: true },

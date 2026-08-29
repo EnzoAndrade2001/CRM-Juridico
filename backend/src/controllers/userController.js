@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const { BCRYPT_ROUNDS, checkPassword } = require('../domain/passwordPolicy');
 const bcrypt = require('bcryptjs');
 
 function normalizeEmail(value) {
@@ -38,7 +39,10 @@ async function create(req, res) {
   });
   if (exists) return res.status(400).json({ error: 'Email ja cadastrado para esta empresa' });
 
-  const hash = await bcrypt.hash(password, 10);
+  const passwordProblems = checkPassword(password, { email: normalizedEmail, name });
+  if (passwordProblems.length) return res.status(400).json({ error: passwordProblems.join(' ') });
+
+  const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
   const user = await prisma.user.create({
     data: {
       tenantId: req.user.tenantId,
@@ -72,7 +76,9 @@ async function update(req, res) {
   }
 
   if (password) {
-    data.password = await bcrypt.hash(password, 10);
+    const passwordProblems = checkPassword(password, { email: req.body.email, name: req.body.name });
+    if (passwordProblems.length) return res.status(400).json({ error: passwordProblems.join(' ') });
+    data.password = await bcrypt.hash(password, BCRYPT_ROUNDS);
   }
 
   const existing = await prisma.user.findFirst({ where: { id, tenantId: req.user.tenantId } });
