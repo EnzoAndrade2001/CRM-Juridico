@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Clock3,
   Database,
+  Globe2,
   RefreshCw,
   Server,
   ShieldAlert,
@@ -35,6 +36,15 @@ const SEVERITY_LABELS = {
   warning: 'Atenção',
   error: 'Erro',
   critical: 'Crítico',
+};
+
+const UPTIME_STATE_LABELS = {
+  up: 'Online',
+  down: 'Fora do ar',
+  degraded: 'Degradado',
+  provider_error: 'Sem leitura',
+  not_configured: 'Não configurado',
+  no_monitors: 'Sem monitores',
 };
 
 function formatDate(value) {
@@ -97,6 +107,7 @@ export default function OperationalMonitor() {
   }
 
   const summary = monitor?.summary || {};
+  const uptime = monitor?.uptime || {};
   const events = monitor?.events || [];
   const connectionLabel = summary.disconnectedInstances > 0
     ? `${summary.disconnectedInstances} desconectada${summary.disconnectedInstances === 1 ? '' : 's'}`
@@ -107,6 +118,8 @@ export default function OperationalMonitor() {
     if (severity) return `${SEVERITY_LABELS[severity]}: eventos recentes`;
     return 'Eventos recentes que precisam de acompanhamento';
   }, [source, severity]);
+  const uptimeState = uptime.state || 'not_configured';
+  const uptimeLabel = UPTIME_STATE_LABELS[uptimeState] || 'Sem leitura';
 
   return (
     <div style={styles.container} className="operational-monitor">
@@ -139,11 +152,46 @@ export default function OperationalMonitor() {
       </div>
 
       <div style={styles.healthStrip}>
-        <div style={styles.healthItem}><Server size={17} /> API monitorada <strong>online</strong></div>
+        <div style={styles.healthItem}><Server size={17} /> API do CRM <strong style={styles.uptime_up}>respondendo</strong></div>
+        <div style={styles.healthItem}><Globe2 size={17} /> Uptime externo <strong style={styles[`uptime_${uptimeState}`]}>{uptime.configured ? `${uptime.counts?.down || 0} fora do ar` : uptimeLabel}</strong></div>
         <div style={styles.healthItem}><Database size={17} /> Sincronizações pendentes <strong>{summary.pendingSync ?? '--'}</strong></div>
         <div style={styles.healthItem}><Activity size={17} /> Leads pendentes <strong>{summary.pendingLandingLeads ?? '--'}</strong></div>
         <div style={styles.healthItem}><Activity size={17} /> Última leitura <strong>{formatDate(monitor?.generatedAt)}</strong></div>
       </div>
+
+      {uptime.configured && uptime.monitors?.length ? (
+        <section style={styles.uptimeSection}>
+          <div style={styles.uptimeHeader}>
+            <div>
+              <h2 style={styles.sectionTitle}>Disponibilidade externa</h2>
+              <p style={styles.sectionDescription}>Leitura dos monitores configurados no UptimeRobot.</p>
+            </div>
+            <span style={{ ...styles.uptimeState, ...styles[`uptimeState_${uptimeState}`] }}>{uptimeLabel}</span>
+          </div>
+          <div style={styles.uptimeGrid}>
+            {uptime.monitors.map((externalMonitor) => (
+              <div key={externalMonitor.id} style={styles.uptimeMonitor}>
+                <span style={{ ...styles.uptimeDot, background: uptimeDotColor(externalMonitor.status) }} />
+                <div style={styles.uptimeMonitorBody}>
+                  <strong style={styles.uptimeMonitorName}>{externalMonitor.friendlyName}</strong>
+                  {externalMonitor.url ? <a href={externalMonitor.url} target="_blank" rel="noreferrer" style={styles.uptimeMonitorUrl}>{externalMonitor.url}</a> : null}
+                </div>
+                <span style={{ ...styles.uptimeMonitorStatus, color: uptimeDotColor(externalMonitor.status) }}>{UPTIME_STATE_LABELS[externalMonitor.status] || 'Aguardando'}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {uptimeState === 'not_configured' ? (
+        <div style={styles.uptimeNotice}><Globe2 size={17} /> Configure o UptimeRobot no backend para monitorar o site e a API mesmo quando o CRM estiver indisponível.</div>
+      ) : null}
+      {uptimeState === 'provider_error' ? (
+        <div style={styles.uptimeNotice}><AlertCircle size={17} /> O CRM não conseguiu consultar o provedor externo: {uptime.lastError || 'verifique a chave e a API do UptimeRobot.'}</div>
+      ) : null}
+      {uptimeState === 'no_monitors' ? (
+        <div style={styles.uptimeNotice}><Globe2 size={17} /> A chave do UptimeRobot está ativa, mas nenhum monitor foi encontrado.</div>
+      ) : null}
 
       <section style={styles.eventsSection}>
         <div style={styles.sectionHeader}>
@@ -200,9 +248,11 @@ export default function OperationalMonitor() {
         @media (max-width: 900px) {
           .operational-monitor { padding: 1rem !important; }
           .monitor-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+          .uptimeGrid { grid-template-columns: 1fr 1fr !important; }
         }
         @media (max-width: 560px) {
           .monitor-kpi-grid { grid-template-columns: 1fr !important; }
+          .uptimeGrid { grid-template-columns: 1fr !important; }
           .operational-monitor .event-row { flex-direction: column; }
           .operational-monitor .event-date { order: -1; }
           .operational-monitor .resolve-button { align-self: flex-start; }
@@ -265,6 +315,10 @@ function severityColor(severity) {
   return { critical: '#ef4444', error: '#f97316', warning: '#d4a72c', info: '#3b82f6' }[severity] || '#64748b';
 }
 
+function uptimeDotColor(status) {
+  return { up: '#16a34a', down: '#dc2626', degraded: '#d97706', paused: '#64748b', pending: '#2563eb' }[status] || '#64748b';
+}
+
 function severityStyle(severity) {
   return { color: severityColor(severity), background: `${severityColor(severity)}18` };
 }
@@ -287,12 +341,33 @@ const styles = {
   tone_danger: { color: '#dc2626', background: 'rgba(239, 68, 68, .13)' },
   tone_critical: { color: '#b91c1c', background: 'rgba(185, 28, 28, .14)' },
   tone_success: { color: '#15803d', background: 'rgba(22, 163, 74, .13)' },
+  uptime_up: { color: '#15803d' },
+  uptime_down: { color: '#dc2626' },
+  uptime_degraded: { color: '#b45309' },
+  uptime_provider_error: { color: '#dc2626' },
+  uptime_not_configured: { color: 'var(--text-muted)' },
+  uptime_no_monitors: { color: 'var(--text-muted)' },
   metricBody: { minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.25rem' },
   metricLabel: { color: 'var(--text-muted)', fontSize: '0.78rem', fontWeight: 700 },
   metricValue: { color: 'var(--text-main)', fontSize: '1.5rem', lineHeight: 1.1 },
   metricValueCompact: { fontSize: '1rem', whiteSpace: 'nowrap' },
   healthStrip: { display: 'flex', flexWrap: 'wrap', gap: '1rem 2rem', padding: '0.85rem 1rem', marginBottom: 'var(--space-6)', border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-surface)', color: 'var(--text-muted)', fontSize: '0.82rem' },
   healthItem: { display: 'inline-flex', alignItems: 'center', gap: '0.45rem' },
+  uptimeSection: { marginBottom: 'var(--space-6)', border: '1px solid var(--border-color)', borderRadius: '12px', background: 'var(--bg-panel)', overflow: 'hidden' },
+  uptimeHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', padding: '1rem 1.2rem', borderBottom: '1px solid var(--border-color)' },
+  uptimeState: { display: 'inline-flex', alignItems: 'center', minHeight: '26px', padding: '0 0.55rem', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 800 },
+  uptimeState_up: { color: '#15803d', background: 'rgba(22, 163, 74, .13)' },
+  uptimeState_down: { color: '#dc2626', background: 'rgba(239, 68, 68, .13)' },
+  uptimeState_degraded: { color: '#b45309', background: 'rgba(217, 119, 6, .13)' },
+  uptimeState_provider_error: { color: '#dc2626', background: 'rgba(239, 68, 68, .13)' },
+  uptimeGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.7rem', padding: '0.9rem 1.2rem 1.1rem' },
+  uptimeMonitor: { display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, padding: '0.7rem 0.75rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-surface)' },
+  uptimeDot: { width: '9px', height: '9px', borderRadius: '50%', flexShrink: 0 },
+  uptimeMonitorBody: { minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '0.2rem' },
+  uptimeMonitorName: { overflow: 'hidden', color: 'var(--text-main)', fontSize: '0.78rem', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  uptimeMonitorUrl: { overflow: 'hidden', color: 'var(--text-dim)', fontSize: '0.68rem', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  uptimeMonitorStatus: { fontSize: '0.68rem', fontWeight: 800, whiteSpace: 'nowrap' },
+  uptimeNotice: { display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 'var(--space-6)', padding: '0.8rem 1rem', border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-surface)', color: 'var(--text-muted)', fontSize: '0.8rem' },
   eventsSection: { border: '1px solid var(--border-color)', borderRadius: '12px', background: 'var(--bg-panel)', overflow: 'hidden' },
   sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '1rem', flexWrap: 'wrap', padding: '1.1rem 1.2rem', borderBottom: '1px solid var(--border-color)' },
   sectionTitle: { margin: 0, color: 'var(--text-main)', fontSize: '1rem', fontWeight: 800 },

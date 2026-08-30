@@ -126,13 +126,13 @@ async function resolveOperationalEvent({ id, tenantId = null, status = 'resolved
   }
 }
 
-async function resolveOperationalEventByExternalId({ externalId, tenantId }) {
-  if (!externalId || !tenantId) return 0;
+async function resolveOperationalEventByExternalId({ externalId, tenantId = null }) {
+  if (!externalId) return 0;
   try {
     if (!process.env.DATABASE_URL || !prisma.operationalEvent?.updateMany) return 0;
     const result = await prisma.operationalEvent.updateMany({
       where: {
-        tenantId,
+        ...(tenantId ? { tenantId } : { tenantId: null }),
         externalId,
         status: { in: ['pending', 'processing', 'failed'] },
       },

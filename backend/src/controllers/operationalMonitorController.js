@@ -3,6 +3,7 @@ const {
   recordOperationalEvent,
   resolveOperationalEvent,
 } = require('../services/operationalMonitorService');
+const { getUptimeOverview } = require('../services/uptimeMonitorService');
 
 const publicEventTimestamps = new Map();
 const PUBLIC_EVENT_WINDOW_MS = 60 * 1000;
@@ -49,6 +50,7 @@ async function getOverview(req, res) {
     ...tenantScope,
     status: { in: ['pending', 'processing', 'failed'] },
   };
+  const uptime = getUptimeOverview();
 
   const [events, pendingCount, failedCount, criticalCount, connectedInstances, disconnectedInstances, pendingSyncCount, pendingLandingLeads] = await Promise.all([
     prisma.operationalEvent.findMany({
@@ -76,7 +78,9 @@ async function getOverview(req, res) {
       pendingLandingLeads,
       connectedInstances,
       disconnectedInstances,
+      externalUptimeDown: uptime.counts.down,
     },
+    uptime,
     events,
   });
 }

@@ -45,6 +45,7 @@ const publicCalculatorRoutes = require('./routes/publicCalculator');
 const cmsAuthRoutes = require('./routes/cmsAuth');
 const operationalMonitorRoutes = require('./routes/operationalMonitor');
 const { recordOperationalEvent } = require('./services/operationalMonitorService');
+const { startUptimeMonitor } = require('./services/uptimeMonitorService');
 
 const app = express();
 app.disable('x-powered-by');
@@ -275,6 +276,7 @@ const PORT = process.env.PORT || 3002;
 server.listen(PORT, () => {
   console.log(`[server] rodando na porta ${PORT}`);
   console.log(`[server] boot=${new Date(bootAt).toISOString()} pid=${process.pid}`);
+  startUptimeMonitor();
   scheduleProcessor.start();
 
   // Sincronização automática de webhooks das instâncias existentes.
