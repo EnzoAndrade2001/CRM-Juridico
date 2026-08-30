@@ -947,7 +947,7 @@ function OsTab({ serviceOrders, onRefresh }) {
     const identifier = order.id || order.externalId || order.number;
     if (!identifier) return;
     const token = encodeURIComponent(localStorage.getItem('token') || '');
-    window.open(`${BACKEND_URL}/api/os/${encodeURIComponent(identifier)}/pdf?token=${token}`, '_blank', 'noopener,noreferrer');
+    window.open(`${BACKEND_URL}/api/os/${encodeURIComponent(identifier)}/pdf`, '_blank', 'noopener,noreferrer');
   }
 
   async function sendToManager(order) {

@@ -364,7 +364,7 @@ export default function ContactProfileModal({ contact, onClose, onUpdated, initi
                 <div style={s.osRight}>
                   <span style={statusBadge(os.status)}>{os.status}</span>
                   <a
-                    href={`${BACKEND_URL}/api/os/${os.id}/pdf?token=${localStorage.getItem('token')}`}
+                    href={`${BACKEND_URL}/api/os/${os.id}/pdf`}
                     target="_blank"
                     rel="noreferrer"
                     style={s.osLink}

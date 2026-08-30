@@ -275,7 +275,7 @@ export default function ServiceOrders() {
                     <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                       <span>#{os.id.substring(os.id.length - 6).toUpperCase()}</span>
                       <a 
-                        href={`${BACKEND_URL}/api/os/${os.id}/pdf?token=${localStorage.getItem('token')}`} 
+                        href={`${BACKEND_URL}/api/os/${os.id}/pdf`} 
                         target="_blank" 
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
@@ -406,7 +406,7 @@ export default function ServiceOrders() {
             </div>
 
             <div style={s.btnGroup}>
-              <a href={`${BACKEND_URL}/api/os/${selectedOs.id}/pdf?token=${localStorage.getItem('token')}`} target="_blank" rel="noreferrer" style={s.pdfBtn}>Abrir / Imprimir O.S.</a>
+              <a href={`${BACKEND_URL}/api/os/${selectedOs.id}/pdf`} target="_blank" rel="noreferrer" style={s.pdfBtn}>Abrir / Imprimir O.S.</a>
               <button style={s.saveBtn} onClick={() => handleUpdate()}>Salvar Atualizações</button>
             </div>
           </div>

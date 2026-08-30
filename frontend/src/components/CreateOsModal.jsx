@@ -23,7 +23,7 @@ export default function CreateOsModal({ ticket, onClose, onCreated }) {
 
   function getPdfUrl(order) {
     const token = encodeURIComponent(localStorage.getItem('token') || '');
-    return `${BACKEND_URL}/api/os/${order.id}/pdf?token=${token}`;
+    return `${BACKEND_URL}/api/os/${order.id}/pdf`;
   }
 
   function completeOrder(order) {
