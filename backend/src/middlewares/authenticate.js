@@ -15,7 +15,9 @@ module.exports = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Fixar o algoritmo impede um token forjado com alg:none ou com troca de
+    // algoritmo ser aceito.
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     req.user = decoded;
     next();
   } catch {

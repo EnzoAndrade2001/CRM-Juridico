@@ -17,6 +17,7 @@ function responseRecorder() {
 test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conectado', async (t) => {
   const originals = {
     tenantFindUnique: prisma.tenant.findUnique,
+    submissionCount: prisma.calculatorSubmission.count,
     submissionCreate: prisma.calculatorSubmission.create,
     submissionUpdate: prisma.calculatorSubmission.update,
     tagFindFirst: prisma.tag.findFirst,
@@ -36,6 +37,7 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
   };
   t.after(() => {
     prisma.tenant.findUnique = originals.tenantFindUnique;
+    prisma.calculatorSubmission.count = originals.submissionCount;
     prisma.calculatorSubmission.create = originals.submissionCreate;
     prisma.calculatorSubmission.update = originals.submissionUpdate;
     prisma.tag.findFirst = originals.tagFindFirst;
@@ -69,6 +71,7 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
     settings: { evolutionUrl: 'https://evolution.test', evolutionKey: 'key' },
     instances: [{ id: 'instance-lund', instanceName: 'LUND', status: 'CONNECTED' }],
   });
+  prisma.calculatorSubmission.count = async () => 0;
   prisma.calculatorSubmission.create = async ({ data }) => {
     submissionData = data;
     return { id: 'submission-1', ...data };
@@ -151,6 +154,7 @@ test('calculadora cria contato, registra origem/tag e envia pelo WhatsApp conect
 test('calculadora reutiliza contato existente com telefone em formato diferente', async (t) => {
   const originals = {
     tenantFindUnique: prisma.tenant.findUnique,
+    submissionCount: prisma.calculatorSubmission.count,
     submissionCreate: prisma.calculatorSubmission.create,
     submissionUpdate: prisma.calculatorSubmission.update,
     tagFindFirst: prisma.tag.findFirst,
@@ -168,6 +172,7 @@ test('calculadora reutiliza contato existente com telefone em formato diferente'
   };
   t.after(() => {
     prisma.tenant.findUnique = originals.tenantFindUnique;
+    prisma.calculatorSubmission.count = originals.submissionCount;
     prisma.calculatorSubmission.create = originals.submissionCreate;
     prisma.calculatorSubmission.update = originals.submissionUpdate;
     prisma.tag.findFirst = originals.tagFindFirst;
@@ -195,6 +200,7 @@ test('calculadora reutiliza contato existente com telefone em formato diferente'
     settings: { evolutionUrl: 'https://evolution.test', evolutionKey: 'key' },
     instances: [{ id: 'instance-lund', instanceName: 'LUND', status: 'CONNECTED' }],
   });
+  prisma.calculatorSubmission.count = async () => 0;
   prisma.calculatorSubmission.create = async ({ data }) => ({ id: 'submission-2', ...data });
   prisma.calculatorSubmission.update = async ({ data }) => ({ id: 'submission-2', ...data });
   prisma.tag.findFirst = async () => ({ id: 'tag-1', name: 'VEIO PELA LANDING PAGE REVISAO BANCARIA' });

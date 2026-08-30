@@ -379,6 +379,32 @@ async function createCalculatorSubmission(req, res) {
       return res.status(503).json({ stored: false, error: 'Tenant da landing page ainda não configurado.' });
     }
 
+    // Teto diario persistente por tenant. O rate-limit por IP (30s, em memoria)
+    // zera a cada deploy e nao segura um atacante com IPs rotativos; aqui, cada
+    // envio dispara WhatsApp e chamada de IA, que custam dinheiro. O limite
+    // conta as submissoes reais gravadas hoje, entao sobrevive a reinicios.
+    const dailyCap = Math.max(1, Number(process.env.PUBLIC_CALCULATOR_DAILY_CAP) || 300);
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const todayCount = await prisma.calculatorSubmission.count({
+      where: { tenantId: tenant.id, createdAt: { gte: startOfDay } },
+    });
+    if (todayCount >= dailyCap) {
+      void recordOperationalEvent({
+        tenantId: tenant.id,
+        source: 'landing',
+        channel: String(source).toLowerCase(),
+        eventType: 'public_lead',
+        status: 'failed',
+        severity: 'warning',
+        summary: `Teto diario de leads da calculadora atingido (${dailyCap})`,
+        details: { source, todayCount },
+        requestId: req.requestId,
+      });
+      res.set('Retry-After', '3600');
+      return res.status(429).json({ stored: false, error: 'Limite diário de simulações atingido. Tente novamente amanhã ou fale pelo WhatsApp.' });
+    }
+
     const submission = await prisma.calculatorSubmission.create({
       data: {
         tenantId: tenant.id,

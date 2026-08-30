@@ -1,28 +1,19 @@
 const router = require('express').Router();
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-
-const { uploadsPath } = require('../utils/uploads');
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ storage });
-
 const authenticate = require('../middlewares/authenticate');
+// Reaproveita o multer endurecido (allowlist de extensao, nome aleatorio e
+// limite de tamanho). A versao anterior gravava com a extensao original, sem
+// filtro nem limite, num diretorio servido publicamente por express.static —
+// permitindo upload de .html/.svg com script e esgotamento de disco.
+const upload = require('../middlewares/upload');
 
-router.post('/', authenticate, upload.single('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
-  const url = `/uploads/${req.file.filename}`;
-  res.json({ url });
+router.post('/', authenticate, (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) return res.status(err.statusCode || 400).json({ error: err.message || 'Falha no upload' });
+    if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+    // O multer compartilhado grava em uploads/media/, entao a URL publica
+    // precisa do prefixo /uploads/media.
+    res.json({ url: `/uploads/media/${req.file.filename}` });
+  });
 });
 
 module.exports = router;

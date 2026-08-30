@@ -56,6 +56,15 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Forca o navegador a usar HTTPS por dois anos, incluindo subdominios. Como
+  // toda a stack ja e servida por HTTPS (EasyPanel + Let's Encrypt), isso fecha
+  // a janela de downgrade para HTTP. Enviado so em conexao segura para nao
+  // travar acesso local por HTTP durante desenvolvimento.
+  if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+  }
+  // A API nao usa camera, microfone nem geolocalizacao; desliga por padrao.
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   next();
 });
 app.use('/api/report', require('./routes/report'));
@@ -158,8 +167,11 @@ app.use((req, res, next) => {
     if (durationMs < 1500) return;
 
     const memoryMb = Math.round(process.memoryUsage().rss / 1024 / 1024);
+    // O JWT chega na query em alguns fluxos (ex.: download de PDF de O.S.).
+    // Sem mascarar, o token — valido por dias — ficaria em texto puro no log.
+    const safeUrl = req.originalUrl.replace(/([?&](?:token|secret)=)[^&]+/gi, '$1***');
     console.warn(
-      `[perf] ${req.method} ${req.originalUrl} -> ${res.statusCode} em ${durationMs}ms | rss=${memoryMb}MB | uptime=${Math.round(process.uptime())}s`
+      `[perf] ${req.method} ${safeUrl} -> ${res.statusCode} em ${durationMs}ms | rss=${memoryMb}MB | uptime=${Math.round(process.uptime())}s`
     );
   });
 
@@ -249,7 +261,7 @@ io.use((socket, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     socket.user = decoded;
     next();
   } catch (err) {

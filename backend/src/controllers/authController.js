@@ -89,7 +89,10 @@ async function login(req, res) {
   const token = jwt.sign(
     { userId: user.id, tenantId: user.tenantId, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: '7d' }
+    // Configuravel para apertar a janela de um token vazado sem mexer no
+    // codigo. Sem fluxo de refresh, encurtar demais forca relogin frequente;
+    // 7 dias segue como padrao.
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d', algorithm: 'HS256' }
   );
 
   res.json({
