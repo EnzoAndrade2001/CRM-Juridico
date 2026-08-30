@@ -24,6 +24,7 @@ import {
   Search,
   Command,
   X,
+  Activity,
 } from 'lucide-react';
 import { getMe, getMediaUrl, getInstances } from '../services/api';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -215,6 +216,7 @@ export default function Layout() {
     { to: '/inbox', icon: <MessageSquare size={18} />, label: 'Chat', roles: ['admin', 'agent', 'superadmin'] },
     { action: () => setIsChatOpen(true), icon: <MessageCircle size={18} />, label: 'Chat Interno', roles: ['admin', 'agent', 'superadmin'] },
     { to: '/connections', icon: <LinkIcon size={18} />, label: 'Conexoes', roles: ['admin', 'agent', 'superadmin'] },
+    { to: '/operational-monitor', icon: <Activity size={18} />, label: 'Monitor operacional', roles: ['admin', 'superadmin'] },
     { to: '/contacts', icon: <Users size={18} />, label: 'Clientes WhatsApp', roles: ['admin', 'agent', 'superadmin'] },
     { to: '/crm', icon: <Database size={18} />, label: 'CRM', roles: ['admin', 'agent', 'superadmin'] },
     { to: '/campaigns', icon: <Megaphone size={18} />, label: 'Campanhas', roles: ['admin', 'agent', 'superadmin'] },

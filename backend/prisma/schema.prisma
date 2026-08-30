@@ -48,6 +48,7 @@ model Tenant {
   legalDocuments    LegalDocument[]
   consentRecords    ConsentRecord[]
   calculatorSubmissions CalculatorSubmission[]
+  operationalEvents OperationalEvent[]
 }
 
 model TenantSettings {
@@ -931,4 +932,30 @@ model CalculatorSubmission {
   @@index([tenantId, email])
   @@index([tenantId, phone])
   @@index([tenantId, status])
+}
+
+model OperationalEvent {
+  id            String    @id @default(cuid())
+  tenantId      String?
+  source        String
+  channel       String?
+  eventType     String
+  status        String    @default("pending")
+  severity      String    @default("error")
+  summary       String
+  details       String?   @db.Text
+  externalId    String?
+  requestId     String?
+  attempts      Int       @default(1)
+  lastAttemptAt DateTime  @default(now())
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, createdAt])
+  @@index([source, status, createdAt])
+  @@index([status, createdAt])
+  @@index([tenantId, externalId])
 }

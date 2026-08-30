@@ -5,6 +5,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import api from './services/api';
 import AuthSpecPage from './pages/AuthSpecPage';
+import { installClientTelemetry, reportClientError } from './services/telemetry';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const Login = lazy(() => import('./pages/Login'));
@@ -16,6 +17,7 @@ const Users = lazy(() => import('./pages/Users'));
 const Teams = lazy(() => import('./pages/Teams'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Connections = lazy(() => import('./pages/Connections'));
+const OperationalMonitor = lazy(() => import('./pages/OperationalMonitor'));
 const KnowledgeBase = lazy(() => import('./pages/KnowledgeBase'));
 const Campaigns = lazy(() => import('./pages/Campaigns'));
 const QuickResponses = lazy(() => import('./pages/QuickResponses'));
@@ -104,6 +106,11 @@ class AppErrorBoundary extends React.Component {
 
   componentDidCatch(error) {
     console.error('[frontend] erro de renderizacao:', error);
+    reportClientError({
+      summary: 'Falha ao renderizar uma tela pública',
+      details: error?.stack || error?.message || String(error),
+      eventType: 'render_error',
+    });
   }
 
   render() {
@@ -190,6 +197,8 @@ function resolveHomeElement() {
   return LANDING_BY_ROUTE[landingRoute] || <InstitutionalSite />;
 }
 
+installClientTelemetry();
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <BrowserRouter basename={import.meta.env.BASE_URL}>
     <AppErrorBoundary>
@@ -224,6 +233,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/teams" element={<Teams />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/connections" element={<Connections />} />
+            <Route path="/operational-monitor" element={<OperationalMonitor />} />
             <Route path="/knowledge" element={<KnowledgeBase />} />
             <Route path="/campaigns" element={<Campaigns />} />
             <Route path="/os" element={<Navigate to="/inbox" replace />} />

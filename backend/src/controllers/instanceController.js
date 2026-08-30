@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma');
 const evolution = require('../services/evolutionService');
 const { buildWebhookUrl } = require('../utils/webhookSecurity');
+const { recordOperationalEvent } = require('../services/operationalMonitorService');
 
 async function getSettings(tenantId) {
   const s = await prisma.tenantSettings.findUnique({ where: { tenantId } });
@@ -22,8 +23,20 @@ async function list(req, res) {
     let settings;
     try {
       settings = await getSettings(req.user.tenantId);
-    } catch {
+    } catch (error) {
       // Se não estiver configurado, retorna a lista do banco mas sem o status real
+      void recordOperationalEvent({
+        tenantId: req.user.tenantId,
+        source: 'integration',
+        channel: 'whatsapp',
+        eventType: 'connection_config',
+        status: 'failed',
+        severity: 'critical',
+        summary: 'Integração do WhatsApp sem configuração válida',
+        details: { message: error.message },
+        externalId: `whatsapp:settings:${req.user.tenantId}`,
+        requestId: req.requestId,
+      });
       return res.json(instances.map(i => ({ ...i, state: 'close' })));
     }
 
@@ -55,13 +68,36 @@ async function list(req, res) {
           }
         });
         return { ...updated, state };
-      } catch {
+      } catch (error) {
+        void recordOperationalEvent({
+          tenantId: req.user.tenantId,
+          source: 'integration',
+          channel: 'whatsapp',
+          eventType: 'connection_check',
+          status: 'failed',
+          severity: 'error',
+          summary: `Falha ao consultar conexão: ${inst.instanceName}`,
+          details: { instanceName: inst.instanceName, message: error.message },
+          externalId: `whatsapp:connection:${inst.id}`,
+          requestId: req.requestId,
+        });
         return { ...inst, state: 'close' };
       }
     }));
 
     res.json(result);
   } catch (err) {
+    void recordOperationalEvent({
+      tenantId: req.user?.tenantId,
+      source: 'integration',
+      channel: 'whatsapp',
+      eventType: 'connection_list',
+      status: 'failed',
+      severity: 'error',
+      summary: 'Falha ao carregar conexões do WhatsApp',
+      details: { message: err.message },
+      requestId: req.requestId,
+    });
     res.status(400).json({ error: err.message });
   }
 }
@@ -97,6 +133,18 @@ async function create(req, res) {
       } else {
         console.error(`[instanceController] Erro ao criar na Evolution:`, responseData || err.message);
         const errorMsg = responseData?.message || err.message;
+        void recordOperationalEvent({
+          tenantId: req.user.tenantId,
+          source: 'integration',
+          channel: 'whatsapp',
+          eventType: 'connection_create',
+          status: 'failed',
+          severity: 'error',
+          summary: `Falha ao criar conexão: ${instanceName}`,
+          details: { instanceName, message: errorMsg },
+          externalId: `whatsapp:connection:${instanceName}`,
+          requestId: req.requestId,
+        });
         return res.status(400).json({ error: `Erro na Evolution API: ${errorMsg}` });
       }
     }
@@ -150,6 +198,18 @@ async function getQrCode(req, res) {
       status,
       message: err.message,
       response: err.response?.data || null,
+    });
+    void recordOperationalEvent({
+      tenantId: req.user?.tenantId,
+      source: 'integration',
+      channel: 'whatsapp',
+      eventType: 'connection_qrcode',
+      status: 'failed',
+      severity: 'error',
+      summary: 'Falha ao gerar QR Code do WhatsApp',
+      details: { instanceId: req.params.id, status, message: err.message },
+      externalId: `whatsapp:qrcode:${req.params.id}`,
+      requestId: req.requestId,
     });
     res.status(status).json({ error: err.message, status });
   }
@@ -224,6 +284,18 @@ async function repair(req, res) {
     });
   } catch (err) {
     console.error('[instanceController] Erro ao reparar instancia:', err.response?.data || err.message);
+    void recordOperationalEvent({
+      tenantId: req.user?.tenantId,
+      source: 'integration',
+      channel: 'whatsapp',
+      eventType: 'connection_repair',
+      status: 'failed',
+      severity: 'error',
+      summary: 'Falha ao reparar conexão do WhatsApp',
+      details: { instanceId: req.params.id, message: err.message },
+      externalId: `whatsapp:connection:${req.params.id}`,
+      requestId: req.requestId,
+    });
     res.status(err.statusCode || err.response?.status || 400).json({ error: err.response?.data?.message || err.message });
   }
 }

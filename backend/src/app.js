@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
@@ -42,6 +43,8 @@ const firebirdSyncRoutes = require('./routes/firebirdSync');
 const legalRoutes = require('./routes/legal');
 const publicCalculatorRoutes = require('./routes/publicCalculator');
 const cmsAuthRoutes = require('./routes/cmsAuth');
+const operationalMonitorRoutes = require('./routes/operationalMonitor');
+const { recordOperationalEvent } = require('./services/operationalMonitorService');
 
 const app = express();
 app.disable('x-powered-by');
@@ -127,6 +130,12 @@ app.use(express.urlencoded({
   parameterLimit: 1000,
 }));
 
+app.use((req, res, next) => {
+  req.requestId = req.headers['x-request-id'] || crypto.randomUUID();
+  res.setHeader('X-Request-Id', req.requestId);
+  next();
+});
+
 // Endpoint usado pelo health check do EasyPanel e pelo monitoramento da VPS.
 // A consulta simples confirma que a API e o PostgreSQL estão respondendo.
 app.get('/health', async (req, res) => {
@@ -193,6 +202,7 @@ app.use('/api/integrations/firebird', firebirdSyncRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/legal', legalRoutes);
 app.use('/api/public', publicCalculatorRoutes);
+app.use('/api/operational-monitor', operationalMonitorRoutes);
 app.use('/api/cms-auth', cmsAuthRoutes);
 
 // Respostas previsíveis para clientes que chamarem uma rota inexistente ou
@@ -207,6 +217,19 @@ app.use((err, req, res, next) => {
   const safeStatus = status >= 400 && status < 500 ? status : 500;
   if (safeStatus >= 500) {
     console.error('[http] erro não tratado:', err?.stack || err);
+    if (!req.originalUrl.startsWith('/api/operational-monitor')) {
+      void recordOperationalEvent({
+        tenantId: req.user?.tenantId || null,
+        source: req.originalUrl.startsWith('/api/public') ? 'landing' : 'crm',
+        channel: req.originalUrl.split('/').filter(Boolean).slice(0, 3).join('/'),
+        eventType: 'api_error',
+        status: 'failed',
+        severity: 'critical',
+        summary: `Falha interna em ${req.method} ${req.path}`,
+        details: { status: safeStatus, message: err?.message || 'Erro interno' },
+        requestId: req.requestId,
+      });
+    }
   }
   res.status(safeStatus).json({
     error: safeStatus >= 500 ? 'Erro interno do servidor' : (err.message || 'Requisição inválida'),

@@ -6,6 +6,10 @@ const evolutionService = require('../services/evolutionService');
 const aiService = require('../services/aiService');
 const businessHourService = require('../services/businessHourService');
 const {
+  recordOperationalEvent,
+  resolveOperationalEventByExternalId,
+} = require('../services/operationalMonitorService');
+const {
   buildInitialGreetingReply,
   buildInitialSubjectReply,
   buildLegalBotInstructions,
@@ -77,6 +81,10 @@ async function confirmDisconnected(instanceName, waInstanceId, attempt = 1) {
       event: 'connection.update',
       data: { state: 'open', confirmed: true },
     });
+    void resolveOperationalEventByExternalId({
+      tenantId: updated.tenantId,
+      externalId: `whatsapp:connection:${updated.id}`,
+    });
     return;
   }
 
@@ -93,6 +101,17 @@ async function confirmDisconnected(instanceName, waInstanceId, attempt = 1) {
 
     const { sendSystemAlert } = require('../services/alertService');
     sendSystemAlert(updated.tenantId, `A conexao *${instanceName.split('_')[1] || instanceName}* foi desconectada. Verifique o painel para reconectar.`);
+    void recordOperationalEvent({
+      tenantId: updated.tenantId,
+      source: 'integration',
+      channel: 'whatsapp',
+      eventType: 'connection_state',
+      status: 'failed',
+      severity: 'critical',
+      summary: `WhatsApp desconectado: ${instanceName}`,
+      details: { instanceName, state: 'close' },
+      externalId: `whatsapp:connection:${updated.id}`,
+    });
     return;
   }
 
@@ -121,6 +140,17 @@ async function confirmDisconnected(instanceName, waInstanceId, attempt = 1) {
 
   const { sendSystemAlert } = require('../services/alertService');
   sendSystemAlert(updated.tenantId, `A conexao *${instanceName.split('_')[1] || instanceName}* nao concluiu a reconexao e esta fora do ar. Verifique o painel para reconectar.`);
+  void recordOperationalEvent({
+    tenantId: updated.tenantId,
+    source: 'integration',
+    channel: 'whatsapp',
+    eventType: 'connection_state',
+    status: 'failed',
+    severity: 'critical',
+    summary: `WhatsApp sem reconexão: ${instanceName}`,
+    details: { instanceName, state: state || 'unknown', attempts: attempt },
+    externalId: `whatsapp:connection:${updated.id}`,
+  });
 }
 
 function scheduleDisconnectConfirmation(instanceName, waInstanceId, attempt = 1) {
@@ -812,14 +842,19 @@ async function processSingleMessage(msg, instance, waInstance, tenant, isHistori
 async function handleWebhook(req, res) {
   res.sendStatus(200);
 
+  let webhookTenantId = null;
+  let webhookInstance = null;
+
   try {
     const { event, instance, data } = req.body;
+    webhookInstance = instance || null;
     const ev = String(event || '').toLowerCase();
     
     // Trata atualização de conexão e QR Code
     if (ev === 'connection.update' || ev === 'qrcode.updated') {
       const waInstance = await prisma.waInstance.findFirst({ where: { instanceName: instance } });
       if (waInstance) {
+        webhookTenantId = waInstance.tenantId;
         if (io) io.to(waInstance.tenantId).emit('connection_update', { instance, event, data });
         
         // Atualiza status e telefone se disponível no evento de conexão
@@ -833,6 +868,10 @@ async function handleWebhook(req, res) {
 
         if (isConnected) {
           clearPendingConnectionCheck(instance);
+          void resolveOperationalEventByExternalId({
+            tenantId: waInstance.tenantId,
+            externalId: `whatsapp:connection:${waInstance.id}`,
+          });
         } else if (shouldConfirmDisconnect) {
           scheduleDisconnectConfirmation(instance, waInstance.id);
         }
@@ -915,6 +954,17 @@ async function handleWebhook(req, res) {
     }
   } catch (err) {
     console.error('[webhook] erro:', err.message);
+    void recordOperationalEvent({
+      tenantId: webhookTenantId,
+      source: 'integration',
+      channel: 'whatsapp',
+      eventType: 'webhook_processing',
+      status: 'failed',
+      severity: 'error',
+      summary: 'Falha ao processar evento do WhatsApp',
+      details: { instance: webhookInstance, message: err.message },
+      requestId: req.requestId,
+    });
   }
 }
 

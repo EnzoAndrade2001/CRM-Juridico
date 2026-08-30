@@ -7,6 +7,7 @@ const { sendServiceOrderManagerCopy } = require('../services/serviceOrderManager
 const { mapEquipmentType } = require('../utils/equipmentMapper');
 const { mediaPath } = require('../utils/uploads');
 const billingDocumentService = require('../services/billingDocumentService');
+const { recordOperationalEvent } = require('../services/operationalMonitorService');
 
 function pick(...values) {
   for (const value of values) {
@@ -400,6 +401,7 @@ async function upsertServiceOrder(tenant, instance, data) {
 }
 
 async function pushBatch(req, res) {
+  let syncTenantId = null;
   try {
     const { tenantSlug, entity, records } = req.body || {};
 
@@ -416,6 +418,7 @@ async function pushBatch(req, res) {
     }
 
     const { tenant, instance } = await resolveTenantContext(tenantSlug);
+    syncTenantId = tenant.id;
     assertToken(req, tenant);
 
     const source = 'firebird';
@@ -479,6 +482,20 @@ async function pushBatch(req, res) {
       },
     });
 
+    if (stats.errors.length) {
+      void recordOperationalEvent({
+        tenantId: tenant.id,
+        source: 'integration',
+        channel: 'firebird',
+        eventType: 'sync_batch',
+        status: 'pending',
+        severity: 'warning',
+        summary: `Sincronização Firebird parcial: ${stats.errors.length} registro(s) com erro`,
+        details: { entity, received: stats.received, stored: stats.stored, errors: stats.errors.slice(0, 20) },
+        requestId: req.requestId,
+      });
+    }
+
     res.json({
       ok: true,
       tenant: tenant.slug,
@@ -487,6 +504,17 @@ async function pushBatch(req, res) {
     });
   } catch (err) {
     console.error('[firebird-sync] erro:', err.message);
+    void recordOperationalEvent({
+      tenantId: syncTenantId,
+      source: 'integration',
+      channel: 'firebird',
+      eventType: 'sync_batch',
+      status: 'failed',
+      severity: 'critical',
+      summary: 'Falha na sincronização com o Firebird',
+      details: { message: err.message },
+      requestId: req.requestId,
+    });
     res.status(500).json({ error: err.message });
   }
 }

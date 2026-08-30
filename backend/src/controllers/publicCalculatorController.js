@@ -1,6 +1,7 @@
 const axios = require('axios');
 const prisma = require('../lib/prisma');
 const evolutionService = require('../services/evolutionService');
+const { recordOperationalEvent } = require('../services/operationalMonitorService');
 
 const recentRequests = new Map();
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -364,7 +365,19 @@ async function createCalculatorSubmission(req, res) {
     const remainingInstallments = Math.max(0, totalInstallments - paidInstallments);
     const totalSavings = Math.round(monthlySavings * remainingInstallments * 100) / 100;
     const tenant = await resolveTenant();
-    if (!tenant) return res.status(503).json({ stored: false, error: 'Tenant da landing page ainda não configurado.' });
+    if (!tenant) {
+      void recordOperationalEvent({
+        source: 'landing',
+        channel: String(source).toLowerCase(),
+        eventType: 'public_lead',
+        status: 'failed',
+        severity: 'critical',
+        summary: 'Landing page recebeu lead sem tenant configurado',
+        details: { source },
+        requestId: req.requestId,
+      });
+      return res.status(503).json({ stored: false, error: 'Tenant da landing page ainda não configurado.' });
+    }
 
     const submission = await prisma.calculatorSubmission.create({
       data: {
@@ -462,6 +475,21 @@ async function createCalculatorSubmission(req, res) {
       },
     });
 
+    if (errors.length || sentCount < 2) {
+      void recordOperationalEvent({
+        tenantId: tenant.id,
+        source: 'landing',
+        channel: landing.contactSource,
+        eventType: 'lead_notification',
+        status: sentCount === 0 ? 'failed' : 'pending',
+        severity: sentCount === 0 ? 'error' : 'warning',
+        summary: `Lead da landing com notificações ${sentCount === 2 ? 'entregues' : 'pendentes'}`,
+        details: { submissionId: updated.id, notifications, errors },
+        externalId: updated.id,
+        requestId: req.requestId,
+      });
+    }
+
     return res.status(202).json({
       stored: true,
       submissionId: updated.id,
@@ -472,6 +500,18 @@ async function createCalculatorSubmission(req, res) {
       notifications,
     });
   } catch (error) {
+    if (error?.name?.startsWith('Prisma') || String(error?.code || '').startsWith('P')) {
+      void recordOperationalEvent({
+        source: 'landing',
+        channel: 'revisional-bancario',
+        eventType: 'public_lead',
+        status: 'failed',
+        severity: 'critical',
+        summary: 'Falha interna ao registrar lead da landing page',
+        details: { message: error.message },
+        requestId: req.requestId,
+      });
+    }
     return res.status(400).json({ stored: false, error: error.message || 'Não foi possível registrar a simulação.' });
   }
 }
