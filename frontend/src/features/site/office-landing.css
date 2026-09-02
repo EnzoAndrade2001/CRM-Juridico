@@ -158,12 +158,20 @@
 .office-calculator__submission { margin: 0 0 12px !important; padding: 10px 12px; background: var(--office-cream); color: var(--office-copy) !important; font-size: 12.5px !important; }
 .office-calculator__submission--success { border-left: 3px solid #1caa59; }
 
+/* Galeria de Imagens (usada na landing de autismo) */
+.office-landing__gallery { padding: 60px 0; border-top: 1px solid rgba(21, 34, 54, .16); background: #fff; }
+.office-landing__gallery + .office-landing__review { border-top: 1px solid rgba(21, 34, 54, .16); }
+.office-landing__gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-top: 10px; }
+.office-landing__gallery-img { width: 100%; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); transition: transform 0.2s ease, box-shadow 0.2s ease; object-fit: cover; }
+.office-landing__gallery-img:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
+
 @media (max-width: 980px) {
   .office-landing__hero::after { width: 100%; opacity: .18; mask-image: none; -webkit-mask-image: none; }
   .office-landing__intro-grid,
   .office-landing__process-grid,
   .office-landing__about-grid,
-  .office-calculator__inner { grid-template-columns: 1fr; }
+  .office-calculator__inner,
+  .office-landing__gallery-grid { grid-template-columns: 1fr; }
   .office-landing__final-cta-inner { flex-direction: column; align-items: flex-start; }
   .office-landing__final-cta .office-button { margin-left: 0; }
   .office-landing__header-cta { display: none; }

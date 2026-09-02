@@ -8,6 +8,7 @@ const ICONS = { HeartHandshake, Landmark, GraduationCap, Scale };
 
 const NAV_ITEMS = [
   { href: '#sobre-o-tema', label: 'Direitos da pessoa autista' },
+  { href: '#informacoes', label: 'Informações Importantes' },
   { href: '#como-funciona', label: 'Como funciona' },
   { href: '#sobre', label: 'Sobre' },
 ];
@@ -19,6 +20,21 @@ export default function AutismLanding() {
       icons={ICONS}
       navItems={NAV_ITEMS}
       ariaLabel="Conversar sobre direitos da pessoa autista pelo WhatsApp"
-    />
+    >
+      <section className="office-landing__gallery" id="informacoes">
+        <div className="office-shell">
+          <div className="office-section-heading">
+            <p className="office-kicker">Avisos e Direitos</p>
+            <h2>Informações Importantes</h2>
+          </div>
+          <div className="office-landing__gallery-grid">
+            <img src="/assets/autismo/deducao-ir.jpg" alt="Imposto de Renda: dedução integral de despesas escolares" className="office-landing__gallery-img" />
+            <img src="/assets/autismo/alerta-fraude.jpg" alt="Alerta: Estão se passando pelo nosso escritório" className="office-landing__gallery-img" />
+            <img src="/assets/autismo/pais-obtem-deducao.jpg" alt="Pais obtêm dedução integral no IR" className="office-landing__gallery-img" />
+            <img src="/assets/autismo/milhares-de-familias.jpg" alt="Milhares de famílias declaram IR errado e podem restituir" className="office-landing__gallery-img" />
+          </div>
+        </div>
+      </section>
+    </OfficeLanding>
   );
 }
