@@ -158,12 +158,51 @@
 .office-calculator__submission { margin: 0 0 12px !important; padding: 10px 12px; background: var(--office-cream); color: var(--office-copy) !important; font-size: 12.5px !important; }
 .office-calculator__submission--success { border-left: 3px solid #1caa59; }
 
-/* Seções de Imagens (usadas na landing de autismo) */
-.office-landing__gallery-section { padding: 60px 0; border-top: 1px solid rgba(21, 34, 54, .12); }
-.office-landing__gallery-section + .office-landing__review { border-top: 1px solid rgba(21, 34, 54, .12); }
-.office-landing__gallery-item { display: flex; justify-content: center; width: 100%; margin: 0 auto; max-width: 680px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.12); transition: transform 0.3s ease, box-shadow 0.3s ease; }
-.office-landing__gallery-item:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.18); }
-.office-landing__gallery-img { width: 100%; max-height: 550px; display: block; object-fit: contain; background: #000; }
+/* Secoes de Campanhas e Creatives (Nativo) */
+.office-landing__creative { padding: 80px 0; color: #fff; }
+.office-creative-content { max-width: 680px; margin: 0 auto; text-align: center; }
+
+/* 1. Alerta de Fraude */
+.office-landing__creative--alert { background: #1a1a1a; position: relative; border-top: 6px solid #e11d48; }
+.office-landing__creative--alert .office-creative-icon { display: inline-flex; justify-content: center; align-items: center; width: 80px; height: 80px; background: #e11d48; color: #fff; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(225, 29, 72, 0.4); }
+.office-landing__creative--alert h2 { color: #e11d48; font-size: clamp(32px, 4vw, 48px); text-transform: uppercase; margin-bottom: 24px; }
+.office-creative-lead { font-size: 18px; line-height: 1.6; color: rgba(255, 255, 255, 0.9); margin-bottom: 32px; font-weight: 500; }
+.office-creative-footer-box { background: #262626; padding: 24px; border-radius: 8px; border-left: 4px solid var(--office-gold); }
+.office-creative-footer-box p { margin: 0 0 12px; font-size: 15px; color: rgba(255, 255, 255, 0.8); }
+.office-creative-footer-box strong { color: var(--office-gold); font-size: 18px; letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* 2. Detalhamento IR */
+.office-landing__creative--detailed { background: #0f0f0f; }
+.office-creative-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 60px; }
+.office-landing__creative--detailed .office-kicker { color: var(--office-gold); }
+.office-landing__creative--detailed h2 { font-size: clamp(24px, 3vw, 36px); margin-bottom: 24px; line-height: 1.2; text-transform: uppercase; }
+.office-creative-left p { color: rgba(255, 255, 255, 0.8); font-size: 16px; line-height: 1.6; margin-bottom: 20px; }
+.office-creative-left strong { color: #fff; }
+.office-creative-checklist { margin: 32px 0; padding: 24px; background: #1c1c1c; border-radius: 8px; }
+.office-creative-checklist p { margin-bottom: 16px; color: #fff; }
+.office-creative-checklist ul { list-style: none; padding: 0; margin: 0; }
+.office-creative-checklist li { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; color: #10b981; font-weight: 600; font-size: 15px; }
+.office-creative-small { font-size: 13.5px !important; color: rgba(255, 255, 255, 0.5) !important; }
+.office-creative-warning { background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); padding: 32px; border-radius: 8px; margin-bottom: 24px; }
+.office-creative-warning h3 { color: #facc15; display: flex; align-items: center; gap: 10px; margin: 0 0 16px; font-size: 20px; }
+.office-creative-warning p { color: rgba(255, 255, 255, 0.9); font-size: 15px; line-height: 1.5; margin-bottom: 16px; }
+.office-creative-warning ul { margin: 0; padding-left: 20px; color: rgba(255, 255, 255, 0.8); font-size: 14px; line-height: 1.5; }
+.office-creative-warning li { margin-bottom: 8px; }
+.office-creative-cta-box h4 { color: #fff; font-size: 16px; margin: 0 0 8px; }
+.office-creative-cta-box p { color: rgba(255, 255, 255, 0.6); font-size: 14px; line-height: 1.5; margin: 0; }
+
+/* 3. Teaser Pais Obtem Deducao */
+.office-landing__creative--teaser1 { background: var(--office-navy); }
+.office-creative-huge-icon { color: #e11d48; margin-bottom: 24px; }
+.office-landing__creative--teaser1 h2 { font-size: clamp(28px, 4vw, 42px); line-height: 1.15; margin-bottom: 40px; }
+.office-creative-highlight-pill { display: inline-flex; align-items: center; gap: 12px; background: #e11d48; color: #fff; padding: 12px 24px; border-radius: 40px; font-weight: 800; font-size: 14px; letter-spacing: 0.05em; }
+
+/* 4. Teaser Milhares de Familias */
+.office-landing__creative--teaser2 { background: #0c7489; }
+.office-landing__creative--teaser2 h2 { font-size: clamp(24px, 3vw, 32px); font-weight: 500; color: rgba(255, 255, 255, 0.9); margin-bottom: 32px; }
+.office-creative-massive-text { font-size: clamp(32px, 5vw, 48px); font-weight: 800; line-height: 1.1; margin-bottom: 32px; }
+.office-creative-massive-text strong { display: block; color: #facc15; font-size: clamp(40px, 6vw, 64px); }
+.office-creative-subtext { font-size: 18px; color: rgba(255, 255, 255, 0.8); max-width: 480px; margin: 0 auto; }
 
 @media (max-width: 980px) {
   .office-landing__hero::after { width: 100%; opacity: .18; mask-image: none; -webkit-mask-image: none; }
@@ -171,7 +210,7 @@
   .office-landing__process-grid,
   .office-landing__about-grid,
   .office-calculator__inner,
-  .office-landing__gallery-grid { grid-template-columns: 1fr; }
+  .office-creative-grid { grid-template-columns: 1fr; }
   .office-landing__final-cta-inner { flex-direction: column; align-items: flex-start; }
   .office-landing__final-cta .office-button { margin-left: 0; }
   .office-landing__header-cta { display: none; }
