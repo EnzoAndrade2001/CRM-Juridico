@@ -1,4 +1,4 @@
-import { GraduationCap, HeartHandshake, Landmark, Scale } from 'lucide-react';
+import { GraduationCap, HeartHandshake, Landmark, Scale, Puzzle } from 'lucide-react';
 import OfficeLanding from '../features/site/OfficeLanding';
 import content from '../content/autismo.json';
 
@@ -24,7 +24,10 @@ export default function AutismLanding() {
       <section className="office-landing__gallery" id="informacoes">
         <div className="office-shell">
           <div className="office-section-heading">
-            <p className="office-kicker">Avisos e Direitos</p>
+            <p className="office-kicker" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Puzzle size={18} style={{ color: 'var(--office-gold)' }} />
+              Avisos e Direitos
+            </p>
             <h2>Informações Importantes</h2>
           </div>
           <div className="office-landing__gallery-grid">
