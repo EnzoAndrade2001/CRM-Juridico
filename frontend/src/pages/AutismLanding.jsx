@@ -28,10 +28,10 @@ export default function AutismLanding() {
             <h2>Informações Importantes</h2>
           </div>
           <div className="office-landing__gallery-grid">
-            <img src="/assets/autismo/deducao-ir.jpg" alt="Imposto de Renda: dedução integral de despesas escolares" className="office-landing__gallery-img" />
-            <img src="/assets/autismo/alerta-fraude.jpg" alt="Alerta: Estão se passando pelo nosso escritório" className="office-landing__gallery-img" />
-            <img src="/assets/autismo/pais-obtem-deducao.jpg" alt="Pais obtêm dedução integral no IR" className="office-landing__gallery-img" />
-            <img src="/assets/autismo/milhares-de-familias.jpg" alt="Milhares de famílias declaram IR errado e podem restituir" className="office-landing__gallery-img" />
+            <img src={`${import.meta.env.BASE_URL}assets/autismo/deducao-ir.jpg`} alt="Imposto de Renda: dedução integral de despesas escolares" className="office-landing__gallery-img" />
+            <img src={`${import.meta.env.BASE_URL}assets/autismo/alerta-fraude.jpg`} alt="Alerta: Estão se passando pelo nosso escritório" className="office-landing__gallery-img" />
+            <img src={`${import.meta.env.BASE_URL}assets/autismo/pais-obtem-deducao.jpg`} alt="Pais obtêm dedução integral no IR" className="office-landing__gallery-img" />
+            <img src={`${import.meta.env.BASE_URL}assets/autismo/milhares-de-familias.jpg`} alt="Milhares de famílias declaram IR errado e podem restituir" className="office-landing__gallery-img" />
           </div>
         </div>
       </section>
