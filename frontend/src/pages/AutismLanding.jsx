@@ -21,25 +21,8 @@ export default function AutismLanding() {
       navItems={NAV_ITEMS}
       ariaLabel="Conversar sobre direitos da pessoa autista pelo WhatsApp"
     >
-      {/* Seção 1: Alerta de Fraude */}
-      <section className="office-landing__creative office-landing__creative--alert" id="informacoes">
-        <div className="office-shell">
-          <div className="office-creative-content">
-            <span className="office-creative-icon"><AlertTriangle size={48} /></span>
-            <h2>Atenção!</h2>
-            <p className="office-creative-lead">
-              Estão entrando em contato com alguns clientes se passando pelo nosso escritório, usando números pessoais dos sócios. Nosso atendimento ocorre somente pelos canais oficiais do escritório.
-            </p>
-            <div className="office-creative-footer-box">
-              <p>Não faça PIX, não compartilhe códigos/senhas e não envie documentos antes de confirmar.</p>
-              <strong>#FiqueAtento</strong>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Seção 2: Detalhamento IR */}
-      <section className="office-landing__creative office-landing__creative--detailed">
+      {/* Seção 1: Detalhamento IR */}
+      <section className="office-landing__creative office-landing__creative--detailed" id="informacoes">
         <div className="office-shell office-creative-grid">
           <div className="office-creative-left">
             <div className="office-section-heading">
