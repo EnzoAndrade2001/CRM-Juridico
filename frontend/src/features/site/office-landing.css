@@ -158,13 +158,12 @@
 .office-calculator__submission { margin: 0 0 12px !important; padding: 10px 12px; background: var(--office-cream); color: var(--office-copy) !important; font-size: 12.5px !important; }
 .office-calculator__submission--success { border-left: 3px solid #1caa59; }
 
-/* Galeria de Imagens (usada na landing de autismo) */
-.office-landing__gallery { padding: 80px 0; border-top: 1px solid rgba(21, 34, 54, .16); background: #fbfbfa; }
-.office-landing__gallery + .office-landing__review { border-top: 1px solid rgba(21, 34, 54, .16); }
-.office-landing__gallery-grid { display: flex; flex-direction: column; gap: 80px; align-items: center; margin-top: 40px; }
-.office-landing__gallery-item { display: flex; width: 100%; max-width: 720px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.12); transition: transform 0.3s ease, box-shadow 0.3s ease; }
-.office-landing__gallery-item:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.18); }
-.office-landing__gallery-img { width: 100%; height: auto; display: block; object-fit: cover; }
+/* Seções de Imagens (usadas na landing de autismo) */
+.office-landing__gallery-section { padding: 60px 0; border-top: 1px solid rgba(21, 34, 54, .12); }
+.office-landing__gallery-section + .office-landing__review { border-top: 1px solid rgba(21, 34, 54, .12); }
+.office-landing__gallery-item { display: flex; justify-content: center; width: 100%; margin: 0 auto; max-width: 680px; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.12); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.office-landing__gallery-item:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.18); }
+.office-landing__gallery-img { width: 100%; max-height: 550px; display: block; object-fit: contain; background: #000; }
 
 @media (max-width: 980px) {
   .office-landing__hero::after { width: 100%; opacity: .18; mask-image: none; -webkit-mask-image: none; }

@@ -21,7 +21,7 @@ export default function AutismLanding() {
       navItems={NAV_ITEMS}
       ariaLabel="Conversar sobre direitos da pessoa autista pelo WhatsApp"
     >
-      <section className="office-landing__gallery" id="informacoes">
+      <section className="office-landing__gallery-section" id="informacoes" style={{ background: '#fff' }}>
         <div className="office-shell">
           <div className="office-section-heading">
             <p className="office-kicker" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -30,19 +30,32 @@ export default function AutismLanding() {
             </p>
             <h2>Informações Importantes</h2>
           </div>
-          <div className="office-landing__gallery-grid">
-            <div className="office-landing__gallery-item">
-              <img src={`${import.meta.env.BASE_URL}assets/autismo/deducao-ir.jpg`} alt="Imposto de Renda: dedução integral de despesas escolares" className="office-landing__gallery-img" />
-            </div>
-            <div className="office-landing__gallery-item">
-              <img src={`${import.meta.env.BASE_URL}assets/autismo/alerta-fraude.jpg`} alt="Alerta: Estão se passando pelo nosso escritório" className="office-landing__gallery-img" />
-            </div>
-            <div className="office-landing__gallery-item">
-              <img src={`${import.meta.env.BASE_URL}assets/autismo/pais-obtem-deducao.jpg`} alt="Pais obtêm dedução integral no IR" className="office-landing__gallery-img" />
-            </div>
-            <div className="office-landing__gallery-item">
-              <img src={`${import.meta.env.BASE_URL}assets/autismo/milhares-de-familias.jpg`} alt="Milhares de famílias declaram IR errado e podem restituir" className="office-landing__gallery-img" />
-            </div>
+          <div className="office-landing__gallery-item">
+            <img src={`${import.meta.env.BASE_URL}assets/autismo/deducao-ir.jpg`} alt="Imposto de Renda: dedução integral de despesas escolares" className="office-landing__gallery-img" />
+          </div>
+        </div>
+      </section>
+
+      <section className="office-landing__gallery-section" style={{ background: 'var(--office-cream)' }}>
+        <div className="office-shell">
+          <div className="office-landing__gallery-item">
+            <img src={`${import.meta.env.BASE_URL}assets/autismo/alerta-fraude.jpg`} alt="Alerta: Estão se passando pelo nosso escritório" className="office-landing__gallery-img" />
+          </div>
+        </div>
+      </section>
+
+      <section className="office-landing__gallery-section" style={{ background: '#fff' }}>
+        <div className="office-shell">
+          <div className="office-landing__gallery-item">
+            <img src={`${import.meta.env.BASE_URL}assets/autismo/pais-obtem-deducao.jpg`} alt="Pais obtêm dedução integral no IR" className="office-landing__gallery-img" />
+          </div>
+        </div>
+      </section>
+
+      <section className="office-landing__gallery-section" style={{ background: 'var(--office-cream)' }}>
+        <div className="office-shell">
+          <div className="office-landing__gallery-item">
+            <img src={`${import.meta.env.BASE_URL}assets/autismo/milhares-de-familias.jpg`} alt="Milhares de famílias declaram IR errado e podem restituir" className="office-landing__gallery-img" />
           </div>
         </div>
       </section>
