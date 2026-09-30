@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import useCanonical from '../hooks/useCanonical';
 import {
   ArrowRight,
   Banknote,
@@ -263,6 +264,7 @@ function ContentModal({ content: modalContent, closeButtonRef, onClose }) {
 
 export default function InstitutionalSite({ section = 'home' }) {
   const { articleSlug } = useParams();
+  useCanonical();
   const isHome = section === 'home';
   const article = section === 'article'
     ? content.blog.posts.find((post) => post.slug === articleSlug)

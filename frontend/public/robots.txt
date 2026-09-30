@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /login
+Disallow: /*/login
+Disallow: /dashboard
+Disallow: /contacts
+Disallow: /crm
+Disallow: /users
+Disallow: /teams
+Disallow: /settings
+Disallow: /connections
+Disallow: /operational-monitor
+Disallow: /knowledge
+Disallow: /campaigns
+Disallow: /quick-responses
+Disallow: /superadmin
+Disallow: /leads
+Disallow: /revenue
+Disallow: /juridico
+Disallow: /inbox
+Disallow: /os
+Disallow: /validation/
+Disallow: /demo-juridico
+
+Sitemap: https://pbladvocacia.com.br/sitemap.xml

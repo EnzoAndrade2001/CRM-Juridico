@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "vite --port 5174",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender-seo.mjs",
     "preview": "vite preview --port 4174",
     "start": "serve dist -l 3000 -s"
   },

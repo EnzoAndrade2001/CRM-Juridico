@@ -6,6 +6,7 @@ import logo from '../../assets/pedro-bastos-lund-monogram.png';
 import site from '../../content/institutional-site.json';
 import '../../pages/institutional-site.css';
 import './office-landing.css';
+import useCanonical from '../../hooks/useCanonical';
 
 // Número oficial da instância PBL: todos os CTAs das landings caem na mesma
 // triagem da IA no WhatsApp.
@@ -46,6 +47,7 @@ function scrollToSection(id) {
 }
 
 export default function OfficeLanding({ content, icons = {}, navItems = [], ariaLabel, heroExtras = true, children }) {
+  useCanonical();
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Link compartilhado com ancora (#calculadora, por exemplo) precisa rolar
