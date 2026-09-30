@@ -1,0 +1,27 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/:slug/login", "destination": "/index.html" },
+    { "source": "/validation/**", "destination": "/index.html" },
+    { "source": "/demo-juridico", "destination": "/index.html" },
+    { "source": "/juridico", "destination": "/index.html" },
+    { "source": "/inbox", "destination": "/index.html" },
+    { "source": "/dashboard", "destination": "/index.html" },
+    { "source": "/contacts", "destination": "/index.html" },
+    { "source": "/crm", "destination": "/index.html" },
+    { "source": "/users", "destination": "/index.html" },
+    { "source": "/teams", "destination": "/index.html" },
+    { "source": "/settings", "destination": "/index.html" },
+    { "source": "/connections", "destination": "/index.html" },
+    { "source": "/operational-monitor", "destination": "/index.html" },
+    { "source": "/knowledge", "destination": "/index.html" },
+    { "source": "/campaigns", "destination": "/index.html" },
+    { "source": "/os", "destination": "/index.html" },
+    { "source": "/quick-responses", "destination": "/index.html" },
+    { "source": "/superadmin", "destination": "/index.html" },
+    { "source": "/leads", "destination": "/index.html" },
+    { "source": "/revenue", "destination": "/index.html" },
+    { "source": "/como-funciona", "destination": "/index.html" }
+  ]
+}

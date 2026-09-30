@@ -5,7 +5,7 @@
     "dev": "vite --port 5174",
     "build": "vite build && node scripts/prerender-seo.mjs",
     "preview": "vite preview --port 4174",
-    "start": "serve dist -l 3000 -s"
+    "start": "serve dist -l 3000"
   },
   "dependencies": {
     "axios": "^1.7.9",
